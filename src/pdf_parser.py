@@ -139,6 +139,13 @@ class PDFDocument:
             except Exception as pe:
                 print(f"[!] Error loading PDF {self.file_path} via pypdf: {pe}")
 
+        # Free any lingering temporary buffers from PDF extraction (Render memory safety)
+        try:
+            import gc
+            gc.collect()
+        except Exception:
+            pass
+
     @property
     def total_pages(self) -> int:
         return len(self.pages)

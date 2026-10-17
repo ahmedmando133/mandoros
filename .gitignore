@@ -31,3 +31,12 @@ Thumbs.db
 ~$*
 **/~$*
 
+# Essential Production Runtime Assets (Always tracked for Render)
+!master_protocols/
+!master_protocols/**
+!clinical_skills_library/
+!clinical_skills_library/**
+!backend instructions/
+!backend instructions/**
+
+

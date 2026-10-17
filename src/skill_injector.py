@@ -19,6 +19,7 @@ import os
 import sys
 import json
 import re
+import functools
 from pathlib import Path
 from typing import Dict, Any, List, Optional, Tuple, Callable
 
@@ -43,8 +44,10 @@ if not SKILLS_LIB_DIR.exists():
             break
 
 
-def _read_file_safe(path: Path, max_chars: Optional[int] = None) -> str:
-    """Reads a file with utf-8 encoding safely."""
+@functools.lru_cache(maxsize=128)
+def _read_file_safe(path_str: str, max_chars: Optional[int] = None) -> str:
+    """Reads a file with utf-8 encoding safely with LRU in-memory caching."""
+    path = Path(path_str)
     if not path.exists():
         return ""
     try:
@@ -59,25 +62,27 @@ def _read_file_safe(path: Path, max_chars: Optional[int] = None) -> str:
 # ---------------------------------------------------------------------------
 # Master Protocols & Schemas Cached Accessors
 # ---------------------------------------------------------------------------
+@functools.lru_cache(maxsize=16)
 def get_phase1_master_instructions() -> str:
     """Retrieves verbatim Markdown Master Instructions for Phase 1 (Extraction)."""
     p = MASTER_PROTOCOLS_DIR / "phase1_master_instructions.md"
-    return _read_file_safe(p)
+    return _read_file_safe(str(p))
 
 
+@functools.lru_cache(maxsize=16)
 def get_phase2_master_instructions() -> str:
     """Retrieves verbatim Markdown Master Instructions for Phase 2 (Analysis)."""
     p = MASTER_PROTOCOLS_DIR / "phase2_master_instructions.md"
-    return _read_file_safe(p)
+    return _read_file_safe(str(p))
 
 
-def get_phase1_schema() -> Dict[str, Any]:
-    """Loads Phase 1 JSON Schema as a strict structural template."""
+@functools.lru_cache(maxsize=16)
+def _get_phase1_schema_cached() -> str:
     p_schema = MASTER_PROTOCOLS_DIR / "phase1_schema.json"
     if p_schema.exists():
         try:
             with open(p_schema, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return f.read()
         except Exception:
             pass
 
@@ -86,19 +91,28 @@ def get_phase1_schema() -> Dict[str, Any]:
         try:
             with open(p_orig, "r", encoding="utf-8") as f:
                 d = json.load(f)
-                return d.get("machine_readable_extraction_json_schema", {})
+                return json.dumps(d.get("machine_readable_extraction_json_schema", {}))
         except Exception:
             pass
-    return {}
+    return "{}"
 
 
-def get_phase2_schema() -> Dict[str, Any]:
-    """Loads Phase 2 JSON Schema as a strict structural template."""
+def get_phase1_schema() -> Dict[str, Any]:
+    """Loads Phase 1 JSON Schema as a strict structural template."""
+    raw = _get_phase1_schema_cached()
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}
+
+
+@functools.lru_cache(maxsize=16)
+def _get_phase2_schema_cached() -> str:
     p_schema = MASTER_PROTOCOLS_DIR / "phase2_schema.json"
     if p_schema.exists():
         try:
             with open(p_schema, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return f.read()
         except Exception:
             pass
 
@@ -106,12 +120,22 @@ def get_phase2_schema() -> Dict[str, Any]:
     if p_orig.exists():
         try:
             with open(p_orig, "r", encoding="utf-8") as f:
-                return json.load(f)
+                return f.read()
         except Exception:
             pass
-    return {}
+    return "{}"
 
 
+def get_phase2_schema() -> Dict[str, Any]:
+    """Loads Phase 2 JSON Schema as a strict structural template."""
+    raw = _get_phase2_schema_cached()
+    try:
+        return json.loads(raw)
+    except Exception:
+        return {}
+
+
+@functools.lru_cache(maxsize=16)
 def get_clinical_synthesis_and_methodology_instructions() -> str:
     """Retrieves the unified specification for Layer 3 (TrialMind) and Layer 4 (RCTMethodologyIE)."""
     candidates = [
@@ -121,34 +145,37 @@ def get_clinical_synthesis_and_methodology_instructions() -> str:
     ]
     for c in candidates:
         if c.exists():
-            return _read_file_safe(c)
+            return _read_file_safe(str(c))
     return ""
 
 
 # ---------------------------------------------------------------------------
 # Skills Injector: Supporting Execution Skills (Tier 2) & References
 # ---------------------------------------------------------------------------
+@functools.lru_cache(maxsize=32)
 def get_skill_instructions(skill_name: str, max_chars: int = 15000) -> str:
-    """Retrieves the SKILL.md methodology for a specified clinical skill."""
+    """Retrieves the SKILL.md methodology for a specified clinical skill with memory caching."""
     skill_file = SKILLS_LIB_DIR / skill_name / "SKILL.md"
-    content = _read_file_safe(skill_file, max_chars=max_chars)
+    content = _read_file_safe(str(skill_file), max_chars=max_chars)
     if not content:
         alt_name = skill_name.replace("-", "_")
         skill_file_alt = SKILLS_LIB_DIR / alt_name / "SKILL.md"
-        content = _read_file_safe(skill_file_alt, max_chars=max_chars)
+        content = _read_file_safe(str(skill_file_alt), max_chars=max_chars)
     return content
 
 
+@functools.lru_cache(maxsize=32)
 def get_skill_reference(skill_name: str, ref_filename: str, max_chars: int = 6000) -> str:
-    """Retrieves markdown reference documentation from a skill's references directory."""
+    """Retrieves markdown reference documentation from a skill's references directory with memory caching."""
     ref_path = SKILLS_LIB_DIR / skill_name / "references" / ref_filename
-    return _read_file_safe(ref_path, max_chars=max_chars)
+    return _read_file_safe(str(ref_path), max_chars=max_chars)
 
 
+@functools.lru_cache(maxsize=32)
 def get_skill_script(skill_name: str, script_name: str) -> str:
-    """Retrieves python script source code from a skill's scripts directory."""
+    """Retrieves python script source code from a skill's scripts directory with memory caching."""
     script_path = SKILLS_LIB_DIR / skill_name / "scripts" / script_name
-    return _read_file_safe(script_path)
+    return _read_file_safe(str(script_path))
 
 
 # ---------------------------------------------------------------------------
@@ -200,6 +227,7 @@ The final report must achieve a 10/10 flawless quality level.
 # ---------------------------------------------------------------------------
 # Strict Hierarchy of Authority System Prompt Builders
 # ---------------------------------------------------------------------------
+@functools.lru_cache(maxsize=4)
 def build_phase1_system_prompt() -> str:
     """
     Constructs the Phase 1 System Prompt enforcing the Strict Hierarchy of Authority:
@@ -269,6 +297,7 @@ Every key, array, and nested object must be populated with verified source data.
     return prompt.strip()
 
 
+@functools.lru_cache(maxsize=4)
 def build_phase2_system_prompt() -> str:
     """
     Constructs the Phase 2 System Prompt enforcing the Strict Hierarchy of Authority:

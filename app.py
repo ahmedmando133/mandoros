@@ -3702,7 +3702,7 @@ def build_app():
                         api_key_input = gr.Textbox(
                             label="🔑 AI Provider API Key (Google AI Studio / Anthropic / OpenAI)",
                             type="password",
-                            placeholder="Enter your Gemini Key (AIza...), Claude Key (sk-ant...), or OpenAI Key (sk-...)"
+                            placeholder="Enter your Gemini Key, Claude Key, or OpenAI Key (or set via environment variable)"
                         )
 
                         extract_btn = gr.Button("🚀 Run Academic Deep Extraction", variant="primary", elem_classes=["extract-btn"])
@@ -3869,7 +3869,7 @@ def build_app():
                         cohort_api_key_input = gr.Textbox(
                             label="🔑 AI Provider API Key (Optional for Cloud Extraction)",
                             type="password",
-                            placeholder="Enter your Gemini Key (AIza...), Claude Key (sk-ant...), or OpenAI Key (sk-...)"
+                            placeholder="Enter your Gemini Key, Claude Key, or OpenAI Key (or set via environment variable)"
                         )
 
                         run_cohort_btn = gr.Button("🚀 Run End-to-End Cohort Extraction & Executive Analysis", variant="primary", elem_classes=["extract-btn"])
