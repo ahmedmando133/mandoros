@@ -112,6 +112,19 @@ def get_phase2_schema() -> Dict[str, Any]:
     return {}
 
 
+def get_clinical_synthesis_and_methodology_instructions() -> str:
+    """Retrieves the unified specification for Layer 3 (TrialMind) and Layer 4 (RCTMethodologyIE)."""
+    candidates = [
+        BASE_DIR / "backend" / "instructions" / "clinical_synthesis_and_methodology_skills.md",
+        BASE_DIR / "backend instructions" / "clinical_synthesis_and_methodology_skills.md",
+        MASTER_PROTOCOLS_DIR / "clinical_synthesis_and_methodology_skills.md"
+    ]
+    for c in candidates:
+        if c.exists():
+            return _read_file_safe(c)
+    return ""
+
+
 # ---------------------------------------------------------------------------
 # Skills Injector: Supporting Execution Skills (Tier 2) & References
 # ---------------------------------------------------------------------------
@@ -240,6 +253,12 @@ Use the following methodologies to execute the Tier 1 instructions with scientif
 --- SKILL: CLINICALTRIALS REGISTRY VERIFICATION ---
 {ct_skill}
 
+================================================================================
+[TIER 3: UNIFIED CLINICAL EVIDENCE & METHODOLOGICAL AUDIT SPECIFICATION]
+(TrialMind npj Digital Medicine 2025 & RCTMethodologyIE AMIA / CONSORT 2010)
+================================================================================
+{get_clinical_synthesis_and_methodology_instructions()}
+
 {SELF_CRITIQUE_QUALITY_GATE_PROMPT}
 
 FINAL DIRECTIVE:
@@ -313,6 +332,12 @@ Use the following methodologies to execute the Tier 1 synthesis with biostatisti
 
 --- SKILL: PEER REVIEW & CONSORT/COCHRANE EVALUATION ---
 {peer_review_skill}
+
+================================================================================
+[TIER 3: UNIFIED CLINICAL EVIDENCE & METHODOLOGICAL AUDIT SPECIFICATION]
+(TrialMind npj Digital Medicine 2025 & RCTMethodologyIE AMIA / CONSORT 2010)
+================================================================================
+{get_clinical_synthesis_and_methodology_instructions()}
 
 {SELF_CRITIQUE_QUALITY_GATE_PROMPT}
 
@@ -487,24 +512,31 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
                     except (ValueError, TypeError):
                         errors.append(f"arms[{idx}].{sn} must be an integer: {arm.get(sn)}")
 
-    # Validate Outcomes & Measures
+    # Validate Outcomes & Measures using Deterministic Code Interpreter
     outcomes = sanitized.get("outcomes", [])
     if isinstance(outcomes, list):
-        for idx, out in enumerate(outcomes):
-            if not isinstance(out, dict):
-                continue
-            ci_l = out.get("ci_lower")
-            ci_u = out.get("ci_upper")
-            if ci_l is not None and ci_u is not None:
-                try:
-                    fl = float(ci_l)
-                    fu = float(ci_u)
-                    if fl > fu:
-                        errors.append(f"outcomes[{idx}]: Inverted CI bounds (ci_lower {fl} > ci_upper {fu}). Correcting...")
-                        out["ci_lower"] = fu
-                        out["ci_upper"] = fl
-                except (ValueError, TypeError):
-                    pass
+        try:
+            from src.clinical_audit_engine import DeterministicCodeInterpreter
+            clean_outcomes, code_report = DeterministicCodeInterpreter.audit_and_standardize_outcomes(outcomes)
+            sanitized["outcomes"] = clean_outcomes
+            if code_report.scale_inversions_fixed > 0:
+                errors.append(f"DeterministicCodeInterpreter: Corrected {code_report.scale_inversions_fixed} inverted CI bounds.")
+        except Exception:
+            for idx, out in enumerate(outcomes):
+                if not isinstance(out, dict):
+                    continue
+                ci_l = out.get("ci_lower")
+                ci_u = out.get("ci_upper")
+                if ci_l is not None and ci_u is not None:
+                    try:
+                        fl = float(ci_l)
+                        fu = float(ci_u)
+                        if fl > fu:
+                            errors.append(f"outcomes[{idx}]: Inverted CI bounds (ci_lower {fl} > ci_upper {fu}). Correcting...")
+                            out["ci_lower"] = fu
+                            out["ci_upper"] = fl
+                    except (ValueError, TypeError):
+                        pass
 
     # Validate Baseline Characteristics
     baseline = sanitized.get("baseline", [])
