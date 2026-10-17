@@ -126,8 +126,36 @@ python run.py analyze-cohort --cohort Mixed_Metabolic_Cohort
 
 ---
 
+## 🔬 Unified 4-Layer Clinical Evidence & Methodological Audit Engine
+
+MANDOROS integrates a production-ready, 4-layer clinical intelligence pipeline into every live web request:
+
+1. **Layer 1: Phase 1 Master Specification Protocol:**
+   - 35 mandatory clinical extraction rules and deterministic machine-readable JSON schemas.
+2. **Layer 2: Phase 2 & Clinical Skills Library:**
+   - 11 specialized biostatistical and extraction skills (`pdf`, `xlsx`, `clinicaltrials-database`, `clinical-decision-support`, `statistical-analysis`, `statsmodels`, `clinical-reports`, `exploratory-data-analysis`, `peer-review`).
+3. **Layer 3: TrialMind Systematic Evidence Synthesis Engine (*Nature npj Digital Medicine 2025*):**
+   - 3-step CoT + RAG PICO deconstruction and MeSH expansion (search recall >= 78%).
+   - Atomic eligibility criteria builder (single testable property per criterion).
+   - Ternary screening (+1, -1, 0) with Zero-False-Negative safeguard (0 never eliminates).
+   - Chunk-anchored data extraction (`[Chunk_001]`, etc.) rejecting unanchored claims.
+   - Code-interpreted standardization prohibiting LLM mental math.
+   - Continuous PRISMA 2020 flow tracking (Identified -> Screened -> Excluded -> Included).
+4. **Layer 4: RCTMethodologyIE Deep Methodological Audit (*AMIA 2022 / CONSORT 2010*):**
+   - Trial architecture classification (Parallel Group, Crossover, Factorial; Phases 1-4; Superiority/Non-inferiority).
+   - 4-Entity blinding audit across Patients, Care Providers, Outcome Assessors, and Data Analysts.
+   - Granular sequence generation, block/stratified subtype, and allocation concealment mechanisms (IWRS, SNOSE, Central Pharmacy).
+   - Sample size calculation and statistical power cross-check against actual enrollment and attrition.
+   - **Verbatim Verification Hook:** Automated server-side string validator checking all quotes against source text chunks (zero hallucination).
+   - **Algorithmic Cochrane RoB 2.0:** Automated evaluation across domains D1 through D5.
+
+*Full details and visual architecture diagrams are presented in **Slide 13 & Slide 14** of `MANDOROS_Global_Academic_Presentation.pptx`.*
+
+---
+
 ## 🔒 Security & Data Integrity
 - Single source of truth in `src/canonical.py`.
-- Zero-hallucination policy (`not_reported` for unmeasured data).
+- Zero-hallucination policy (`Not Reported (NR)` for unmeasured data).
 - Strict separation of numeric values, operators, and units.
-- Full PRISMA, Cochrane, and academic systematic review compatibility.
+- Verbatim quote verification hook and deterministic code interpreter.
+- Full CONSORT 2010, Cochrane RoB 2.0, GRADE, and PRISMA 2020 compatibility.
