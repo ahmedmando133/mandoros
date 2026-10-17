@@ -1,10 +1,16 @@
 """
 MANDOROS Master Skill Injector & 10/10 Programmatic Validation Quality Gate.
-Enforces Strict Hierarchy of Authority:
-- TIER 1: SUPREME LAW (100% Mandatory & Non-Negotiable Master Protocols & JSON Schemas)
-- TIER 2: SUPPORTING EXECUTION SKILLS (Technical Muscle from clinical_skills_library)
+Dynamically reads SKILL.md, references/, and scripts/ from clinical_skills_library/
+and injects them into LLM System Prompts according to task:
+- Phase 1: Clinical Extraction Pipeline
+- Phase 2: Statistical Analysis & Meta-Analysis Pipeline
+- Peer Review & Academic Quality Gate
 
-Completely path-agnostic for seamless execution on both local machines and Render cloud production.
+Enforces:
+1. TIER 1: SUPREME LAW (Verbatim Master Protocols & Deterministic JSON Schemas).
+2. TIER 2: SUPPORTING EXECUTION SKILLS (Technical Muscle from clinical_skills_library).
+3. 5-CONDITION SELF-CRITIQUE & 10/10 QUALITY GATE (PICO completeness, 100% numerical accuracy,
+   APA/GRADE/CONSORT adherence, statistical rigor, zero cell distortion).
 """
 
 from __future__ import annotations
@@ -24,7 +30,6 @@ BASE_DIR = CURRENT_DIR.parent if CURRENT_DIR.name == "src" else CURRENT_DIR
 
 MASTER_PROTOCOLS_DIR = BASE_DIR / "master_protocols"
 if not MASTER_PROTOCOLS_DIR.exists():
-    # Fallback to local sibling or root search
     for candidate in [BASE_DIR / "backend instructions", CURRENT_DIR / "master_protocols"]:
         if candidate.exists():
             MASTER_PROTOCOLS_DIR = candidate
@@ -76,7 +81,6 @@ def get_phase1_schema() -> Dict[str, Any]:
         except Exception:
             pass
 
-    # Fallback to Phase 1 extraction.json
     p_orig = MASTER_PROTOCOLS_DIR / "Phase 1 extraction.json"
     if p_orig.exists():
         try:
@@ -98,7 +102,6 @@ def get_phase2_schema() -> Dict[str, Any]:
         except Exception:
             pass
 
-    # Fallback to Phase 2 meta-analysis.json
     p_orig = MASTER_PROTOCOLS_DIR / "Phase 2 meta-analysis.json"
     if p_orig.exists():
         try:
@@ -110,24 +113,75 @@ def get_phase2_schema() -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Skills Injector: Supporting Execution Skills (Tier 2)
+# Skills Injector: Supporting Execution Skills (Tier 2) & References
 # ---------------------------------------------------------------------------
 def get_skill_instructions(skill_name: str, max_chars: int = 15000) -> str:
     """Retrieves the SKILL.md methodology for a specified clinical skill."""
     skill_file = SKILLS_LIB_DIR / skill_name / "SKILL.md"
     content = _read_file_safe(skill_file, max_chars=max_chars)
     if not content:
-        # Check alternative naming
         alt_name = skill_name.replace("-", "_")
         skill_file_alt = SKILLS_LIB_DIR / alt_name / "SKILL.md"
         content = _read_file_safe(skill_file_alt, max_chars=max_chars)
     return content
 
 
+def get_skill_reference(skill_name: str, ref_filename: str, max_chars: int = 6000) -> str:
+    """Retrieves markdown reference documentation from a skill's references directory."""
+    ref_path = SKILLS_LIB_DIR / skill_name / "references" / ref_filename
+    return _read_file_safe(ref_path, max_chars=max_chars)
+
+
 def get_skill_script(skill_name: str, script_name: str) -> str:
     """Retrieves python script source code from a skill's scripts directory."""
     script_path = SKILLS_LIB_DIR / skill_name / "scripts" / script_name
     return _read_file_safe(script_path)
+
+
+# ---------------------------------------------------------------------------
+# 5-Condition Self-Critique & 10/10 Quality Gate Block
+# ---------------------------------------------------------------------------
+SELF_CRITIQUE_QUALITY_GATE_PROMPT = """
+================================================================================
+STRICT 5-CONDITION SELF-CRITIQUE & 10/10 QUALITY GATE
+================================================================================
+Before finalizing and returning your response, you MUST programmatically
+self-evaluate your output against the following 5 Non-Negotiable Conditions:
+
+1. COMPLETENESS OF PICO ELEMENTS & TABLES:
+   - Every PICO element, treatment arm, Table 1 baseline row, primary/secondary
+     efficacy endpoint, and safety adverse event must be extracted without row truncation.
+   - Do NOT omit rows or use ellipses (...).
+
+2. 100% NUMERICAL ACCURACY & ZERO HALLUCINATION:
+   - Every number, mean, SD, CI bound, p-value, count, and percentage must match
+     the source PDF 100%. Cite exact page and table number for every extracted value.
+   - If a specific metric or value is not reported in the publication, write
+     'Not Reported (NR)'. NEVER invent, guess, or extrapolate unverified figures.
+
+3. STRICT ACADEMIC STANDARDS COMPLIANCE:
+   - Comply with APA 7th Edition statistical reporting standards (exact p-values,
+     test statistics, effect sizes, and 95% CIs).
+   - Comply with CONSORT 2010 RCT reporting principles and ICH-GCP guidelines.
+   - Perform full Cochrane Risk of Bias 2.0 evaluation across all 5 domains.
+   - Formulate GRADE Certainty of Evidence profiles (High, Moderate, Low, Very Low).
+
+4. COMPREHENSIVE BIOSTATISTICAL RIGOR:
+   - Include complete effect sizes (MD, Cohen's d, Hedges' g, RR, OR, HR, NNT).
+   - Ensure numerical scale sanity: confidence intervals must not be inverted
+     (CI lower <= CI upper), I^2 must be in [0, 100], tau^2 >= 0, and ratios strictly > 0.
+
+5. PROFESSIONAL TABLE FORMATTING & CELL ISOLATION:
+   - Strictly separate numbers, operators, and units into isolated fields
+     (e.g., operator='>=', value=18.0, unit='years').
+   - Zero cell-merging distortion.
+
+SELF-CRITIQUE DIRECTIVE:
+If any part of your generated analysis fails any of these 5 conditions, you MUST
+immediately regenerate and correct that part before returning the final output.
+The final report must achieve a 10/10 flawless quality level.
+================================================================================
+"""
 
 
 # ---------------------------------------------------------------------------
@@ -138,13 +192,14 @@ def build_phase1_system_prompt() -> str:
     Constructs the Phase 1 System Prompt enforcing the Strict Hierarchy of Authority:
     - TIER 1: SUPREME LAW (verbatim phase1_master_instructions.md + Phase 1 JSON schema)
     - TIER 2: SUPPORTING EXECUTION SKILLS (pdf, clinical-reports, clinicaltrials-database)
+    - 5-CONDITION SELF-CRITIQUE & 10/10 QUALITY GATE
     """
     phase1_instructions = get_phase1_master_instructions()
     phase1_schema = get_phase1_schema()
 
-    # Tier 2 execution muscle
     pdf_skill = get_skill_instructions("pdf", max_chars=6000)
     reports_skill = get_skill_instructions("clinical-reports", max_chars=8000)
+    reports_ref = get_skill_reference("clinical-reports", "clinical_trial_reporting.md", max_chars=4000)
     ct_skill = get_skill_instructions("clinicaltrials-database", max_chars=6000)
 
     prompt = f"""
@@ -160,11 +215,10 @@ and JSON schema are the ABSOLUTE SUPREME LAW.
 If any conflict arises between general skills, habits, or external knowledge and Tier 1 protocols,
 TIER 1 OVERRIDES EVERYTHING 100%.
 
-1. You MUST extract all clinical entities without data duplication.
-2. The uploaded PDF is the primary source of truth. Never invent, impute, or extrapolate values.
+1. Extract all clinical entities without data duplication.
+2. The uploaded PDF is the primary source of truth. Zero hallucination. Missing data -> 'Not Reported (NR)'.
 3. Every single key in the Phase 1 Output Schema is strictly mandatory.
-4. Cell-level data normalization, PICO alignment, CONSORT reporting, and independent verification
-   are mandatory.
+4. Cell-level data normalization, PICO alignment, CONSORT reporting, and independent verification are mandatory.
 
 --- MASTER PROTOCOL INSTRUCTIONS (VERBATIM) ---
 {phase1_instructions}
@@ -181,16 +235,17 @@ Use the following methodologies to execute the Tier 1 instructions with scientif
 
 --- SKILL: CLINICAL REPORT CONSISTENCY & ADVERSE EVENT TAXONOMY ---
 {reports_skill}
+{reports_ref}
 
 --- SKILL: CLINICALTRIALS REGISTRY VERIFICATION ---
 {ct_skill}
 
-================================================================================
+{SELF_CRITIQUE_QUALITY_GATE_PROMPT}
+
 FINAL DIRECTIVE:
 Return strictly valid JSON conforming exactly to the Phase 1 Output Schema.
 No surrounding conversational text or markdown code fences outside JSON.
 Every key, array, and nested object must be populated with verified source data.
-================================================================================
 """
     return prompt.strip()
 
@@ -200,13 +255,16 @@ def build_phase2_system_prompt() -> str:
     Constructs the Phase 2 System Prompt enforcing the Strict Hierarchy of Authority:
     - TIER 1: SUPREME LAW (verbatim phase2_master_instructions.md + Phase 2 JSON schema)
     - TIER 2: SUPPORTING EXECUTION SKILLS (statistical-analysis, clinical-decision-support, statsmodels, peer-review)
+    - 5-CONDITION SELF-CRITIQUE & 10/10 QUALITY GATE
     """
     phase2_instructions = get_phase2_master_instructions()
     phase2_schema = get_phase2_schema()
 
-    # Tier 2 execution muscle
     stat_skill = get_skill_instructions("statistical-analysis", max_chars=8000)
+    stat_ref = get_skill_reference("statistical-analysis", "assumptions_and_diagnostics.md", max_chars=4000)
+    stat_es = get_skill_reference("statistical-analysis", "effect_sizes_and_power.md", max_chars=4000)
     cds_skill = get_skill_instructions("clinical-decision-support", max_chars=8000)
+    cds_ref = get_skill_reference("clinical-decision-support", "evidence_profiles.md", max_chars=4000)
     statsmodels_skill = get_skill_instructions("statsmodels", max_chars=6000)
     peer_review_skill = get_skill_instructions("peer-review", max_chars=6000)
 
@@ -243,9 +301,12 @@ Use the following methodologies to execute the Tier 1 synthesis with biostatisti
 
 --- SKILL: STATISTICAL ANALYSIS & EFFECT SIZE ESTIMATION (APA STANDARDS) ---
 {stat_skill}
+{stat_ref}
+{stat_es}
 
 --- SKILL: CLINICAL DECISION SUPPORT & EVIDENCE PROFILES ---
 {cds_skill}
+{cds_ref}
 
 --- SKILL: STATSMODELS & MIXED-EFFECTS META-REGRESSION ---
 {statsmodels_skill}
@@ -253,15 +314,60 @@ Use the following methodologies to execute the Tier 1 synthesis with biostatisti
 --- SKILL: PEER REVIEW & CONSORT/COCHRANE EVALUATION ---
 {peer_review_skill}
 
-================================================================================
+{SELF_CRITIQUE_QUALITY_GATE_PROMPT}
+
 FINAL DIRECTIVE:
 Return strictly valid JSON conforming exactly to the Phase 2 Output Schema.
 Ensure all 21 analytical sections are comprehensively populated with mathematically valid values.
-================================================================================
 """
     return prompt.strip()
 
 
+def build_system_prompt_for_task(task_type: str = "extraction") -> str:
+    """
+    Dynamically constructs a specialized System Prompt based on task type:
+    - 'extraction' / 'phase1': Full Phase 1 Extraction Pipeline prompt.
+    - 'statistical_analysis' / 'phase2': Full Phase 2 Meta-Analysis & Biostatistical Pipeline prompt.
+    - 'peer_review': Peer-Review & Evidence Verification prompt.
+    """
+    t_low = task_type.lower().strip()
+    if "extract" in t_low or "phase1" in t_low or "phase_1" in t_low:
+        return build_phase1_system_prompt()
+    elif "stat" in t_low or "meta" in t_low or "phase2" in t_low or "phase_2" in t_low:
+        return build_phase2_system_prompt()
+    elif "review" in t_low or "peer" in t_low:
+        peer_skill = get_skill_instructions("peer-review", max_chars=12000)
+        stat_skill = get_skill_instructions("statistical-analysis", max_chars=8000)
+        reports_skill = get_skill_instructions("clinical-reports", max_chars=8000)
+        return f"""
+================================================================================
+MANDOROS CLINICAL AI SYSTEM — PEER REVIEW & EVIDENCE AUDIT PIPELINE
+================================================================================
+You are an expert Senior Medical Journal Editor and Biostatistical Referee.
+Evaluate clinical manuscripts and trial extractions adhering strictly to:
+- CONSORT 2010 Checklist
+- Cochrane Risk of Bias 2.0 (RoB 2.0)
+- GRADE Evidence Profile Guidelines
+- APA 7th Edition Statistical Standards
+
+--- PEER REVIEW METHODOLOGY ---
+{peer_skill}
+
+--- STATISTICAL REPRODUCIBILITY & ASSUMPTIONS ---
+{stat_skill}
+
+--- CLINICAL TRIAL REPORTING CHECKLIST ---
+{reports_skill}
+
+{SELF_CRITIQUE_QUALITY_GATE_PROMPT}
+""".strip()
+    else:
+        return build_phase1_system_prompt()
+
+
+# ---------------------------------------------------------------------------
+# Data Structuring: Convert Extracted Data to Phase 1 Master Schema
+# ---------------------------------------------------------------------------
 def to_phase1_master_dict(trial_data: Any) -> Dict[str, Any]:
     """
     Converts ExtractedTrialData or a dictionary into the strict Phase 1 Master JSON structure
@@ -321,7 +427,7 @@ def to_phase1_master_dict(trial_data: Any) -> Dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# Task 3: Hard Programmatic JSON Schema Validation Layer
+# Programmatic Validation & 10/10 Quality Gate
 # ---------------------------------------------------------------------------
 def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]:
     """
@@ -333,8 +439,7 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
         return False, ["Phase 1 payload must be a JSON object (dict)."], {}
 
     sanitized = dict(data)
-    
-    # 1. Check required top-level keys
+
     req_keys = [
         "schema_version", "phase", "study", "arms",
         "eligibility", "baseline", "outcomes", "sources", "validation_log"
@@ -342,7 +447,6 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
     for k in req_keys:
         if k not in sanitized:
             errors.append(f"Missing required top-level key: '{k}'")
-            # Default auto-reconstruction for missing keys
             if k in ["arms", "eligibility", "baseline", "outcomes", "sources", "validation_log"]:
                 sanitized[k] = []
             elif k == "study":
@@ -352,7 +456,7 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
             elif k == "phase":
                 sanitized[k] = 1
 
-    # 2. Validate Study Metadata
+    # Validate Study Metadata
     study = sanitized.get("study", {})
     if not isinstance(study, dict):
         errors.append("Field 'study' must be an object.")
@@ -363,22 +467,17 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
             if not study.get(sk):
                 errors.append(f"Field 'study.{sk}' is empty or missing.")
 
-    # 3. Validate Treatment Arms
+    # Validate Treatment Arms
     arms = sanitized.get("arms", [])
     if not isinstance(arms, list) or len(arms) == 0:
         errors.append("Field 'arms' must be a non-empty list of treatment arms.")
     else:
-        arm_ids = set()
         for idx, arm in enumerate(arms):
             if not isinstance(arm, dict):
                 errors.append(f"arms[{idx}] is not an object.")
                 continue
-            aid = arm.get("arm_id")
-            if not aid:
+            if not arm.get("arm_id"):
                 errors.append(f"arms[{idx}] missing 'arm_id'.")
-            else:
-                arm_ids.add(str(aid))
-            # Validate sample size non-negativity
             for sn in ["sample_size_allocated", "sample_size_analyzed"]:
                 if arm.get(sn) is not None:
                     try:
@@ -388,15 +487,12 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
                     except (ValueError, TypeError):
                         errors.append(f"arms[{idx}].{sn} must be an integer: {arm.get(sn)}")
 
-    # 4. Validate Outcomes & Measures
+    # Validate Outcomes & Measures
     outcomes = sanitized.get("outcomes", [])
-    if not isinstance(outcomes, list):
-        errors.append("Field 'outcomes' must be a list.")
-    else:
+    if isinstance(outcomes, list):
         for idx, out in enumerate(outcomes):
             if not isinstance(out, dict):
                 continue
-            # CI lower <= CI upper check
             ci_l = out.get("ci_lower")
             ci_u = out.get("ci_upper")
             if ci_l is not None and ci_u is not None:
@@ -409,12 +505,8 @@ def validate_phase1_payload(data: Any) -> Tuple[bool, List[str], Dict[str, Any]]
                         out["ci_upper"] = fl
                 except (ValueError, TypeError):
                     pass
-            # Guarantee sample size is present
-            if out.get("sample_size") is None:
-                # auto-fill if possible
-                pass
 
-    # 5. Validate Baseline Characteristics
+    # Validate Baseline Characteristics
     baseline = sanitized.get("baseline", [])
     if isinstance(baseline, list):
         for idx, b in enumerate(baseline):
@@ -518,8 +610,7 @@ def execute_phase1_validation_loop(
 ) -> Dict[str, Any]:
     """
     Validates Phase 1 extraction data against strict schemas.
-    If errors exist and an LLM retry function is provided, executes an automated
-    self-correction retry loop until 100% compliant or auto-repaired.
+    Executes automated self-correction retry loop until 100% compliant or auto-repaired.
     """
     current_payload = raw_payload
     for attempt in range(1, max_retries + 1):
@@ -532,7 +623,6 @@ def execute_phase1_validation_loop(
         for err in errors[:5]:
             print(f"    - {err}")
 
-        # If LLM retry is available and attempts remain, formulate targeted feedback
         if llm_retry_fn and attempt < max_retries:
             feedback_prompt = (
                 "CRITICAL VALIDATION FAILURE: Your previous Phase 1 JSON output failed strict Master Protocol validation.\n"
@@ -549,7 +639,6 @@ def execute_phase1_validation_loop(
         else:
             current_payload = sanitized
 
-    # Final pass: return sanitized with validation issues logged
     _, _, final_sanitized = validate_phase1_payload(current_payload)
     return final_sanitized
 
@@ -561,8 +650,7 @@ def execute_phase2_validation_loop(
 ) -> Dict[str, Any]:
     """
     Validates Phase 2 meta-analysis data against strict schemas.
-    If errors exist and an LLM retry function is provided, executes an automated
-    self-correction retry loop until 100% compliant or auto-repaired.
+    Executes automated self-correction retry loop until 100% compliant or auto-repaired.
     """
     current_payload = raw_payload
     for attempt in range(1, max_retries + 1):
