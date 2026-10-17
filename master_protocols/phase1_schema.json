@@ -1,0 +1,921 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mandoros.local/schema/phase1-v1.json",
+  "title": "MANDOROS Phase 1 Single RCT",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "phase",
+    "study",
+    "arms",
+    "eligibility",
+    "baseline",
+    "outcomes",
+    "sources",
+    "validation_log"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0"
+    },
+    "phase": {
+      "const": "single_rct"
+    },
+    "study": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "study_id",
+        "title"
+      ],
+      "properties": {
+        "study_id": {
+          "type": "string",
+          "minLength": 1
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "authors": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "journal": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "doi": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "registration_id": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "design": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "randomization": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "blinding": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "phase": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "country": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "setting": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "sponsor": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "funding": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "primary_endpoint": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "publication_year": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "randomized_n": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "centers_n": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "treatment_duration_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "followup_duration_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "treatment_duration_unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "followup_duration_unit": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      }
+    },
+    "sources": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "source_id",
+          "page",
+          "location_type",
+          "extraction_method"
+        ],
+        "properties": {
+          "source_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "page": {
+            "type": "integer",
+            "minimum": 1
+          },
+          "location_type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "table",
+              "figure",
+              "supplement"
+            ]
+          },
+          "section": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "item_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "evidence": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "extraction_method": {
+            "type": "string",
+            "enum": [
+              "digital_text",
+              "table_read",
+              "figure_exact",
+              "figure_approximate"
+            ]
+          },
+          "confidence": {
+            "type": [
+              "number",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "arms": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "arm_id",
+          "name",
+          "type",
+          "source_ids"
+        ],
+        "properties": {
+          "arm_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "experimental",
+              "placebo",
+              "active_comparator",
+              "usual_care",
+              "other"
+            ]
+          },
+          "drug": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "dose_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "dose_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "frequency_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "frequency_per_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "route": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "duration_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "randomized_n": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "analyzed_n": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "eligibility": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "criterion_id",
+          "kind",
+          "variable",
+          "source_ids"
+        ],
+        "properties": {
+          "criterion_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "INCLUSION",
+              "EXCLUSION"
+            ]
+          },
+          "variable": {
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "population_subgroup": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "assessment_stage": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lower_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "lower_operator_1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "lower_operator_2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "upper_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "upper_operator_1": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "upper_operator_2": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "medication": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "duration_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "duration_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "baseline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "baseline_id",
+          "variable",
+          "scope",
+          "statistic",
+          "source_ids"
+        ],
+        "properties": {
+          "baseline_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "variable": {
+            "type": "string",
+            "minLength": 1
+          },
+          "arm_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "scope": {
+            "type": "string",
+            "enum": [
+              "overall",
+              "arm"
+            ]
+          },
+          "population": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "statistic": {
+            "type": "string",
+            "enum": [
+              "mean_sd",
+              "median_iqr",
+              "median_range",
+              "count",
+              "percentage",
+              "count_percentage",
+              "other"
+            ]
+          },
+          "mean": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "sd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "median": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "q1": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "q3": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "min": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "max": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "percentage": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "outcomes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "outcome_id",
+          "domain",
+          "name",
+          "estimate_type",
+          "source_ids",
+          "status",
+          "approximate_from_figure"
+        ],
+        "properties": {
+          "outcome_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "domain": {
+            "type": "string",
+            "enum": [
+              "EFFICACY",
+              "SAFETY",
+              "OTHER"
+            ]
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "definition": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "arm_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "comparator_arm_id": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "analysis_population": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "timepoint_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "timepoint_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "original_timepoint_label": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "period_start": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "period_end": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "period_unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "estimate_type": {
+            "type": "string",
+            "enum": [
+              "RAW_MEAN",
+              "MEAN_CHANGE",
+              "ADJUSTED_MEAN_CHANGE",
+              "RAW_MEAN_DIFFERENCE",
+              "ADJUSTED_MEAN_DIFFERENCE",
+              "EVENT_COUNT",
+              "PERCENTAGE",
+              "RISK_RATIO",
+              "ODDS_RATIO",
+              "HAZARD_RATIO",
+              "GEOMETRIC_MEAN_RATIO",
+              "MEDIAN",
+              "OTHER"
+            ]
+          },
+          "value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "sd": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "se": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ci_lower": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ci_upper": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "ci_level": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "p_value": {
+            "type": [
+              "number",
+              "null"
+            ]
+          },
+          "p_operator": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "unit": {
+            "type": [
+              "string",
+              "null"
+            ]
+          },
+          "n_analyzed": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "event_count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "denominator": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "minimum": 0
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "VERIFIED",
+              "FLAGGED",
+              "NOT_REPORTED"
+            ]
+          },
+          "approximate_from_figure": {
+            "type": "boolean"
+          }
+        }
+      }
+    },
+    "validation_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "issue_id",
+          "record_id",
+          "rule_id",
+          "severity",
+          "message",
+          "status",
+          "source_ids"
+        ],
+        "properties": {
+          "issue_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "record_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "rule_id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "BLOCKER",
+              "MAJOR",
+              "MINOR",
+              "INFO"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "OPEN",
+              "RESOLVED",
+              "MANUAL_REVIEW"
+            ]
+          },
+          "source_ids": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        }
+      }
+    },
+    "pico": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "population": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "interventions": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "comparators": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "outcomes": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "audit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [],
+      "properties": {
+        "checked_records": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "critical_errors": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "duplicates": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "unresolved_conflicts": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "verified_records": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "PASS_WITH_DEFINED_SCOPE",
+            "REJECT",
+            "MANUAL_REVIEW",
+            "INCOMPLETE"
+          ]
+        }
+      }
+    }
+  }
+}

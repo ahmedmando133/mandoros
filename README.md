@@ -31,27 +31,56 @@
 
 ---
 
-## 🏛️ Core Architecture & Pipeline Laws
+## 🏛️ Two-Phase Architecture & Master Protocol Governance
 
-### 1. Mandatory Stage-1 Individual Excel Law
-- **Unbreakable Pre-Extraction Rule:** Whenever raw RCT PDFs are added to an active-ingredient cohort folder (`analysis/<Cohort_Name>/`) or uploaded directly via the Phase-2 Web UI tab, **Stage-1 single-study extraction executes first for every PDF**.
-- **Deliverables:**
-  - Individual `<study_id>_structured_extracted.xlsx` (complete 7-sheet workbook) saved to `outputs/analysis/<Cohort_Name>/extracted_trials/` and copied to root `outputs/`.
-  - Structured individual JSON archives.
-  - Bundled `<Cohort_Name>_Individual_Stage1_Trial_Excels.zip` for instant one-click download.
+MANDOROS enforces a strict, bi-level **Hierarchy of Authority** across all extraction and evidence synthesis pipelines:
 
-### 2. Phase 2: Intelligent Adaptive Meta-Analysis & Predictive Engine
-- **Cohort Mode Detection:** Automatically detects *Homogeneous Single-Drug*, *Multi-Drug Shared-Indication*, or *Heterogeneous Cross-Domain* cohorts.
-- **Tiered Analytical Pooling:**
-  - **Tier 1 (Exact Parameters):** Direct pooling using Inverse-Variance Fixed-Effect and DerSimonian-Laird (DL) & Restricted Maximum Likelihood (REML) Random-Effects models. Computes pooled estimates, 95% CIs, **95% Prediction Intervals (PI)**, Cochran's $Q$, $I^2$ (%), $\tau^2$, and Egger's test.
-  - **Tier 2 (Clinical Domain Bridging):** Standardizes divergent outcome measures (e.g., BMI vs Body Weight vs Waist Circumference) into scale-free **Standardized Mean Differences (Hedges' $g$)** and baseline percentage change (%Δ).
-  - **Tier 3 (Longitudinal Normalization):** Reconciles disparate trial durations into standardized monthly rates of change.
-- **Subgroup & Network Meta-Analysis:**
-  - Evaluates between-subgroup variance ($Q_{\text{between}}$, $p_{\text{between}}$) across active substances and dosage tiers.
-  - Computes Bucher anchored indirect comparisons and Monte Carlo SUCRA rankings (0–100%).
-- **Virtual Trial Simulator:**
-  - Multivariate WLS meta-regression across dose and duration.
-  - Interactive scenario forecasting with 95% Prediction Intervals, NNT, and Extrapolation Reliability Ratings.
+```mermaid
+graph TD
+    subgraph "TIER 1: SUPREME LAW (100% Mandatory & Non-Negotiable)"
+        T1_P1["Phase 1 Master Protocols<br/>(35 Strict Rules, PICO, Zero Duplication)"]
+        T1_P2["Phase 2 Master Protocols<br/>(21 Worksheets, GRADE, Cochrane RoB 2.0)"]
+        T1_Schema["Deterministic JSON Schemas<br/>(phase1_schema.json & phase2_schema.json)"]
+    end
+
+    subgraph "TIER 2: TECHNICAL MUSCLE (Clinical Skills Library)"
+        T2_Ext["Extraction Skills<br/>(pdf, clinical-reports, clinicaltrials-database)"]
+        T2_Stat["Biostatistical Skills<br/>(statistical-analysis, statsmodels, clinical-decision-support, peer-review)"]
+    end
+
+    subgraph "10/10 DETERMINISTIC QUALITY GATE"
+        QG_Val["Programmatic Schema Validation<br/>(Data types, ranges, non-negativity, CI order)"]
+        QG_Retry["Automated Self-Correction Retry Loop<br/>(Feedback errors to LLM for auto-repair)"]
+        QG_Out["Universal Publication-Ready Deliverables<br/>(Multi-sheet Excels, Plotly Dashboards, Master JSONs)"]
+    end
+
+    T1_P1 --> QG_Val
+    T1_P2 --> QG_Val
+    T1_Schema --> QG_Val
+    T2_Ext --> T1_P1
+    T2_Stat --> T1_P2
+    QG_Val --> QG_Retry
+    QG_Retry --> QG_Out
+```
+
+### 1. Phase 1: Strict Single-RCT Clinical Extraction Pipeline
+- **Master Extraction Rules (35 Non-Negotiable Directives):** Enforces zero data duplication, verbatim quote provenance linking, and cell-level data normalization.
+- **PICO & CONSORT Alignment:** Standardizes population, intervention, comparator, and outcome mappings with mathematical verification of all arm sample sizes ($N$).
+- **Atomic Eligibility Thresholds:** Parses continuous and categorical inclusion/exclusion criteria into isolated mathematical operators (`min_operator`, `min_value`, `max_operator`, `max_value`, `unit`).
+- **Zero Hallucination Guarantee:** The original research publication PDF is the absolute ground truth; zero imputation or assumption is permitted.
+
+### 2. Phase 2: Multi-Trial Cohort Meta-Analysis & Evidence Synthesis
+- **21-Worksheet Relational Architecture:** Builds full Master Extraction Sheet, Study Characteristics, Treatment Arms, Eligibility Criteria, Baseline Population, Efficacy & Safety Endpoints, PICO Compatibility, and Quantitative Synthesis matrices.
+- **metafor-Grade Biostatistical Models:** Inverse-Variance Fixed-Effect, DerSimonian-Laird (DL), and Restricted Maximum Likelihood (REML) random-effects pooling with Knapp-Hartung adjustments.
+- **Heterogeneity & Predictive Uncertainty:** Exact computations of Cochran's $Q$, $p$-value, $I^2$ (%), $\tau^2$, and **95% Prediction Intervals (PI)**.
+- **Cochrane Risk of Bias 2.0:** Evaluates study bias across all 5 domains ($D1$ Randomization, $D2$ Deviations, $D3$ Missing Data, $D4$ Measurement, $D5$ Selection) and overall bias rating.
+- **GRADE Evidence Profiles:** Formal evaluation of evidence certainty across 5 downgrade (RoB, Inconsistency, Indirectness, Imprecision, Publication Bias) and 3 upgrade criteria.
+- **100/100 Academic Quality Score:** Strict scoring across 12 institutional validation domains ensuring submission readiness for top medical journals (*The Lancet*, *NEJM*, *JAMA*).
+
+### 3. Hard Programmatic Quality Gate & Self-Correction Retry Loop
+- **Programmatic Validation:** Every payload is validated against strict JSON schemas before being exposed to users or downstream consumers.
+- **Self-Correction Feedback:** If any schema key, numeric bound ($I^2 \in [0, 100]$, $\tau^2 \ge 0$, $\text{CI lower} \le \text{CI upper}$, $\text{ratio} > 0$), or rule fails, the exact diagnostic diff is fed back into the LLM in an automated retry loop.
+- **Local === Render Cloud Parity:** 100% path-agnostic design dynamically resolves bundled protocols and skills on both Windows local environments and Linux Render cloud production.
 
 ---
 

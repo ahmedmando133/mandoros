@@ -130,9 +130,11 @@ def process_pdf(
         exporter = ExcelTrialExporter(data)
         saved_excel = exporter.export(excel_path)
 
-        # 4. Export to JSON
+        # 4. Export to JSON (10/10 Phase 1 Master Schema)
+        from src.skill_injector import to_phase1_master_dict, execute_phase1_validation_loop
+        master_p1 = execute_phase1_validation_loop(to_phase1_master_dict(data))
         with open(json_path, "w", encoding="utf-8") as jf:
-            json.dump(data.model_dump(), jf, indent=2, default=str)
+            json.dump(master_p1, jf, indent=2, default=str)
 
         # 5. Build KPI Summary & AI Diagnostics
         engine_badge = extractor.engine_used

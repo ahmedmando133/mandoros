@@ -19,6 +19,11 @@ from src.models import (
 )
 from src.pdf_parser import PDFDocument
 from src.extraction_qa import execute_full_extraction_qa
+from src.skill_injector import (
+    build_phase1_system_prompt,
+    execute_phase1_validation_loop,
+    to_phase1_master_dict
+)
 
 
 def verify_biomarker_in_pdf_tables(table_text: str, biomarker_name: str) -> bool:
@@ -4378,7 +4383,7 @@ class RCTExtractor:
         if len(doc_sample) < 1000:
             doc_sample = self.doc.get_full_text()[:25000]
 
-        sys_prompt = "You are an expert Cochrane systematic reviewer. Extract study metadata and all treatment arms from this RCT paper into valid JSON."
+        sys_prompt = build_phase1_system_prompt()
         prompt = f"""
 Extract the Study Metadata and Treatment Arms for Study ID: {study_id}.
 Rules:
@@ -4454,7 +4459,7 @@ DOCUMENT CONTEXT:
 
         VALID_DOMAINS = ["demographic", "biomarker", "diagnostic", "medical_history", "lifestyle", "other"]
 
-        sys_prompt = "You are an expert clinical trial methodologist. Extract all atomic inclusion and exclusion criteria into structured JSON."
+        sys_prompt = build_phase1_system_prompt()
         prompt = f"""
 Extract all Inclusion and Exclusion Criteria for Study ID: {study_id}. Target 12 to 20+ atomic criteria.
 CRITICAL METHODOLOGICAL RULES:
@@ -4567,7 +4572,7 @@ DOCUMENT CONTEXT:
 
         arms_summary = [{"arm_id": a.arm_id, "arm_name": a.arm_name, "sample_size": a.sample_size_analyzed or a.sample_size_allocated} for a in arms]
 
-        sys_prompt = "You are a clinical trial data extraction specialist. Extract all Table 1 baseline patient characteristics across treatment arms into JSON."
+        sys_prompt = build_phase1_system_prompt()
         prompt = f"""
 Extract all baseline characteristics from Table 1 for Study ID: {study_id}.
 Known Treatment Arms:
@@ -4673,7 +4678,7 @@ DOCUMENT CONTEXT:
 
         arms_summary = [{"arm_id": a.arm_id, "arm_name": a.arm_name, "sample_size": a.sample_size_analyzed or a.sample_size_allocated} for a in arms]
 
-        sys_prompt = "You are a clinical trial biostatistician. Extract all primary, secondary, and safety endpoints across treatment arms into JSON."
+        sys_prompt = build_phase1_system_prompt()
         prompt = f"""
 Extract all Efficacy Endpoints and Safety Adverse Events for Study ID: {study_id}.
 Known Treatment Arms:

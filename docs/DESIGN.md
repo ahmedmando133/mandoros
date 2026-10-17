@@ -154,3 +154,16 @@ D:\Evidex
 - **Cloud Platform:** Render (`render.yaml`, `Procfile`)
 - **Live Production URL:** [https://mandoros.onrender.com](https://mandoros.onrender.com)
 - **GitHub Repository:** [https://github.com/ahmedmando133/MANDOROS](https://github.com/ahmedmando133/MANDOROS)
+
+## 12. Two-Phase Master Protocol Architecture & Quality Gate
+
+### Hierarchy of Authority
+- **TIER 1 (Supreme Law - 100% Mandatory):** Verbatim Master Protocols loaded from `master_protocols/phase1_master_instructions.md` and `master_protocols/phase2_master_instructions.md`. Overrides any general knowledge or LLM default.
+- **TIER 2 (Technical Muscle):** Clinical Skills Library from `clinical_skills_library/` (`pdf`, `clinical-reports`, `clinicaltrials-database`, `statistical-analysis`, `clinical-decision-support`, `statsmodels`, `peer-review`).
+
+### 10/10 Deterministic Programmatic Quality Gate
+- Hard JSON Schema validation against `master_protocols/phase1_schema.json` and `master_protocols/phase2_schema.json`.
+- Automatic retry loop feeding structured diagnostic diffs back to LLMs for self-correction.
+- Scale integrity validation: $I^2 \in [0, 100]$, $\tau^2 \ge 0$, $\text{CI lower} \le \text{CI upper}$, and positive ratio metrics.
+- Complete Local === Render Cloud Parity with dynamic path resolution via `pathlib.Path(__file__).resolve().parent`.
+

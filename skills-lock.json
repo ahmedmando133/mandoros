@@ -1,0 +1,65 @@
+{
+  "version": 1,
+  "skills": {
+    "pdf": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/pdf/SKILL.md",
+      "computedHash": "37226d4220d844377e6b2a386c51a011df4cd130855ff0b80bcc22f9c28abd57"
+    },
+    "xlsx": {
+      "source": "anthropics/skills",
+      "sourceType": "github",
+      "skillPath": "skills/xlsx/SKILL.md",
+      "computedHash": "cbaaabead69c5e03643f116cde6a396ad53f6da058da6eaa7bad6c4fbafe6026"
+    },
+    "bgpt-paper-search": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/bgpt-paper-search/SKILL.md",
+      "computedHash": "3b7db6956c13ccf24df151f0905ae579ed58230708a4ba19e6d6fb3bf9d4d6b7"
+    },
+    "clinical-decision-support": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/clinical-decision-support/SKILL.md",
+      "computedHash": "05645e4bc5c73a613ddaeba5bea616739cc0cd71c789c869d97cdfcd8994e072"
+    },
+    "statistical-analysis": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/statistical-analysis/SKILL.md",
+      "computedHash": "e112848726b3713267cac65e4e2c15491a0a26ee1ed628db01195f7e43f97997"
+    },
+    "statsmodels": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/statsmodels/SKILL.md",
+      "computedHash": "9e6c034bb4acbf0972fda18892d2feea907885ac5ad7194d220182d8810295a3"
+    },
+    "clinical-reports": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/clinical-reports/SKILL.md",
+      "computedHash": "0d7c821b7857a4a761805e1a8263920a37f181658f77f1397755df0e14125022"
+    },
+    "exploratory-data-analysis": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/exploratory-data-analysis/SKILL.md",
+      "computedHash": "955c4cefa49106dd03b55cbd62603bab2d2fb678e627dd452ba62040c7128484"
+    },
+    "peer-review": {
+      "source": "K-Dense-AI/scientific-agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/peer-review/SKILL.md",
+      "computedHash": "a042ccdc76d3399431b9a6c4cd4f98968eab964b1c14baeea4d9e73de82c7d19"
+    },
+    "clinicaltrials-database": {
+      "source": "google-deepmind/science-skills",
+      "sourceType": "github",
+      "skillPath": "skills/clinical_trials_database/SKILL.md",
+      "computedHash": "d7c3390f01dd9c1f755ed27a89946c7fbd068f64945230e45cffa7b3321f46fa"
+    }
+  }
+}

@@ -1,0 +1,214 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://mandoros.ai/schemas/phase2_meta_analysis.json",
+  "title": "MANDOROS Phase 2 Master Meta-Analysis & Evidence Synthesis Schema",
+  "description": "Strict structural JSON schema for Phase 2 Multi-RCT Synthesis, Meta-Analysis, Risk of Bias, GRADE, and 100/100 Quality Assurance.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "phase",
+    "active_ingredient",
+    "study_characteristics",
+    "treatment_arms",
+    "study_eligibility",
+    "pico_compatibility",
+    "meta_analysis_input",
+    "individual_effect_sizes",
+    "pooled_meta_analysis",
+    "heterogeneity_analysis",
+    "subgroup_analysis",
+    "sensitivity_analysis",
+    "publication_bias",
+    "risk_of_bias",
+    "grade_evidence_profile",
+    "dose_duration_model",
+    "validation_log",
+    "quality_score"
+  ],
+  "properties": {
+    "schema_version": { "type": "string" },
+    "phase": { "type": "integer", "enum": [2] },
+    "active_ingredient": { "type": "string" },
+    "total_studies_screened": { "type": "integer", "minimum": 1 },
+    "total_studies_pooled": { "type": "integer", "minimum": 1 },
+    "master_extraction_sheet": { "type": "array", "items": { "type": "object" } },
+    "study_characteristics": { "type": "array", "items": { "type": "object" } },
+    "treatment_arms": { "type": "array", "items": { "type": "object" } },
+    "eligibility_criteria": { "type": "array", "items": { "type": "object" } },
+    "baseline_characteristics": { "type": "array", "items": { "type": "object" } },
+    "efficacy_outcomes": { "type": "array", "items": { "type": "object" } },
+    "safety_outcomes": { "type": "array", "items": { "type": "object" } },
+    "study_eligibility": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["study_id", "decision", "rationale"],
+        "properties": {
+          "study_id": { "type": "string" },
+          "decision": { "type": "string", "enum": ["INCLUDED", "EXCLUDED", "PENDING"] },
+          "rationale": { "type": "string" }
+        }
+      }
+    },
+    "pico_compatibility": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["domain", "compatible", "clinical_justification"],
+        "properties": {
+          "domain": { "type": "string" },
+          "compatible": { "type": "boolean" },
+          "clinical_justification": { "type": "string" }
+        }
+      }
+    },
+    "meta_analysis_input": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["study_id", "outcome_name", "parameter_name", "timepoint", "intervention_arm", "comparator_arm"],
+        "properties": {
+          "study_id": { "type": "string" },
+          "outcome_name": { "type": "string" },
+          "parameter_name": { "type": "string" },
+          "timepoint": { "type": "string" },
+          "intervention_arm": { "type": "string" },
+          "comparator_arm": { "type": "string" }
+        }
+      }
+    },
+    "individual_effect_sizes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["study_id", "parameter_name", "effect_measure", "effect_size", "standard_error", "ci_lower", "ci_upper", "weight_percent"],
+        "properties": {
+          "study_id": { "type": "string" },
+          "parameter_name": { "type": "string" },
+          "effect_measure": { "type": "string" },
+          "effect_size": { "type": "number" },
+          "standard_error": { "type": "number", "minimum": 0 },
+          "ci_lower": { "type": "number" },
+          "ci_upper": { "type": "number" },
+          "weight_percent": { "type": "number", "minimum": 0, "maximum": 100 }
+        }
+      }
+    },
+    "pooled_meta_analysis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["parameter_name", "model_type", "pooled_estimate", "ci_lower", "ci_upper", "p_value"],
+        "properties": {
+          "parameter_name": { "type": "string" },
+          "model_type": { "type": "string" },
+          "pooled_estimate": { "type": "number" },
+          "ci_lower": { "type": "number" },
+          "ci_upper": { "type": "number" },
+          "p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+          "k_studies": { "type": "integer", "minimum": 1 },
+          "total_n": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "heterogeneity_analysis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["parameter_name", "i_squared", "tau_squared", "q_statistic", "q_p_value"],
+        "properties": {
+          "parameter_name": { "type": "string" },
+          "i_squared": { "type": "number", "minimum": 0, "maximum": 100 },
+          "tau_squared": { "type": "number", "minimum": 0 },
+          "q_statistic": { "type": "number", "minimum": 0 },
+          "q_p_value": { "type": "number", "minimum": 0, "maximum": 1 },
+          "prediction_interval_lower": { "type": "number" },
+          "prediction_interval_upper": { "type": "number" },
+          "interpretation": { "type": "string" }
+        }
+      }
+    },
+    "subgroup_analysis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["subgroup_dimension", "subgroup_category", "pooled_estimate", "ci_lower", "ci_upper"]
+      }
+    },
+    "sensitivity_analysis": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["analysis_type", "estimate_change", "conclusion"]
+      }
+    },
+    "publication_bias": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["parameter_name", "eggers_p_value", "beggs_p_value", "funnel_asymmetry_detected"]
+      }
+    },
+    "risk_of_bias": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["study_id", "overall_bias"],
+        "properties": {
+          "study_id": { "type": "string" },
+          "d1_randomisation": { "type": "string" },
+          "d2_deviations": { "type": "string" },
+          "d3_missing_data": { "type": "string" },
+          "d4_measurement": { "type": "string" },
+          "d5_selection": { "type": "string" },
+          "overall_bias": { "type": "string", "enum": ["Low risk", "Some concerns", "High risk"] }
+        }
+      }
+    },
+    "grade_evidence_profile": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["outcome_name", "certainty_rating"],
+        "properties": {
+          "outcome_name": { "type": "string" },
+          "risk_of_bias_downgrade": { "type": "string" },
+          "inconsistency_downgrade": { "type": "string" },
+          "indirectness_downgrade": { "type": "string" },
+          "imprecision_downgrade": { "type": "string" },
+          "publication_bias_downgrade": { "type": "string" },
+          "certainty_rating": { "type": "string", "enum": ["High", "Moderate", "Low", "Very low"] },
+          "summary_of_findings": { "type": "string" }
+        }
+      }
+    },
+    "dose_duration_model": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "validation_log": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["issue_id", "severity", "description", "status"],
+        "properties": {
+          "issue_id": { "type": "string" },
+          "severity": { "type": "string" },
+          "description": { "type": "string" },
+          "status": { "type": "string" }
+        }
+      }
+    },
+    "quality_score": {
+      "type": "object",
+      "required": ["overall_score", "breakdown", "interpretation"],
+      "properties": {
+        "overall_score": { "type": "number", "minimum": 0, "maximum": 100 },
+        "breakdown": { "type": "object" },
+        "interpretation": { "type": "string" }
+      }
+    }
+  }
+}
