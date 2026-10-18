@@ -236,7 +236,7 @@ class RCTExtractor:
         out_id_counter = len(new_outcomes) + 1
 
         for a in arms:
-            arm_n = a.sample_size_analyzed or a.sample_size_allocated or (study_meta.total_sample_size // len(arms) if study_meta and study_meta.total_sample_size else 100)
+            arm_n = a.sample_size_analyzed or a.sample_size_allocated
 
             # Check if Male or Female outcome exists for this arm
             male_rec = next((o for o in new_outcomes if o.arm_id == a.arm_id and (o.gender == "Male" or o.parameter_name.strip().lower() in ["male", "men", "sex: male", "% male"])), None)
@@ -276,7 +276,8 @@ class RCTExtractor:
                         unit="%",
                         is_baseline=True,
                         metric_type="events_percentage",
-                        source_page=male_rec.source_page or 2,
+                        source_page=male_rec.source_page,
+                        derivation_type="mathematically_derived",
                         source_location="Mathematically inferred from reported male subgroup",
                         raw_source_text=f"Female Count = Total N ({arm_n}) - Male Count ({m_count})"
                     ))
@@ -315,7 +316,8 @@ class RCTExtractor:
                         unit="%",
                         is_baseline=True,
                         metric_type="events_percentage",
-                        source_page=female_rec.source_page or 2,
+                        source_page=female_rec.source_page,
+                        derivation_type="mathematically_derived",
                         source_location="Mathematically inferred from reported female subgroup",
                         raw_source_text=f"Male Count = Total N ({arm_n}) - Female Count ({f_count})"
                     ))
@@ -330,10 +332,7 @@ class RCTExtractor:
                     m_count = demo_parsed.get("male_count")
                     f_count = demo_parsed.get("female_count")
 
-                    if m_pct and not m_count and arm_n:
-                        m_count = int(round(arm_n * (m_pct / 100.0)))
-                    if f_pct and not f_count and arm_n:
-                        f_count = int(round(arm_n * (f_pct / 100.0)))
+                    # Rule 16: an overall proportion is never converted into an arm-specific count.
 
                     if m_count is not None or m_pct is not None:
                         new_outcomes.append(OutcomeMeasurement(
@@ -348,14 +347,16 @@ class RCTExtractor:
                             timepoint_value="0",
                             timepoint_unit="weeks",
                             timepoint="Baseline",
-                            sample_size=arm_n,
+                            analysis_population="Overall study population (study-level value, not arm-specific)",
+                            derivation_type="converted",
+                            sample_size=None,
                             events=m_count,
-                            total=arm_n,
+                            total=None,
                             percentage=m_pct,
                             unit="%",
                             is_baseline=True,
                             metric_type="events_percentage",
-                            source_page=2,
+                            source_page=None,
                             source_location="Methods & Eligibility / Patient Selection Fallback",
                             raw_source_text=demo_parsed.get("raw_text") or "Parsed from Methods section"
                         ))
@@ -374,14 +375,16 @@ class RCTExtractor:
                             timepoint_value="0",
                             timepoint_unit="weeks",
                             timepoint="Baseline",
-                            sample_size=arm_n,
+                            analysis_population="Overall study population (study-level value, not arm-specific)",
+                            derivation_type="converted",
+                            sample_size=None,
                             events=f_count,
-                            total=arm_n,
+                            total=None,
                             percentage=f_pct,
                             unit="%",
                             is_baseline=True,
                             metric_type="events_percentage",
-                            source_page=2,
+                            source_page=None,
                             source_location="Methods & Eligibility / Patient Selection Fallback",
                             raw_source_text=demo_parsed.get("raw_text") or "Parsed from Methods section"
                         ))
@@ -391,7 +394,7 @@ class RCTExtractor:
         detected_race = self._extract_race_with_prose_fallback(study_meta, new_outcomes, sections)
         if detected_race:
             for a in arms:
-                arm_n = a.sample_size_analyzed or a.sample_size_allocated or (study_meta.total_sample_size // len(arms) if study_meta and study_meta.total_sample_size else 100)
+                arm_n = a.sample_size_analyzed or a.sample_size_allocated
                 has_race_out = any(o.arm_id == a.arm_id and (o.race or "race" in str(o.parameter_name).lower()) for o in new_outcomes)
                 if not has_race_out:
                     new_outcomes.append(OutcomeMeasurement(
@@ -2518,6 +2521,11 @@ class RCTExtractor:
             full_methods_text = self.doc.get_full_text()[:40000]
         source_p = methods_pages[0].get("page", 2) if methods_pages else 2
         norm_methods = self._normalize_clinical_prose(full_methods_text)
+        # Column-aware reading-order text is appended as a secondary search surface so that
+        # subgroup-specific eligibility sentences split across two-column layouts are still found.
+        reading_methods = "\n".join([p.get("reading_text", "") for p in methods_pages if p.get("reading_text")])
+        if reading_methods:
+            norm_methods = norm_methods + "\n" + self._normalize_clinical_prose(reading_methods)
 
         # -------------------------------------------------------------
         # INCLUSION CRITERIA
@@ -4063,11 +4071,11 @@ class RCTExtractor:
 
                     if dichot_matches and len(dichot_matches) >= len(arms):
                         for idx_a, arm in enumerate(arms):
-                            dedupe_k = (std_name, tp_val, arm.arm_id)
+                            tup = dichot_matches[idx_a]
+                            dedupe_k = (std_name, tp_val, arm.arm_id, tup[0], tup[1])
                             if dedupe_k in extracted_keys:
                                 continue
                             extracted_keys.add(dedupe_k)
-                            tup = dichot_matches[idx_a]
                             ev = int(tup[0])
                             pct = float(tup[1])
                             outcomes.append(OutcomeMeasurement(
@@ -4082,11 +4090,11 @@ class RCTExtractor:
 
                     elif cont_matches and len(cont_matches) >= len(arms):
                         for idx_a, arm in enumerate(arms):
-                            dedupe_k = (std_name, tp_val, arm.arm_id)
+                            num_tuple = cont_matches[idx_a]
+                            dedupe_k = (std_name, tp_val, arm.arm_id, num_tuple[0], num_tuple[1])
                             if dedupe_k in extracted_keys:
                                 continue
                             extracted_keys.add(dedupe_k)
-                            num_tuple = cont_matches[idx_a]
                             mean_val = float(num_tuple[0])
                             disp_val = float(num_tuple[1])
                             sd_v = None if line_has_se else disp_val
@@ -4144,7 +4152,7 @@ class RCTExtractor:
                 full_sys = (system_prompt + "\nReturn strictly valid JSON only. Do not use markdown blocks.").strip()
                 resp = client.messages.create(
                     model=target_model,
-                    max_tokens=4096,
+                    max_tokens=16384,
                     temperature=0.1,
                     system=full_sys,
                     messages=[{"role": "user", "content": prompt}]
@@ -4461,7 +4469,7 @@ DOCUMENT CONTEXT:
 
         sys_prompt = build_phase1_system_prompt()
         prompt = f"""
-Extract all Inclusion and Exclusion Criteria for Study ID: {study_id}. Target 12 to 20+ atomic criteria.
+Extract ALL Inclusion and Exclusion Criteria for Study ID: {study_id}, one atomic record per criterion, per population subgroup (e.g. drug-naive vs previously treated; set applicable_population) and per assessment stage (screening, run-in, randomization; set assessment_stage) - Rules 10-14, 38.
 CRITICAL METHODOLOGICAL RULES:
 1. Strict domain: must be one of {VALID_DOMAINS}.
 2. Continuous / Numerical Criteria (e.g. Age >= 18, Age >= 20 and <= 74, HbA1c 7 to 10%, LVEF <= 40%, SBP < 95, eGFR < 30, BMI >= 27):
@@ -4578,7 +4586,7 @@ Extract all baseline characteristics from Table 1 for Study ID: {study_id}.
 Known Treatment Arms:
 {arms_summary}
 
-Target 30 to 50+ baseline variables across arms:
+Extract EVERY baseline variable reported in Table 1 (and its footnotes) for EVERY arm - examples:
 - Demographics: Age, Sex (% Female, % Male, count Female, count Male), Race/Ethnicity (White %, Black %, Asian %, Hispanic %, Other %).
 - Anthropometrics: Height, Weight, BMI, Waist Circumference.
 - Vitals: Systolic BP, Diastolic BP, Heart Rate.
@@ -4587,7 +4595,7 @@ Target 30 to 50+ baseline variables across arms:
 
 MANDATORY RULES:
 - Use arm_id matching the known treatment arms above.
-- sample_size MUST be 100% filled (use the arm sample size if omitted in the row; NEVER null).
+- sample_size: the arm N reported for that row/column header; null if the source does not report it (never invent).
 - timepoint_value: "0", timepoint_unit: "weeks", timepoint: "Baseline", is_baseline: true.
 - statistical_type: "continuous" (with mean and sd, metric_type: "mean_sd") or "dichotomous" (with events and percentage, metric_type: "events_percentage").
 - POPULATION STRATIFICATION & MISSING DATA INTEGRITY:
@@ -4614,7 +4622,7 @@ Return JSON in this format:
       "timepoint_value": "0",
       "timepoint_unit": "weeks",
       "timepoint": "Baseline",
-      "sample_size": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else 100},
+      "sample_size": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else "null"},
       "mean": 66.3,
       "sd": 10.9,
       "unit": "years",
@@ -4635,7 +4643,7 @@ Return JSON in this format:
       "timepoint_value": "0",
       "timepoint_unit": "weeks",
       "timepoint": "Baseline",
-      "sample_size": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else 100},
+      "sample_size": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else "null"},
       "events": 562,
       "percentage": 23.7,
       "unit": "%",
@@ -4658,7 +4666,7 @@ DOCUMENT CONTEXT:
                 if not o.get("sample_size") and arms:
                     a_id = o.get("arm_id")
                     arm_match = next((a for a in arms if a.arm_id == a_id), arms[0])
-                    o["sample_size"] = arm_match.sample_size_analyzed or arm_match.sample_size_allocated or 100
+                    o["sample_size"] = arm_match.sample_size_analyzed or arm_match.sample_size_allocated
                 if o.get("race") and str(o.get("race")).strip().lower() in ["overall", "all", "total", "n/a", "none"]:
                     o["race"] = None
                 o["is_baseline"] = True
@@ -4684,7 +4692,7 @@ Extract all Efficacy Endpoints and Safety Adverse Events for Study ID: {study_id
 Known Treatment Arms:
 {arms_summary}
 
-Target 35 to 65+ endpoints across arms (MANDATORY EXHAUSTIVE MINING - ZERO TRUNCATION):
+Extract EVERY reported endpoint for EVERY arm at EVERY timepoint (MANDATORY EXHAUSTIVE MINING - ZERO TRUNCATION) - examples:
 - Primary Composite Endpoint (e.g. CV Death or HF Hospitalization, MACE).
 - Individual Secondary Endpoints (All-cause death, hospitalization, stroke, MI, urgent visits).
 - Full Biomarker Profiles & Secondary Panels:
@@ -4698,14 +4706,19 @@ Target 35 to 65+ endpoints across arms (MANDATORY EXHAUSTIVE MINING - ZERO TRUNC
 
 MANDATORY RULES:
 - Use arm_id matching known treatment arms.
-- sample_size MUST be 100% filled (use the arm analyzed N if omitted).
+- sample_size: the analysed N reported for that outcome/arm; null if not reported (never invent).
 - is_baseline: false.
 - race: null (NEVER set race to "Overall").
 - Specify follow-up timepoint_value and timepoint_unit (e.g. "12", "weeks" or "18.2", "months").
-- Populate hazard ratios or relative risks in effect_measure ('Hazard Ratio') and effect_value.
-- Populate p_value where reported.
-- Populate change_value (e.g. delta from baseline) where reported.
-- Set metric_type: "mean_sd", "events_percentage", "median_iqr", or "change_from_baseline".
+- Populate hazard ratios, odds ratios, risk ratios or mean differences in effect_measure ('Hazard Ratio', 'Odds Ratio', 'Risk Ratio', 'Adjusted Mean Difference', 'Mean Difference') and effect_value, with ci_lower / ci_upper (95% CI) in separate fields and is_between_group_diff: true.
+- Populate p_value exactly as printed (e.g. "<0.001", "0.023"); null if not reported.
+- Populate change_value (delta from baseline) and change_sd where reported; keep sd and se in SEPARATE fields (dispersion_type: "SD" or "SE").
+- Set estimate_type to the published estimate: FOLLOWUP_MEAN, RAW_CHANGE_FROM_BASELINE, ADJUSTED_CHANGE_FROM_BASELINE, RAW_MEAN_DIFFERENCE, ADJUSTED_MEAN_DIFFERENCE, GEOMETRIC_MEAN_RATIO, BINARY_RATE. Never label adjusted estimates as raw means.
+- Set analysis_population (e.g. "ITT", "FAS", "Per-protocol", "Safety set") and original_timepoint_label (verbatim, e.g. "Day 28", "Week 24").
+- One record per (parameter, arm, timepoint, population, estimate type, subgroup). Day 1 and Day 28 of the same parameter are TWO records; ITT and PP are TWO records; each dose arm is its own record. Never merge them.
+- For safety outcomes set domain "safety_adverse_events", events (participants with event), total (denominator), percentage, and describe severity/seriousness/relationship in parameter_name when reported (e.g. "Serious Adverse Events", "Hypoglycaemia (severe)").
+- Set metric_type: "mean_sd", "mean_se", "events_percentage", "median_iqr", "geometric_mean_ratio", or "effect_size".
+- derivation_type: "directly_reported" for printed numbers; "digitized" for values read visually from a figure (Rule 21).
 
 Return JSON in this format:
 {{
@@ -4724,16 +4737,24 @@ Return JSON in this format:
       "timepoint_value": "18.2",
       "timepoint_unit": "months",
       "timepoint": "18.2 months",
-      "sample_size": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else 100},
+      "sample_size": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else "null"},
       "events": 386,
-      "total": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else 100},
+      "total": {arms[0].sample_size_analyzed if arms and arms[0].sample_size_analyzed else "null"},
       "percentage": 16.3,
       "unit": "%",
       "effect_measure": "Hazard Ratio",
       "effect_value": 0.74,
+      "ci_lower": 0.65,
+      "ci_upper": 0.85,
       "p_value": "<0.001",
+      "is_between_group_diff": true,
+      "estimate_type": "BINARY_RATE",
+      "analysis_population": "ITT",
+      "original_timepoint_label": "18.2 months (median follow-up)",
+      "derivation_type": "directly_reported",
       "source_page": 6,
-      "raw_source_text": "Primary outcome occurred in 386 patients (16.3%) HR 0.74 (P<0.001)"
+      "source_location": "Table 2",
+      "raw_source_text": "Primary outcome occurred in 386 patients (16.3%) HR 0.74 (95% CI 0.65-0.85; P<0.001)"
     }}
   ]
 }}
@@ -4751,7 +4772,7 @@ DOCUMENT CONTEXT:
                 if not o.get("sample_size") and arms:
                     a_id = o.get("arm_id")
                     arm_match = next((a for a in arms if a.arm_id == a_id), arms[0])
-                    o["sample_size"] = arm_match.sample_size_analyzed or arm_match.sample_size_allocated or 100
+                    o["sample_size"] = arm_match.sample_size_analyzed or arm_match.sample_size_allocated
                 if o.get("race") and str(o.get("race")).strip().lower() in ["overall", "all", "total", "n/a", "none"]:
                     o["race"] = None
                 o["is_baseline"] = False
@@ -4804,7 +4825,7 @@ DOCUMENT CONTEXT:
 
         # Build arm size map
         arm_sizes = {a.arm_id: (a.sample_size_analyzed or a.sample_size_allocated) for a in arms_list}
-        default_cohort = study_meta.total_sample_size or 100
+        default_cohort = None
 
         # Quality Audit: Guarantee 100% sample sizes across all outcomes
         for o in outcomes_list:

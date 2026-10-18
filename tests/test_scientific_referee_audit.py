@@ -115,9 +115,11 @@ def test_ref_02_zero_nan_sample_size():
     repaired_data, report = audit_and_repair_extracted_data(data, full_text="A total of 120 patients were randomized.")
     assert repaired_data.study.total_sample_size is not None
     assert repaired_data.study.total_sample_size == 120
+    # Protocol Rule 37 / Rule 49: arm sizes are NEVER derived from the study total — they stay blank and are flagged.
     for a in repaired_data.arms:
-        assert a.sample_size_allocated is not None and a.sample_size_allocated > 0
-        assert a.sample_size_analyzed is not None and a.sample_size_analyzed > 0
+        assert a.sample_size_allocated is None
+        assert a.sample_size_analyzed is None
+    assert any(v.check_id == "REF-02-ZERO-NAN-N" and "Arm" in v.entity for v in report.violations)
 
 
 def test_ref_03_dose_and_frequency_column_splitting():
@@ -138,8 +140,9 @@ def test_ref_03_dose_and_frequency_column_splitting():
     r_arm = repaired_data.arms[0]
     assert r_arm.dose_value == 25.0
     assert r_arm.dose_unit == "mg"
-    assert r_arm.frequency_number == 1.0
-    assert r_arm.frequency_unit == "daily"
+    # Protocol Rule 9: frequency is left blank when the source does not report it (never assumed 'once daily').
+    assert r_arm.frequency_number is None
+    assert r_arm.frequency_unit is None
 
 
 def test_ref_04_range_splitting_bounded_and_single_inequality():
@@ -338,7 +341,7 @@ def test_unified_template_integrity_individual_and_master(tmp_path):
     Unified Template Law:
     Both the Individual Extraction Workbook and the Master Analysis Workbook MUST share
     the exact same core 7-sheet Arm-per-Row template:
-      1. Master_Extraction_Sheet
+      1. Master Excel Sheet
       2. Studies
       3. Arms
       4. Eligibility
@@ -370,12 +373,12 @@ def test_unified_template_integrity_individual_and_master(tmp_path):
     exporter.export(indiv_path)
 
     wb_indiv = openpyxl.load_workbook(indiv_path)
-    core_7_sheets = ["Master_Extraction_Sheet", "Studies", "Arms", "Eligibility", "Outcomes", "Provenance", "Validation_Log"]
+    core_7_sheets = ["Master Excel Sheet", "Studies", "Arms", "Eligibility", "Outcomes", "Provenance", "Validation_Log"]
     for s_name in core_7_sheets:
         assert s_name in wb_indiv.sheetnames, f"Missing {s_name} in Individual Workbook"
 
-    # 2. Verify Row = Study Arm Structure in Master_Extraction_Sheet
-    ws_master = wb_indiv["Master_Extraction_Sheet"]
+    # 2. Verify Row = Study Arm Structure in Master Excel Sheet
+    ws_master = wb_indiv["Master Excel Sheet"]
     assert ws_master.cell(row=1, column=1).value is not None
 
 

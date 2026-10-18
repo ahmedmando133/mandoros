@@ -12,6 +12,12 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils import get_column_letter
 
 from src.models import ExtractedTrialData, StudyMetadata
+from src.protocol_engine import (
+    MASTER_SHEET_NAME,
+    append_phase1_protocol_sheets,
+    clean_scalar,
+    sanitize_workbook_cells,
+)
 
 
 def get_criterion_bounds(e_obj) -> Tuple[str, Any, str, Any, str]:
@@ -41,12 +47,23 @@ def get_criterion_bounds(e_obj) -> Tuple[str, Any, str, Any, str]:
         return ("", None, "", None, e_obj.unit or "")
 
 
+def _same_criterion(a, b) -> bool:
+    """Two eligibility records are the same criterion only if every structured field matches."""
+    for f in ("criterion_type", "criterion_name", "min_operator", "min_value", "max_operator", "max_value",
+              "value", "unit", "applicable_population", "assessment_stage", "raw_source_text"):
+        if str(getattr(a, f, None)) != str(getattr(b, f, None)):
+            return False
+    return True
+
+
 class ExcelTrialExporter:
     def __init__(self, data: ExtractedTrialData, studies: Optional[List[StudyMetadata]] = None):
         from src.scientific_referee import scientific_referee_audit_and_repair
         self.data = scientific_referee_audit_and_repair(data)
         self.studies = studies if studies else ([self.data.study] if self.data.study else [])
         self.study_map = {s.study_id: s for s in self.studies}
+        self.phase1_payload: Dict[str, Any] = {}
+        self.phase1_report: Dict[str, Any] = {}
         self.wb = openpyxl.Workbook()
         # Remove default empty sheet
         self.wb.remove(self.wb.active)
@@ -94,23 +111,41 @@ class ExcelTrialExporter:
             cell.fill = self.header_fill
             cell.alignment = self.align_center
 
-        # Apply borders and auto-fit column widths
+        # Apply borders, text wrapping, numeric formats and auto-fit column widths
+        wrap_align = Alignment(horizontal="left", vertical="top", wrap_text=True)
         for col in ws.columns:
             max_len = 0
             col_letter = get_column_letter(col[0].column)
             for cell in col:
                 cell.border = self.border_thin
-                val_str = str(cell.value or '')
+                if cell.row > 1:
+                    if isinstance(cell.value, float):
+                        cell.number_format = "0.###"
+                    elif isinstance(cell.value, str):
+                        cell.alignment = wrap_align
+                val_str = str(cell.value if cell.value is not None else '')
                 if len(val_str) > max_len:
                     max_len = len(val_str)
-            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 45)
+            ws.column_dimensions[col_letter].width = min(max(max_len + 3, 12), 55)
 
         ws.row_dimensions[1].height = 24
+        if ws.max_row > 1 and ws.max_column > 0:
+            ws.freeze_panes = "A2"
+            ws.auto_filter.ref = f"A1:{get_column_letter(ws.max_column)}{ws.max_row}"
 
         # Embed official MR logo at sheet top-right
         logo_col = max(ws.max_column + 2, 8)
         logo_cell = f"{get_column_letter(logo_col)}1"
         self._embed_mr_logo(ws, logo_cell, width=50, height=50)
+
+    def build_phase1_payload(self) -> Dict[str, Any]:
+        """Maps the extraction to the exact Phase 1 schema and runs the deterministic validation gate."""
+        from src.skill_injector import to_phase1_master_dict, validate_phase1_payload, phase1_quality_report
+        raw = to_phase1_master_dict(self.data)
+        _, errors, sanitized = validate_phase1_payload(raw)
+        self.phase1_payload = sanitized
+        self.phase1_report = phase1_quality_report(sanitized, errors)
+        return sanitized
 
     def export(self, output_path: str) -> str:
         self._build_master_extraction_sheet()
@@ -124,22 +159,38 @@ class ExcelTrialExporter:
         self._build_variables_matrix_sheet()
         self._build_inventory_and_gates_sheet()
 
+        # Protocol worksheets with schema-exact columns (Rule 35) + Quality Assessment (Rules 52-55)
+        try:
+            payload = self.build_phase1_payload()
+            append_phase1_protocol_sheets(self.wb, payload, self.phase1_report, include_master=False)
+        except Exception as gate_err:
+            print(f"[!] Protocol sheet generation notice: {gate_err}")
+
+        # Final export gate: no NaN / None / 'nan' / raw dict cells anywhere
+        sanitize_workbook_cells(self.wb)
+
         import os
         parent_dir = os.path.dirname(output_path)
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
 
         try:
-            self.wb.save(output_path)
-            print(f"Exported clean structured Excel workbook to: {output_path}")
-            return output_path
-        except PermissionError:
-            base, ext = os.path.splitext(output_path)
-            alt_path = f"{base}_updated{ext}"
-            self.wb.save(alt_path)
-            print(f"[!] Primary file '{output_path}' is currently OPEN in Excel.")
-            print(f"[OK] Saved updated version to: {alt_path}")
-            return alt_path
+            try:
+                self.wb.save(output_path)
+                print(f"Exported clean structured Excel workbook to: {output_path}")
+                return output_path
+            except PermissionError:
+                base, ext = os.path.splitext(output_path)
+                alt_path = f"{base}_updated{ext}"
+                self.wb.save(alt_path)
+                print(f"[!] Primary file '{output_path}' is currently OPEN in Excel.")
+                print(f"[OK] Saved updated version to: {alt_path}")
+                return alt_path
+        finally:
+            try:
+                self.wb.close()
+            except Exception:
+                pass
 
     def _build_master_extraction_sheet(self):
         """
@@ -148,7 +199,7 @@ class ExcelTrialExporter:
         range splitting, demographic reconstruction, arm-level row continuity,
         and baseline vs follow-up separation.
         """
-        ws = self.wb.create_sheet(title="Master_Extraction_Sheet", index=0)
+        ws = self.wb.create_sheet(title=MASTER_SHEET_NAME, index=0)
         ws.sheet_view.showGridLines = True
 
         h1_fill = PatternFill(start_color="1B365D", end_color="1B365D", fill_type="solid")
@@ -183,24 +234,37 @@ class ExcelTrialExporter:
         seen_inc = set()
         seen_exc = set()
 
+        def _elig_label(e_obj) -> str:
+            base = e_obj.criterion_name.replace("_", " ").title()
+            quals = []
+            pop = getattr(e_obj, "applicable_population", None)
+            stage = getattr(e_obj, "assessment_stage", None)
+            if pop and str(pop).strip().lower() not in ("overall", "all", "none", "nan"):
+                quals.append(str(pop).replace("_", " "))
+            if stage and str(stage).strip().lower() not in ("eligibility_assessment", "none", "nan"):
+                quals.append(str(stage).replace("_", " "))
+            return f"{base} [{' / '.join(quals)}]" if quals else base
+
+        elig_label_map = {}
         for e in self.data.eligibility:
-            c_name = e.criterion_name.replace("_", " ").title()
+            c_name = _elig_label(e)
             is_num = (e.min_value is not None or e.max_value is not None or (e.value is not None and isinstance(e.value, (int, float)))
                       or e.min_operator is not None or e.max_operator is not None or e.between is not None)
-            if e.criterion_type == "exclusion":
-                if c_name not in seen_exc:
-                    seen_exc.add(c_name)
-                    if is_num:
-                        exc_continuous.append((c_name, e))
-                    else:
-                        exc_categorical.append((c_name, e))
-            else:
-                if c_name not in seen_inc:
-                    seen_inc.add(c_name)
-                    if is_num:
-                        inc_continuous.append((c_name, e))
-                    else:
-                        inc_categorical.append((c_name, e))
+            seen = seen_exc if e.criterion_type == "exclusion" else seen_inc
+            n = 2
+            unique_name = c_name
+            while unique_name in seen:
+                prev = elig_label_map.get((e.criterion_type, unique_name))
+                if prev is not None and _same_criterion(prev, e):
+                    break
+                unique_name = f"{c_name} ({n})"
+                n += 1
+            if unique_name in seen:
+                continue
+            seen.add(unique_name)
+            elig_label_map[(e.criterion_type, unique_name)] = e
+            target = (exc_continuous if is_num else exc_categorical) if e.criterion_type == "exclusion" else (inc_continuous if is_num else inc_categorical)
+            target.append((unique_name, e))
 
         # 2. Collect and Separate Outcomes: Baseline vs Longitudinal vs Safety
         baseline_params = []
@@ -210,21 +274,61 @@ class ExcelTrialExporter:
         safety_params = []
         seen_safe = set()
 
+        # A column group is keyed by the FULL observation identity minus arm/timepoint so that
+        # ITT vs PP, adjusted vs raw, severity grades, subgroups, meal types etc. never overwrite
+        # each other (Rule 40). Labels are only decorated when a collision actually exists.
+        def _variant(o) -> str:
+            bits = []
+            pop = str(o.analysis_population or "").strip()
+            if pop and pop.lower() not in ("nan", "none"):
+                bits.append(pop)
+            if o.gender:
+                bits.append(str(o.gender))
+            if o.race and str(o.race).strip().lower() not in ["overall", "all", "total", "n/a", "none"]:
+                bits.append(str(o.race))
+            est = str(getattr(o, "estimate_type", "") or "").strip()
+            if est and est not in ("BASELINE_MEAN", "FOLLOWUP_MEAN", "BINARY_RATE", "RAW_CHANGE_FROM_BASELINE"):
+                bits.append(est)
+            return " | ".join(bits)
+
+        def _group_key(o):
+            return (o.parameter_name.strip(), _variant(o))
+
+        def _display(o) -> str:
+            base = o.parameter_name.strip()
+            if o.domain == "safety_adverse_events" and base.lower() in ["adverse events", "any adverse events", "any adverse event"]:
+                base = "Any Adverse Event"
+            v = _variant(o)
+            return f"{base} [{v}]" if v else base
+
+        variants_per_param = {}
         for o in self.data.outcomes:
-            p_name = o.parameter_name.strip()
+            variants_per_param.setdefault(o.parameter_name.strip(), set()).add(_variant(o))
+
+        def _label(o) -> str:
+            base = o.parameter_name.strip()
+            if o.domain == "safety_adverse_events" and base.lower() in ["adverse events", "any adverse events", "any adverse event"]:
+                base = "Any Adverse Event"
+            if len(variants_per_param.get(o.parameter_name.strip(), set())) > 1 and _variant(o):
+                return f"{base} [{_variant(o)}]"
+            return base
+
+        group_members = {}
+        for o in self.data.outcomes:
+            label = _label(o)
             if o.domain == "safety_adverse_events":
-                canon_name = "Any Adverse Event" if p_name.lower().strip() in ["adverse events", "any adverse events", "any adverse event"] else p_name
-                if canon_name not in seen_safe:
-                    seen_safe.add(canon_name)
-                    safety_params.append(canon_name)
+                if label not in seen_safe:
+                    seen_safe.add(label)
+                    safety_params.append(label)
             elif o.is_baseline or str(o.timepoint_value or "").strip() in ["0", "0.0"]:
-                if p_name not in seen_base:
-                    seen_base.add(p_name)
-                    baseline_params.append(p_name)
+                if label not in seen_base:
+                    seen_base.add(label)
+                    baseline_params.append(label)
             else:
-                if p_name not in seen_long:
-                    seen_long.add(p_name)
-                    longitudinal_params.append(p_name)
+                if label not in seen_long:
+                    seen_long.add(label)
+                    longitudinal_params.append(label)
+            group_members.setdefault(label, []).append(o)
 
         col_idx = 1
 
@@ -265,7 +369,7 @@ class ExcelTrialExporter:
         base_col_map = {}
         for p_name in baseline_params:
             base_col_map[p_name] = col_idx
-            col_idx += 5  # Mean, SD, Events (n), Percentage (%), Unit
+            col_idx += 7  # Mean, SD, SE, Median, Count (n), Percentage (%), Unit
         base_end_col = col_idx - 1 if col_idx > base_start_col else None
 
         # Block 4B: Longitudinal Efficacy & Endpoints (Follow-up)
@@ -273,7 +377,7 @@ class ExcelTrialExporter:
         long_col_map = {}
         for p_name in longitudinal_params:
             long_col_map[p_name] = col_idx
-            col_idx += 6  # Mean, SD, Events (n), Percentage (%), Change from Baseline, Unit
+            col_idx += 11  # Mean, SD, SE, Events (n), Percentage (%), Change from Baseline, Effect Estimate, CI Lower, CI Upper, P-value, Unit
         long_end_col = col_idx - 1 if col_idx > long_start_col else None
 
         # Block 4C: Safety & Adverse Events
@@ -281,7 +385,7 @@ class ExcelTrialExporter:
         safe_col_map = {}
         for p_name in safety_params:
             safe_col_map[p_name] = col_idx
-            col_idx += 4  # Events (n), Total (N), Percentage (%), Unit
+            col_idx += 5  # Participants with Event (n), Denominator (N), Percentage (%), Observation Period, Unit
         safe_end_col = col_idx - 1 if col_idx > safe_start_col else None
 
         total_cols = col_idx - 1
@@ -291,18 +395,18 @@ class ExcelTrialExporter:
         ws.row_dimensions[3].height = 20
 
         # Row 1 Main Categories
-        format_range(ws, arm_start_col, arm_end_col, 1, "STUDY & INTERVENTION ARMS", font_h1, h1_fill)
+        format_range(ws, arm_start_col, arm_end_col, 1, "1. STUDY CHARACTERISTICS AND TREATMENT ARMS", font_h1, h1_fill)
         if inc_end_col:
-            format_range(ws, inc_start_col, inc_end_col, 1, "INCLUSION CRITERIA", font_h1, h1_fill)
+            format_range(ws, inc_start_col, inc_end_col, 1, "2. ELIGIBILITY CRITERIA — INCLUSION", font_h1, h1_fill)
         if exc_end_col:
-            format_range(ws, exc_start_col, exc_end_col, 1, "EXCLUSION CRITERIA", font_h1, h1_fill)
-        format_range(ws, pop_start_col, pop_end_col, 1, "POPULATION STRATIFICATION", font_h1, h1_fill)
+            format_range(ws, exc_start_col, exc_end_col, 1, "2. ELIGIBILITY CRITERIA — EXCLUSION", font_h1, h1_fill)
+        format_range(ws, pop_start_col, pop_end_col, 1, "POPULATION STRATIFICATION & TIMEPOINT", font_h1, h1_fill)
         if base_end_col:
-            format_range(ws, base_start_col, base_end_col, 1, "BASELINE CHARACTERISTICS & LABS (TIME 0)", font_h1, h1_fill)
+            format_range(ws, base_start_col, base_end_col, 1, "3. BASELINE CHARACTERISTICS", font_h1, h1_fill)
         if long_end_col:
-            format_range(ws, long_start_col, long_end_col, 1, "LONGITUDINAL EFFICACY & ENDPOINTS (FOLLOW-UP)", font_h1, h1_fill)
+            format_range(ws, long_start_col, long_end_col, 1, "4. EFFICACY OUTCOMES", font_h1, h1_fill)
         if safe_end_col:
-            format_range(ws, safe_start_col, safe_end_col, 1, "SAFETY & ADVERSE EVENTS", font_h1, h1_fill)
+            format_range(ws, safe_start_col, safe_end_col, 1, "5. SAFETY OUTCOMES", font_h1, h1_fill)
 
         # Row 2 & Row 3 Headers:
         # Block 1: Study & Arms
@@ -406,8 +510,8 @@ class ExcelTrialExporter:
 
         # Block 4A: Baseline Characteristics Headers
         for p_name, start_c in base_col_map.items():
-            format_range(ws, start_c, start_c + 4, 2, p_name, font_h2, h2_fill)
-            sub_labels = ["Mean", "SD", "Events (n)", "Percentage (%)", "Unit"]
+            format_range(ws, start_c, start_c + 6, 2, p_name, font_h2, h2_fill)
+            sub_labels = ["Mean", "SD", "SE", "Median", "Count (n)", "Percentage (%)", "Unit"]
             for i, sub_lab in enumerate(sub_labels):
                 cell = ws.cell(row=3, column=start_c + i, value=sub_lab)
                 cell.fill = h3_fill
@@ -417,8 +521,8 @@ class ExcelTrialExporter:
 
         # Block 4B: Longitudinal Efficacy Headers
         for p_name, start_c in long_col_map.items():
-            format_range(ws, start_c, start_c + 5, 2, p_name, font_h2, h2_fill)
-            sub_labels = ["Mean", "SD", "Events (n)", "Percentage (%)", "Change from Baseline", "Unit"]
+            format_range(ws, start_c, start_c + 10, 2, p_name, font_h2, h2_fill)
+            sub_labels = ["Mean", "SD", "SE", "Events (n)", "Percentage (%)", "Change from Baseline", "Effect Estimate", "CI Lower", "CI Upper", "P-value", "Unit"]
             for i, sub_lab in enumerate(sub_labels):
                 cell = ws.cell(row=3, column=start_c + i, value=sub_lab)
                 cell.fill = h3_fill
@@ -428,8 +532,8 @@ class ExcelTrialExporter:
 
         # Block 4C: Safety & Adverse Events Headers
         for p_name, start_c in safe_col_map.items():
-            format_range(ws, start_c, start_c + 3, 2, p_name, font_h2, h2_fill)
-            sub_labels = ["Events (n)", "Total (N)", "Percentage (%)", "Unit"]
+            format_range(ws, start_c, start_c + 4, 2, p_name, font_h2, h2_fill)
+            sub_labels = ["Participants with Event (n)", "Denominator (N)", "Percentage (%)", "Observation Period", "Unit"]
             for i, sub_lab in enumerate(sub_labels):
                 cell = ws.cell(row=3, column=start_c + i, value=sub_lab)
                 cell.fill = h3_fill
@@ -450,14 +554,12 @@ class ExcelTrialExporter:
             timepoints = set()
             for o in arm_outcomes:
                 tp_v = str(o.timepoint_value or "").strip()
-                tp_u = str(o.timepoint_unit or s.duration_unit or "weeks").strip()
+                tp_u = str(o.timepoint_unit or "").strip()
                 if tp_v:
                     timepoints.add((tp_v, tp_u))
 
             if not timepoints:
-                timepoints.add(("0", s.duration_unit or "weeks"))
-                if s.duration_value:
-                    timepoints.add((str(s.duration_value), s.duration_unit or "weeks"))
+                timepoints.add(("", ""))
 
             def tp_sort_key(tup):
                 try:
@@ -466,7 +568,7 @@ class ExcelTrialExporter:
                     return 0.0
             sorted_timepoints = sorted(list(timepoints), key=tp_sort_key)
 
-            arm_n = a.sample_size_analyzed or a.sample_size_allocated or (s.total_sample_size // len(self.data.arms) if self.data.arms else 100)
+            arm_n = a.sample_size_analyzed or a.sample_size_allocated
 
             # Demographic mathematical reconstruction for this arm
             male_out = next((o for o in arm_outcomes if o.gender == "Male" or "male" in o.parameter_name.lower()), None)
@@ -475,26 +577,14 @@ class ExcelTrialExporter:
             male_n, male_pct = None, None
             female_n, female_pct = None, None
 
+            # Only values present in the extraction are written (derived records are produced upstream
+            # with explicit derivation_type; the exporter never computes new clinical numbers).
             if male_out:
-                male_n = male_out.events if male_out.events is not None else (int(round(arm_n * (male_out.percentage / 100.0))) if male_out.percentage else None)
-                male_pct = male_out.percentage if male_out.percentage is not None else (round((male_n / arm_n) * 100.0, 1) if male_n and arm_n else None)
-
+                male_n = male_out.events
+                male_pct = male_out.percentage
             if female_out:
-                female_n = female_out.events if female_out.events is not None else (int(round(arm_n * (female_out.percentage / 100.0))) if female_out.percentage else None)
-                female_pct = female_out.percentage if female_out.percentage is not None else (round((female_n / arm_n) * 100.0, 1) if female_n and arm_n else None)
-
-            if male_n is not None and female_n is None and arm_n:
-                female_n = max(0, arm_n - male_n)
-                female_pct = round((female_n / arm_n) * 100.0, 1)
-            elif female_n is not None and male_n is None and arm_n:
-                male_n = max(0, arm_n - female_n)
-                male_pct = round((male_n / arm_n) * 100.0, 1)
-            elif male_pct is not None and female_pct is None:
-                female_pct = round(100.0 - male_pct, 1)
-                female_n = int(round(arm_n * (female_pct / 100.0))) if arm_n else None
-            elif female_pct is not None and male_pct is None:
-                male_pct = round(100.0 - female_pct, 1)
-                male_n = int(round(arm_n * (male_pct / 100.0))) if arm_n else None
+                female_n = female_out.events
+                female_pct = female_out.percentage
 
             # Race: never fake 'Overall' if not explicitly reported
             race_val = None
@@ -523,43 +613,37 @@ class ExcelTrialExporter:
 
                 # Block 2A: Inclusion Criteria (Propagated: Min | Max | Unit)
                 for c_name, (start_c, is_num, e_obj) in inc_col_map.items():
-                    arm_e = next((e for e in self.data.eligibility if (e.study_id == a.study_id or e.study_id == s.study_id) and e.criterion_type == "inclusion" and e.criterion_name.replace("_", " ").title() == c_name), e_obj)
+                    arm_e = e_obj if (e_obj.study_id in (a.study_id, s.study_id)) else next((e for e in self.data.eligibility if e.study_id in (a.study_id, s.study_id) and e.criterion_type == "inclusion" and _elig_label(e) == c_name.split(" (")[0]), None)
                     if is_num:
                         min_op, min_v, max_op, max_v, unit_v = get_criterion_bounds(arm_e) if arm_e else ("", None, "", None, "")
                         ws.cell(row=current_row, column=start_c, value=min_v)
                         ws.cell(row=current_row, column=start_c + 1, value=max_v)
                         ws.cell(row=current_row, column=start_c + 2, value=unit_v)
                     else:
-                        ws.cell(row=current_row, column=start_c, value="Required" if arm_e else "")
+                        ws.cell(row=current_row, column=start_c, value=(str(arm_e.value) if (arm_e and arm_e.value is not None and str(arm_e.value).strip().lower() not in ["true", "yes", "required", "nan", "none", ""]) else ((arm_e.raw_source_text or "Required") if arm_e else None)))
 
                 # Block 2B: Exclusion Criteria (Propagated: Min | Max | Unit & Unpacked Prohibited Meds/Durations)
                 for c_name, (start_c, is_num, e_obj) in exc_col_map.items():
-                    arm_e = next((e for e in self.data.eligibility if (e.study_id == a.study_id or e.study_id == s.study_id) and e.criterion_type == "exclusion" and e.criterion_name.replace("_", " ").title() == c_name), e_obj)
+                    arm_e = e_obj if (e_obj.study_id in (a.study_id, s.study_id)) else next((e for e in self.data.eligibility if e.study_id in (a.study_id, s.study_id) and e.criterion_type == "exclusion" and _elig_label(e) == c_name.split(" (")[0]), None)
                     if is_num:
                         min_op, min_v, max_op, max_v, unit_v = get_criterion_bounds(arm_e) if arm_e else ("", None, "", None, "")
                         ws.cell(row=current_row, column=start_c, value=min_v)
                         ws.cell(row=current_row, column=start_c + 1, value=max_v)
                         ws.cell(row=current_row, column=start_c + 2, value=unit_v)
                     else:
-                        val_to_write = ""
+                        val_to_write = None
                         if arm_e:
-                            if arm_e.value and str(arm_e.value).strip().lower() not in ["prohibited", "true", "yes"]:
+                            if arm_e.value is not None and str(arm_e.value).strip().lower() not in ["prohibited", "true", "yes", "nan", "none", ""]:
                                 val_to_write = str(arm_e.value)
-                            elif "prohibited medication" in c_name.lower():
-                                val_to_write = arm_e.value or "Insulin, GLP-1 analogues, Sulfonylurea (> half max approved daily dose), Thiazolidinedione (within 12 weeks prior to consent)"
                             elif arm_e.raw_source_text:
-                                m_time = re.search(r'\b(within\s+\d+\s+(?:weeks?|days?|months?)(?:\s+(?:prior to|of|before)\s+\w+)?|at\s+(?:screening|time of consent|randomization))\b', arm_e.raw_source_text, re.I)
-                                if m_time:
-                                    val_to_write = f"Prohibited {m_time.group(0)}"
-                                else:
-                                    val_to_write = f"Prohibited ({arm_e.raw_source_text[:50]})"
+                                val_to_write = str(arm_e.raw_source_text).strip()
                             else:
-                                val_to_write = "Prohibited"
+                                val_to_write = "Excluded"
                         ws.cell(row=current_row, column=start_c, value=val_to_write)
 
                 # Block 3: Population Stratification (Propagated)
-                ws.cell(row=current_row, column=pop_start_col, value=race_val if race_val else "")
-                ws.cell(row=current_row, column=pop_start_col + 1, value="")
+                ws.cell(row=current_row, column=pop_start_col, value=race_val if race_val else None)
+                ws.cell(row=current_row, column=pop_start_col + 1, value=None)
                 ws.cell(row=current_row, column=pop_start_col + 2, value=male_n)
                 ws.cell(row=current_row, column=pop_start_col + 3, value=male_pct)
                 ws.cell(row=current_row, column=pop_start_col + 4, value=female_n)
@@ -569,50 +653,49 @@ class ExcelTrialExporter:
 
                 # Block 4A: Baseline Characteristics & Labs (Time 0) - FULLY PROPAGATED ACROSS ALL ROWS
                 for p_name, start_c in base_col_map.items():
-                    matched_base = next((o for o in arm_outcomes if o.parameter_name.strip() == p_name and (o.is_baseline or str(o.timepoint_value or "").strip() in ["0", "0.0"])), None)
+                    matched_base = next((o for o in group_members.get(p_name, []) if o.arm_id == a.arm_id and (o.is_baseline or str(o.timepoint_value or "").strip() in ["0", "0.0"])), None)
                     if matched_base:
                         ws.cell(row=current_row, column=start_c, value=matched_base.mean)
                         ws.cell(row=current_row, column=start_c + 1, value=matched_base.sd)
-                        ws.cell(row=current_row, column=start_c + 2, value=matched_base.events)
-                        ws.cell(row=current_row, column=start_c + 3, value=matched_base.percentage)
-                        ws.cell(row=current_row, column=start_c + 4, value=matched_base.unit)
+                        ws.cell(row=current_row, column=start_c + 2, value=matched_base.se)
+                        ws.cell(row=current_row, column=start_c + 3, value=matched_base.median)
+                        ws.cell(row=current_row, column=start_c + 4, value=matched_base.events)
+                        ws.cell(row=current_row, column=start_c + 5, value=matched_base.percentage)
+                        ws.cell(row=current_row, column=start_c + 6, value=matched_base.unit)
 
                 # Block 4B: Longitudinal Efficacy & Endpoints (Follow-up) - Matching THIS row's timepoint
                 for p_name, start_c in long_col_map.items():
-                    matched_long = next((o for o in arm_outcomes if o.parameter_name.strip() == p_name and str(o.timepoint_value or "").strip() == tp_v and not o.is_baseline), None)
+                    matched_long = next((o for o in group_members.get(p_name, []) if o.arm_id == a.arm_id and str(o.timepoint_value or "").strip() == tp_v and not o.is_baseline), None)
                     if matched_long:
                         ws.cell(row=current_row, column=start_c, value=matched_long.mean)
                         ws.cell(row=current_row, column=start_c + 1, value=matched_long.sd)
-                        ws.cell(row=current_row, column=start_c + 2, value=matched_long.events)
-                        ws.cell(row=current_row, column=start_c + 3, value=matched_long.percentage)
-                        # Geometric / Ratio outcomes: if arithmetic change_value is None but ratio is present, mark NOT_APPLICABLE to eliminate red blanks
-                        if matched_long.change_value is not None:
-                            ws.cell(row=current_row, column=start_c + 4, value=matched_long.change_value)
-                        elif matched_long.ratio is not None or matched_long.metric_type == "geometric_mean_ratio":
-                            ws.cell(row=current_row, column=start_c + 4, value="NOT_APPLICABLE")
-                        else:
-                            ws.cell(row=current_row, column=start_c + 4, value=None)
-                        ws.cell(row=current_row, column=start_c + 5, value=matched_long.unit)
+                        ws.cell(row=current_row, column=start_c + 2, value=matched_long.se)
+                        ws.cell(row=current_row, column=start_c + 3, value=matched_long.events)
+                        ws.cell(row=current_row, column=start_c + 4, value=matched_long.percentage)
+                        ws.cell(row=current_row, column=start_c + 5, value=matched_long.change_value)
+                        eff_v = matched_long.effect_value if matched_long.effect_value is not None else matched_long.ratio
+                        ci_l = matched_long.ci_lower if matched_long.effect_value is not None else matched_long.ratio_ci_lower
+                        ci_u = matched_long.ci_upper if matched_long.effect_value is not None else matched_long.ratio_ci_upper
+                        ws.cell(row=current_row, column=start_c + 6, value=eff_v)
+                        ws.cell(row=current_row, column=start_c + 7, value=ci_l)
+                        ws.cell(row=current_row, column=start_c + 8, value=ci_u)
+                        ws.cell(row=current_row, column=start_c + 9, value=matched_long.p_value)
+                        ws.cell(row=current_row, column=start_c + 10, value=matched_long.unit)
 
                 # Block 4C: Safety & Adverse Events
                 # Safety data is evaluated across the cumulative study treatment period.
                 # Display safety counts on the primary follow-up row for this arm (e.g. Day 28 or study duration), and display reference markers '—' on interim intra-day rows.
-                dur_str = str(int(s.duration_value)) if (s.duration_value is not None and float(s.duration_value).is_integer()) else str(s.duration_value or "")
-                target_safe_tp = dur_str if any(t[0] == dur_str for t in sorted_timepoints) else (sorted_timepoints[-1][0] if sorted_timepoints else "28")
-                is_safety_display_row = (tp_v == target_safe_tp)
+                # Safety counts belong to an observation period, not a visit day (Rule 44). They are shown on
+                # the final row of each arm; interim rows stay genuinely blank (Rule 5 — no placeholders).
+                is_safety_display_row = (tp_v == sorted_timepoints[-1][0]) if sorted_timepoints else True
                 for p_name, start_c in safe_col_map.items():
-                    matched_safe = next((o for o in arm_outcomes if (o.parameter_name.strip() == p_name or (p_name == "Any Adverse Event" and o.parameter_name.lower().strip() in ["adverse events", "any adverse events", "any adverse event"])) and o.domain == "safety_adverse_events"), None)
-                    if matched_safe:
-                        if is_safety_display_row:
-                            ws.cell(row=current_row, column=start_c, value=matched_safe.events)
-                            ws.cell(row=current_row, column=start_c + 1, value=matched_safe.total or arm_n)
-                            ws.cell(row=current_row, column=start_c + 2, value=matched_safe.percentage)
-                            ws.cell(row=current_row, column=start_c + 3, value=matched_safe.unit or "%")
-                        else:
-                            ws.cell(row=current_row, column=start_c, value="—")
-                            ws.cell(row=current_row, column=start_c + 1, value="—")
-                            ws.cell(row=current_row, column=start_c + 2, value="—")
-                            ws.cell(row=current_row, column=start_c + 3, value="—")
+                    matched_safe = next((o for o in group_members.get(p_name, []) if o.arm_id == a.arm_id and o.domain == "safety_adverse_events"), None)
+                    if matched_safe and is_safety_display_row:
+                        ws.cell(row=current_row, column=start_c, value=matched_safe.events)
+                        ws.cell(row=current_row, column=start_c + 1, value=matched_safe.total)
+                        ws.cell(row=current_row, column=start_c + 2, value=matched_safe.percentage)
+                        ws.cell(row=current_row, column=start_c + 3, value=getattr(matched_safe, "original_timepoint_label", None) or "Safety observation period")
+                        ws.cell(row=current_row, column=start_c + 4, value=matched_safe.unit)
 
                 ws.row_dimensions[current_row].height = 20
                 for c in range(1, total_cols + 1):
@@ -621,6 +704,8 @@ class ExcelTrialExporter:
                     cell.border = self.border_thin
                     if row_fill:
                         cell.fill = row_fill
+                    if isinstance(cell.value, float):
+                        cell.number_format = "0.###"
                     if c in [1, 2, 8]:
                         cell.alignment = align_left
                     else:
@@ -714,7 +799,8 @@ class ExcelTrialExporter:
             "Timepoint (value)", "Timepoint (unit)", "sample_size", "analysis_population", "mean", "sd", "se", "dispersion_type", "median", "iqr_lower", "iqr_upper",
             "change_value", "change_sd", "ratio", "ratio_ci_lower", "ratio_ci_upper", "events", "total", "percentage", "unit", "effect_measure", "effect_value",
             "ci_lower", "ci_upper", "p_value", "is_primary", "source_page", "source_location", "raw_source_text",
-            "variable_role", "estimate_type", "original_timepoint_label", "assessment_stage", "timepoint_type", "source_evidence"
+            "variable_role", "estimate_type", "original_timepoint_label", "assessment_stage", "timepoint_type", "source_evidence",
+            "is_between_group_diff", "derivation_type", "digitization_uncertainty"
         ]
         ws.append(headers)
 
@@ -726,11 +812,14 @@ class ExcelTrialExporter:
                 o.change_value, o.change_sd, o.ratio, o.ratio_ci_lower, o.ratio_ci_upper, o.events, o.total, o.percentage, o.unit, o.effect_measure, o.effect_value,
                 o.ci_lower, o.ci_upper, o.p_value, "YES" if o.is_primary else "NO", o.source_page, o.source_location, o.raw_source_text,
                 getattr(o, "variable_role", None) or ("SAFETY_OUTCOME" if o.domain == "safety_adverse_events" else ("BASELINE_CHARACTERISTIC" if o.is_baseline else "EFFICACY_OUTCOME")),
-                getattr(o, "estimate_type", None) or "FOLLOWUP_MEAN",
-                getattr(o, "original_timepoint_label", None) or (f"Day {o.timepoint_value}" if o.timepoint_value else "TIMEPOINT_NOT_EXPLICITLY_REPORTED"),
+                getattr(o, "estimate_type", None),
+                getattr(o, "original_timepoint_label", None),
                 getattr(o, "assessment_stage", None) or ("overall_safety_period" if o.domain == "safety_adverse_events" else ("baseline" if o.is_baseline else "follow_up")),
                 getattr(o, "timepoint_type", None) or ("cumulative_period" if o.domain == "safety_adverse_events" else "point_in_time"),
-                getattr(o, "source_evidence", None) or o.raw_source_text or o.source_location or "Reported clinical trial finding"
+                getattr(o, "source_evidence", None) or o.raw_source_text or o.source_location,
+                "YES" if getattr(o, "is_between_group_diff", False) else "NO",
+                getattr(o, "derivation_type", None),
+                getattr(o, "digitization_uncertainty", None)
             ])
         self._apply_sheet_formatting(ws)
 
@@ -811,8 +900,8 @@ class ExcelTrialExporter:
                 o.ratio, o.ratio_ci_lower, o.ratio_ci_upper,
                 o.unit, o.effect_measure, o.effect_value, o.ci_lower, o.ci_upper, o.p_value,
                 getattr(o, "variable_role", None) or ("SAFETY_OUTCOME" if o.domain == "safety_adverse_events" else ("BASELINE_CHARACTERISTIC" if o.is_baseline else "EFFICACY_OUTCOME")),
-                getattr(o, "estimate_type", None) or "FOLLOWUP_MEAN",
-                getattr(o, "original_timepoint_label", None) or (f"Day {o.timepoint_value}" if o.timepoint_value else "TIMEPOINT_NOT_EXPLICITLY_REPORTED"),
+                getattr(o, "estimate_type", None),
+                getattr(o, "original_timepoint_label", None),
                 getattr(o, "assessment_stage", None) or ("overall_safety_period" if o.domain == "safety_adverse_events" else ("baseline" if o.is_baseline else "follow_up")),
                 getattr(o, "timepoint_type", None) or ("cumulative_period" if o.domain == "safety_adverse_events" else "point_in_time"),
                 o.source_page, o.source_location

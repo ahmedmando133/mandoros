@@ -87,7 +87,7 @@ def test_real_document_extraction_and_qa_gates(pdf_name, expected_drug, tmp_path
 
     wb = openpyxl.load_workbook(exported_file)
     expected_sheets = [
-        "Master_Extraction_Sheet",
+        "Master Excel Sheet",
         "Studies",
         "Arms",
         "Eligibility",

@@ -25,6 +25,9 @@ outputs/*.zip
 !outputs/MANDOROS_Phase2_Validation_and_Error_Report.xlsx
 !outputs/*_Student_Express_Report.xlsx
 !outputs/*_Individual_Stage1_Trial_Excels.zip
+.pytest_cache/
+outputs/test_*.xlsx
+outputs/test_*.json
 .DS_Store
 Thumbs.db
 *.log

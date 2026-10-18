@@ -13,8 +13,10 @@ from typing import Any
 import gradio as gr
 import pandas as pd
 
-# Ensure workspace root in path
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+# Ensure workspace root in path and anchor all relative paths to the repository root (Render-safe)
+ROOT_DIR = Path(__file__).resolve().parent
+sys.path.append(str(ROOT_DIR))
+os.chdir(ROOT_DIR)
 
 
 @functools.lru_cache(maxsize=4)
@@ -125,14 +127,14 @@ def process_pdf(
         extractor = RCTExtractor(pdf_path, api_key=api_key.strip() if api_key else None, model_name=model_name)
         data = extractor.extract_all()
 
-        # 3. Export to Standardized Multi-Sheet Excel (with Master_Extraction_Sheet as Sheet 1)
+        # 3. Export to Standardized Multi-Sheet Excel (with "Master Excel Sheet" as Sheet 1 — Rule 7)
         progress(0.80, desc="📑 Generating standardized multi-sheet Excel & JSON archives...")
         exporter = ExcelTrialExporter(data)
         saved_excel = exporter.export(excel_path)
 
-        # 4. Export to JSON (10/10 Phase 1 Master Schema)
+        # 4. Export to JSON (exact Phase 1 Master Schema, validated by the deterministic gate)
         from src.skill_injector import to_phase1_master_dict, execute_phase1_validation_loop
-        master_p1 = execute_phase1_validation_loop(to_phase1_master_dict(data))
+        master_p1 = exporter.phase1_payload or execute_phase1_validation_loop(to_phase1_master_dict(data))
 
         # 4b. Execute Complete 4-Layer Clinical Evidence & Methodological Audit Pipeline (TrialMind & RCTMethodologyIE)
         progress(0.85, desc="🔬 Executing TrialMind Synthesis & RCTMethodologyIE Methodological Audit...")
@@ -252,7 +254,7 @@ def process_pdf(
         # 6. Preview DataFrames:
         # A. Master Extraction Sheet Preview (Sheet 1 from Excel)
         try:
-            raw_master = pd.read_excel(saved_excel, sheet_name="Master_Extraction_Sheet", header=None)
+            raw_master = pd.read_excel(saved_excel, sheet_name="Master Excel Sheet", header=None)
             r2 = raw_master.iloc[1].fillna('')
             r3 = raw_master.iloc[2].fillna('')
             r2_filled = []
@@ -482,7 +484,7 @@ def get_default_single_study_preview():
     """Generates drug-agnostic Stage-1 Methodological Readiness Hub and Schema Blueprints on startup."""
     default_master = pd.DataFrame([
         {
-            "Relational Sheet": "Sheet 1: Master_Extraction_Sheet",
+            "Relational Sheet": "Sheet 1: Master Excel Sheet",
             "Target Data Domain": "Consolidated Study Blueprint",
             "Key Atomic Columns Extracted": "Study ID, Title, DOI, Phase, Total N, Primary Endpoint, Effect Size, Safety Verdict",
             "Epistemic Validation Guardrail": "Verbatim text span, Page #, Confidence Score, not_reported enforcement"

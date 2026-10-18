@@ -198,8 +198,8 @@ def test_biomarker_domain_and_zero_contamination_audit():
     assert len(sanitized) == 2
 
 
-def test_master_extraction_sheet_and_row_continuity(tmp_path):
-    """Verify Master_Extraction_Sheet builds with atomic columns, split criteria, and row continuity."""
+def test_master_excel_sheet_and_row_continuity(tmp_path):
+    """Verify Master Excel Sheet builds with atomic columns, split criteria, and row continuity."""
     study = StudyMetadata(
         study_id="TEST_RCT",
         title="Sample Double-Blind Trial",
@@ -340,15 +340,15 @@ def test_master_extraction_sheet_and_row_continuity(tmp_path):
     exporter = ExcelTrialExporter(data)
     exporter.export(out_file)
 
-    # Load workbook and inspect Master_Extraction_Sheet
+    # Load workbook and inspect Master Excel Sheet
     wb = openpyxl.load_workbook(out_file)
-    assert "Master_Extraction_Sheet" in wb.sheetnames
+    assert "Master Excel Sheet" in wb.sheetnames
     assert "Eligibility" in wb.sheetnames
     assert "Outcomes" in wb.sheetnames
     assert "Flattened_View" in wb.sheetnames
     assert "Variables_Matrix" in wb.sheetnames
 
-    ws = wb["Master_Extraction_Sheet"]
+    ws = wb["Master Excel Sheet"]
 
     # Read row 1 (Categories), row 2 (Major variables), row 3 (Atomic sub-headers)
     r1_cats = [cell.value for cell in ws[1]]
@@ -356,12 +356,13 @@ def test_master_extraction_sheet_and_row_continuity(tmp_path):
     r3_subheaders = [cell.value for cell in ws[3]]
 
     # 1. Section Categories in Row 1
-    assert "STUDY & INTERVENTION ARMS" in r1_cats
-    assert "INCLUSION CRITERIA" in r1_cats
-    assert "EXCLUSION CRITERIA" in r1_cats
-    assert "POPULATION STRATIFICATION" in r1_cats
-    assert "BASELINE CHARACTERISTICS & LABS (TIME 0)" in r1_cats
-    assert "LONGITUDINAL EFFICACY & ENDPOINTS (FOLLOW-UP)" in r1_cats
+    # Protocol Rule 7: the five mandatory sections appear in order with clearly identifiable headings
+    assert "1. STUDY CHARACTERISTICS AND TREATMENT ARMS" in r1_cats
+    assert "2. ELIGIBILITY CRITERIA — INCLUSION" in r1_cats
+    assert "2. ELIGIBILITY CRITERIA — EXCLUSION" in r1_cats
+    assert "POPULATION STRATIFICATION & TIMEPOINT" in r1_cats
+    assert "3. BASELINE CHARACTERISTICS" in r1_cats
+    assert "4. EFFICACY OUTCOMES" in r1_cats
 
     # 2. Major Variables in Row 2
     assert "Dose" in r2_vars

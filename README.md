@@ -77,10 +77,14 @@ graph TD
 - **GRADE Evidence Profiles:** Formal evaluation of evidence certainty across 5 downgrade (RoB, Inconsistency, Indirectness, Imprecision, Publication Bias) and 3 upgrade criteria.
 - **100/100 Academic Quality Score:** Strict scoring across 12 institutional validation domains ensuring submission readiness for top medical journals (*The Lancet*, *NEJM*, *JAMA*).
 
-### 3. Hard Programmatic Quality Gate & Self-Correction Retry Loop
-- **Programmatic Validation:** Every payload is validated against strict JSON schemas before being exposed to users or downstream consumers.
-- **Self-Correction Feedback:** If any schema key, numeric bound ($I^2 \in [0, 100]$, $\tau^2 \ge 0$, $\text{CI lower} \le \text{CI upper}$, $\text{ratio} > 0$), or rule fails, the exact diagnostic diff is fed back into the LLM in an automated retry loop.
-- **Local === Render Cloud Parity:** 100% path-agnostic design dynamically resolves bundled protocols and skills on both Windows local environments and Linux Render cloud production.
+### 3. Deterministic Protocol Engine & Validation Gate (`src/protocol_engine.py`, `src/skill_injector.py`)
+- **Supreme-Law injection:** every LLM call carries the verbatim `master_protocols/phase{1,2}_master_instructions.md` plus the exact `phase{1,2}_schema.json`; Tier-2 skills are discovered dynamically from `clinical_skills_library/` (`pdf`, `clinical-reports`, `clinicaltrials-database`, `statistical-analysis`, `clinical-decision-support`, `statsmodels`, `peer-review`).
+- **JSON-Schema gate (Draft 2020-12):** `to_phase1_master_dict()` maps the extraction losslessly to the Phase 1 schema (one record per estimate type — raw mean, change from baseline, between-group effect, event count). `validate_phase{1,2}_payload()` enforce Rules 37/40/49/51/53 and Phase 2 Rules 14/27/29, then retry the LLM with the exact diff and finally repair deterministically — never silently.
+- **Zero-data-loss duplicate handling:** a record is a duplicate only when its full identifying key (outcome, arm, population, timepoint, estimate type, scale, subgroup) **and** every reported value are identical; conflicting records are kept and flagged `SOURCE_CONFLICT`. Distinct timepoints, doses, arms, ITT/PP populations and severity grades are always preserved.
+- **No fabrication:** missing sample sizes, doses, frequencies, control-arm statistics, RoB judgments, Egger tests and quality points are left blank / `NOT_ASSESSED` instead of being invented (Rules 5, 11, 17, 20, 28).
+- **Publication-ready workbooks:** first sheet is always `Master Excel Sheet` (Rule 7) with the five mandatory sections; protocol sheets (`Treatment Arms`, `Eligibility Criteria`, `Baseline Characteristics`, `Efficacy Outcomes`, `Safety Outcomes`, `Source Provenance`, `Validation Log`, `Quality Assessment` and, for Phase 2, the full Rule-2 worksheet set) carry schema-exact columns; nested JSON is flattened, and no `NaN`/`None`/`N/A`/raw-dict cell can reach the file.
+- **Universal input resilience:** PDF (pdfplumber → pypdf → raw-byte salvage, column-aware reading order, multi-page table stitching, Unicode minus/ligature normalisation), DOCX, TXT/MD, HTML and XLSX/CSV all load without crashing.
+- **Local === Render Cloud Parity:** path-agnostic (`pathlib`), protocols and skills cached in RAM (`lru_cache`), all PDF/Excel streams closed; API keys are read only from `GEMINI_API_KEY` / `OPENAI_API_KEY` / `ANTHROPIC_API_KEY`.
 
 ---
 

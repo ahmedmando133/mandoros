@@ -82,6 +82,122 @@ class ScientificRefereeAuditReport:
 
 
 # -------------------------------------------------------------------------
+# 0. Zero-Data-Loss Duplicate Merger (Protocol Rules 1, 6, 40)
+# -------------------------------------------------------------------------
+_OUTCOME_IDENTITY_FIELDS = (
+    "parameter_name", "arm_id", "timepoint_value", "timepoint_unit", "analysis_population",
+    "estimate_type", "metric_type", "is_between_group_diff", "effect_measure", "unit",
+    "gender", "race", "assessment_stage", "timepoint_type", "dispersion_type", "statistical_type",
+)
+_OUTCOME_VALUE_FIELDS = (
+    "mean", "sd", "se", "median", "iqr_lower", "iqr_upper", "min_value", "max_value",
+    "change_value", "change_sd", "change_percentage", "events", "total", "percentage",
+    "effect_value", "ci_lower", "ci_upper", "p_value", "ratio", "ratio_ci_lower", "ratio_ci_upper",
+    "sample_size",
+)
+
+
+def _norm(v: Any) -> str:
+    if v is None:
+        return ""
+    if isinstance(v, float):
+        if math.isnan(v):
+            return ""
+        if v.is_integer():
+            v = int(v)
+    return str(v).strip().lower()
+
+
+def _identity_key(o: OutcomeMeasurement) -> Tuple[str, ...]:
+    return tuple(_norm(getattr(o, f, None)) for f in _OUTCOME_IDENTITY_FIELDS)
+
+
+def _value_signature(o: OutcomeMeasurement) -> Tuple[str, ...]:
+    return tuple(_norm(getattr(o, f, None)) for f in _OUTCOME_VALUE_FIELDS)
+
+
+def _values_compatible(a: OutcomeMeasurement, b: OutcomeMeasurement) -> bool:
+    """True when every value field reported by BOTH records is identical (no conflicts)."""
+    for f in _OUTCOME_VALUE_FIELDS:
+        va, vb = getattr(a, f, None), getattr(b, f, None)
+        if va is None or vb is None:
+            continue
+        if _norm(va) != _norm(vb):
+            return False
+    return True
+
+
+def merge_identical_outcome_records(outcomes: List[OutcomeMeasurement]) -> Tuple[List[OutcomeMeasurement], List[Dict[str, str]]]:
+    """
+    Collapses ONLY redundant extraction artifacts:
+      - identical identity key + identical values           -> one record (sources concatenated)
+      - identical identity key + complementary values       -> one record (nulls filled, nothing overwritten)
+      - identical identity key + CONFLICTING values         -> BOTH kept (flagged for manual review)
+    Every distinct observation (different timepoint, population, estimate, arm...) is retained.
+    """
+    kept: List[OutcomeMeasurement] = []
+    index: Dict[Tuple[str, ...], List[OutcomeMeasurement]] = {}
+    notes: List[Dict[str, str]] = []
+
+    # Guard: the same table row parsed twice under different statistic types ("17 (81.0)" read once as
+    # count/percentage and once as mean/SD) is a redundant artifact, not a new observation (Rule 1:
+    # "Duplicate numerical results under different outcome names"). The dichotomous reading is kept.
+    dichot_signatures = {
+        (_norm(o.parameter_name), _norm(o.arm_id), _norm(o.timepoint_value), _norm(o.events), _norm(o.percentage))
+        for o in outcomes if o.events is not None and o.percentage is not None
+    }
+    filtered: List[OutcomeMeasurement] = []
+    for o in outcomes:
+        if (o.mean is not None and o.sd is not None and o.events is None and o.percentage is None
+                and float(o.mean).is_integer()
+                and (_norm(o.parameter_name), _norm(o.arm_id), _norm(o.timepoint_value), _norm(int(o.mean)), _norm(o.sd)) in dichot_signatures):
+            notes.append({
+                "entity": f"Outcome {o.outcome_id} ({o.parameter_name})",
+                "message": "Removed misparsed duplicate: count (percentage) row re-read as mean (SD); the dichotomous record with identical numbers is retained.",
+            })
+            continue
+        filtered.append(o)
+    outcomes = filtered
+
+    for o in outcomes:
+        k = _identity_key(o)
+        group = index.setdefault(k, [])
+        target = next((g for g in group if _values_compatible(g, o)), None)
+        if target is None:
+            group.append(o)
+            kept.append(o)
+            if len(group) > 1:
+                notes.append({
+                    "entity": f"Outcome {o.outcome_id} ({o.parameter_name})",
+                    "message": f"Same identifying attributes as {group[0].outcome_id} but different reported values; BOTH retained (SOURCE_CONFLICT, manual verification required).",
+                })
+            continue
+        filled = []
+        for f in _OUTCOME_VALUE_FIELDS:
+            if getattr(target, f, None) is None and getattr(o, f, None) is not None:
+                setattr(target, f, getattr(o, f))
+                filled.append(f)
+        if o.is_primary:
+            target.is_primary = True
+        for f in ("source_location", "raw_source_text", "source_evidence"):
+            tv, ov = getattr(target, f, None), getattr(o, f, None)
+            if ov and not tv:
+                setattr(target, f, ov)
+            elif ov and tv and ov not in tv:
+                setattr(target, f, f"{tv} || {ov}")
+        if target.source_page is None and o.source_page is not None:
+            target.source_page = o.source_page
+        notes.append({
+            "entity": f"Outcome {o.outcome_id} ({o.parameter_name})",
+            "message": (
+                f"Redundant extraction artifact merged into {target.outcome_id} (identical identifying attributes; "
+                f"{'filled ' + ', '.join(filled) if filled else 'identical values'}; source locations linked)."
+            ),
+        })
+    return kept, notes
+
+
+# -------------------------------------------------------------------------
 # 1. Extracted Trial Data Referee & Repair Engine
 # -------------------------------------------------------------------------
 
@@ -112,7 +228,7 @@ def audit_and_repair_extracted_data(
                 repaired=True
             ))
 
-    # Reconstruct study sample size if nan or missing
+    # Resolve study sample size from source evidence only (arm sums / randomization sentence); never fabricate
     if not study.total_sample_size or math.isnan(study.total_sample_size) or study.total_sample_size <= 0:
         resolved_study_n = resolve_study_sample_size(
             study_id=study_id,
@@ -120,30 +236,43 @@ def audit_and_repair_extracted_data(
             full_text=full_text,
             arms=data.arms
         )
-        study.total_sample_size = resolved_study_n
-        report.violations.append(ScientificRefereeViolation(
-            check_id="REF-02-ZERO-NAN-N",
-            severity="REPAIRED",
-            entity=f"Study {study_id}",
-            message=f"Reconstructed missing study total_sample_size to {resolved_study_n} via multi-stage fallback.",
-            repaired=True
-        ))
-
-    # Ensure every arm has a valid integer sample size
-    for arm in data.arms:
-        # Reconstruct arm sample sizes
-        if arm.sample_size_allocated is None or (isinstance(arm.sample_size_allocated, float) and math.isnan(arm.sample_size_allocated)) or arm.sample_size_allocated <= 0:
-            fallback_arm_n = max(1, int(study.total_sample_size // max(1, len(data.arms))))
-            arm.sample_size_allocated = fallback_arm_n
+        if resolved_study_n and resolved_study_n > 0:
+            study.total_sample_size = resolved_study_n
             report.violations.append(ScientificRefereeViolation(
                 check_id="REF-02-ZERO-NAN-N",
                 severity="REPAIRED",
-                entity=f"Arm {arm.arm_id} ({arm.arm_name})",
-                message=f"Reconstructed missing arm sample_size_allocated to {fallback_arm_n}.",
+                entity=f"Study {study_id}",
+                message=f"Resolved study total_sample_size to {resolved_study_n} from arm counts / randomization statement in the source.",
                 repaired=True
             ))
-        if arm.sample_size_analyzed is None or (isinstance(arm.sample_size_analyzed, float) and math.isnan(arm.sample_size_analyzed)) or arm.sample_size_analyzed <= 0:
-            arm.sample_size_analyzed = arm.sample_size_allocated
+        else:
+            study.total_sample_size = None
+            report.violations.append(ScientificRefereeViolation(
+                check_id="REF-02-ZERO-NAN-N",
+                severity="WARNING",
+                entity=f"Study {study_id}",
+                message="Total randomized N not found in source; left blank (Rule 5).",
+                repaired=False
+            ))
+
+    # Arm sample sizes: NaN -> blank; never fabricate (Rule 37: do not copy study N into arms)
+    for arm in data.arms:
+        if isinstance(arm.sample_size_allocated, float) and math.isnan(arm.sample_size_allocated):
+            arm.sample_size_allocated = None
+        if isinstance(arm.sample_size_analyzed, float) and math.isnan(arm.sample_size_analyzed):
+            arm.sample_size_analyzed = None
+        if arm.sample_size_allocated is not None and arm.sample_size_allocated <= 0:
+            arm.sample_size_allocated = None
+        if arm.sample_size_analyzed is not None and arm.sample_size_analyzed <= 0:
+            arm.sample_size_analyzed = None
+        if arm.sample_size_allocated is None and arm.sample_size_analyzed is None:
+            report.violations.append(ScientificRefereeViolation(
+                check_id="REF-02-ZERO-NAN-N",
+                severity="WARNING",
+                entity=f"Arm {arm.arm_id} ({arm.arm_name})",
+                message="Arm sample size not reported in source; left blank (Rule 5 / Rule 37 — never derived from study total).",
+                repaired=False
+            ))
 
         # -----------------------------------------------------------------
         # CHECK 3: Strict 4-Column Splitting for Dose & Frequency
@@ -176,16 +305,18 @@ def audit_and_repair_extracted_data(
                             repaired=True
                         ))
         else:
-            if arm.dose_value is None:
-                arm.dose_value = 0.0
-            if not arm.dose_unit:
-                arm.dose_unit = "mg"
+            # Placebo / usual-care arms carry no dose (Rule 9 example: Placebo dose cells blank)
+            if isinstance(arm.dose_value, float) and math.isnan(arm.dose_value):
+                arm.dose_value = None
+            if arm.dose_value == 0.0 and (arm.dose_unit or "").lower() == "mg":
+                arm.dose_value = None
+                arm.dose_unit = None
 
-        # Frequency normalization
-        if arm.frequency_number is None or (isinstance(arm.frequency_number, float) and math.isnan(arm.frequency_number)):
-            arm.frequency_number = 1.0
-        if not arm.frequency_unit or str(arm.frequency_unit).strip() == "":
-            arm.frequency_unit = "daily"
+        # Frequency: NaN -> blank; never assume 'once daily' when the source does not report it (Rule 9)
+        if isinstance(arm.frequency_number, float) and math.isnan(arm.frequency_number):
+            arm.frequency_number = None
+        if arm.frequency_unit is not None and str(arm.frequency_unit).strip().lower() in ("", "nan", "none", "null"):
+            arm.frequency_unit = None
 
     # ---------------------------------------------------------------------
     # CHECK 4 & 5: Strict 5-Column Range Parsing & Inclusion vs Exclusion
@@ -264,7 +395,11 @@ def audit_and_repair_extracted_data(
                 percentage=comp_male_pct,
                 unit="%",
                 is_baseline=True,
-                statistical_type="categorical"
+                statistical_type="categorical",
+                derivation_type="mathematically_derived",
+                raw_source_text=f"Derived: 100 - Female % ({f_o.percentage}) = {comp_male_pct}",
+                source_page=f_o.source_page,
+                source_location=f_o.source_location
             )
             data.outcomes.append(new_m_outcome)
             report.violations.append(ScientificRefereeViolation(
@@ -285,7 +420,11 @@ def audit_and_repair_extracted_data(
                 percentage=comp_female_pct,
                 unit="%",
                 is_baseline=True,
-                statistical_type="categorical"
+                statistical_type="categorical",
+                derivation_type="mathematically_derived",
+                raw_source_text=f"Derived: 100 - Male % ({m_o.percentage}) = {comp_female_pct}",
+                source_page=m_o.source_page,
+                source_location=m_o.source_location
             )
             data.outcomes.append(new_f_outcome)
             report.violations.append(ScientificRefereeViolation(
@@ -319,7 +458,8 @@ def audit_and_repair_extracted_data(
 
         # Check FPG vs PPG discrimination (Prevent Figure 3 FPG contrasts from ever being assigned to PPG AUC)
         if "ppg" in p_low or "postprandial" in p_low:
-            if (o.change_value in [-19.6, -26.3] or o.effect_value in [-19.6, -26.3]) and "fpg" in str(o.raw_source_text or "").lower():
+            raw_evidence = str(o.raw_source_text or "").lower()
+            if re.search(r'\b(fpg|fasting plasma glucose|fasting glucose)\b', raw_evidence) and not re.search(r'\b(ppg|postprandial|auc)\b', raw_evidence):
                 o.parameter_name = "Fasting Plasma Glucose"
                 o.domain = "glycemic"
                 o.timepoint_value = "2"
@@ -393,63 +533,21 @@ def audit_and_repair_extracted_data(
                 ))
 
     # ---------------------------------------------------------------------
-    # CHECK 9: Arm-per-Row Deduplication & Follow-up Law (REF-14-NO-DUPLICATE-OUTCOMES)
+    # CHECK 9: Zero-Data-Loss Duplicate Handling (REF-14-NO-DUPLICATE-OUTCOMES)
+    # Protocol Rule 1 / Rule 40: a record is a duplicate ONLY when its full identifying
+    # key (outcome, arm, population, timepoint, estimate type, scale, subgroup, period)
+    # AND all of its reported values are identical. Distinct timepoints, doses, arms,
+    # populations, severities, comparators and estimate types are always preserved.
     # ---------------------------------------------------------------------
-    # Step A: Purge spurious generic Follow-up rows if specific post-baseline timepoint rows exist for that arm/parameter
-    specific_postbase_keys = {
-        (str(o.parameter_name).strip().lower(), str(o.arm_id).strip())
-        for o in sanitized_outcomes
-        if not o.is_baseline and str(o.timepoint_value or "").strip().lower() not in ["follow-up", "none", ""]
-    }
-    non_fu_outcomes = []
-    for o in sanitized_outcomes:
-        k = (str(o.parameter_name).strip().lower(), str(o.arm_id).strip())
-        is_generic_fu = str(o.timepoint_value or "").strip().lower() in ["follow-up"]
-        if is_generic_fu and k in specific_postbase_keys:
-            report.violations.append(ScientificRefereeViolation(
-                check_id="REF-14-NO-DUPLICATE-OUTCOMES",
-                severity="REPAIRED",
-                entity=f"Outcome {o.outcome_id} ({o.parameter_name})",
-                message=f"Purged spurious generic 'Follow-up' duplicate row for arm {o.arm_id}; specific post-baseline timepoint already extracted.",
-                repaired=True
-            ))
-            continue
-        non_fu_outcomes.append(o)
-
-    # Step B: Deduplicate any remaining multiple rows for (parameter_name, arm_id, timepoint_value)
-    # Merges ANCOVA contrast fields onto within-arm observation
-    grouped_outcomes = {}
-    for o in non_fu_outcomes:
-        k = (str(o.parameter_name).strip().lower(), str(o.arm_id).strip(), str(o.timepoint_value or "").strip().lower())
-        grouped_outcomes.setdefault(k, []).append(o)
-
-    deduped_outcomes = []
-    for k, o_list in grouped_outcomes.items():
-        if len(o_list) == 1:
-            deduped_outcomes.append(o_list[0])
-        else:
-            primary_o = next((o for o in o_list if o.mean is not None or o.change_value is not None or o.ratio is not None or o.events is not None), o_list[0])
-            for other_o in o_list:
-                if other_o is primary_o:
-                    continue
-                if other_o.effect_value is not None and primary_o.effect_value is None:
-                    primary_o.effect_value = other_o.effect_value
-                    primary_o.effect_measure = other_o.effect_measure or "Adjusted Difference vs Placebo"
-                    primary_o.ci_lower = other_o.ci_lower
-                    primary_o.ci_upper = other_o.ci_upper
-                    primary_o.p_value = other_o.p_value
-                if other_o.is_primary:
-                    primary_o.is_primary = True
-                report.violations.append(ScientificRefereeViolation(
-                    check_id="REF-14-NO-DUPLICATE-OUTCOMES",
-                    severity="REPAIRED",
-                    entity=f"Outcome {other_o.outcome_id} ({primary_o.parameter_name})",
-                    message=f"Merged duplicate contrast record into primary arm record for {primary_o.arm_id} at timepoint {primary_o.timepoint_value}.",
-                    repaired=True
-                ))
-            deduped_outcomes.append(primary_o)
-
-    data.outcomes = deduped_outcomes
+    data.outcomes, dedup_notes = merge_identical_outcome_records(sanitized_outcomes)
+    for note in dedup_notes:
+        report.violations.append(ScientificRefereeViolation(
+            check_id="REF-14-NO-DUPLICATE-OUTCOMES",
+            severity="REPAIRED",
+            entity=note["entity"],
+            message=note["message"],
+            repaired=True
+        ))
 
     # Add referee log issues to validation_log
     for v in report.violations:

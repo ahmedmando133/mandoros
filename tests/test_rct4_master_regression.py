@@ -115,7 +115,7 @@ def test_table2_insulin_gmean_gcv_and_ratios(rct4_extracted_data):
 
 
 def test_table3_urinary_8isopgf2a_se_dispersion(rct4_extracted_data):
-    """Verifies Error 16: Urinary 8-iso-PGF2α reports Mean (SE) with Fasting and 24h separated."""
+    """Verifies Error 16: Urinary 8-iso-PGF2خ± reports Mean (SE) with Fasting and 24h separated."""
     outcomes = rct4_extracted_data.outcomes
     fasting_out = [o for o in outcomes if o.parameter_name == "8-iso-PGF2a (Fasting)"]
     h24_out = [o for o in outcomes if o.parameter_name == "8-iso-PGF2a (24h)"]
@@ -234,16 +234,20 @@ def test_safety_adverse_events(rct4_extracted_data):
     assert gen_ae["ARM_003"].percentage == 5.3
 
 
-def test_excel_workbook_structure_and_columns():
-    """Verifies Deliverables A, D: 10 synchronized sheets and updated column schemas."""
-    file_path = "outputs/RCT4_Empagliflozin_Fully_Corrected_Validated.xlsx"
+def test_excel_workbook_structure_and_columns(rct4_extracted_data):
+    """Verifies Deliverables A, D: synchronized legacy + protocol sheets and updated column schemas."""
+    file_path = "outputs/test_rct4_structure_export.xlsx"
+    ExcelTrialExporter(rct4_extracted_data).export(file_path)
     assert os.path.exists(file_path), "Deliverable A workbook missing!"
     wb = openpyxl.load_workbook(file_path)
     expected_sheets = [
-        "Master_Extraction_Sheet", "Studies", "Arms", "Eligibility", "Outcomes",
-        "Provenance", "Validation_Log", "Flattened_View", "Variables_Matrix", "QA_Audit_and_Inventory"
+        "Master Excel Sheet", "Studies", "Arms", "Eligibility", "Outcomes",
+        "Provenance", "Validation_Log", "Flattened_View", "Variables_Matrix", "QA_Audit_and_Inventory",
+        "Treatment Arms", "Eligibility Criteria", "Baseline Characteristics", "Efficacy Outcomes",
+        "Safety Outcomes", "Source Provenance", "Validation Log", "Quality Assessment"
     ]
     assert wb.sheetnames == expected_sheets
+    assert wb.sheetnames[0] == "Master Excel Sheet"
 
     out_ws = wb["Outcomes"]
     headers = [cell.value for cell in out_ws[1]]

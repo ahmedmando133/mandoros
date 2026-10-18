@@ -287,18 +287,8 @@ def resolve_study_sample_size(
         except ValueError:
             pass
 
-    # Stage 4b: Any explicit patient/participant count token
-    m_pat = re.search(r'\b(\d{2,6})\s*(?:patients|participants|subjects|individuals)\b', combined_text, re.IGNORECASE)
-    if m_pat:
-        try:
-            val = int(m_pat.group(1))
-            if val > 0:
-                return val
-        except ValueError:
-            pass
-
-    # Fallback to integer 100
-    return 100
+    # Rule 5 / Rule 49: never fabricate a sample size. Returns 0 == "not reported" (callers store None).
+    return 0
 
 
 def resolve_arm_dose(

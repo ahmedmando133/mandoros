@@ -51,7 +51,7 @@ def build_audit_excel():
         (
             "DEF-01",
             "Arms / Denominators",
-            "Arms!C2:C4; Master_Extraction_Sheet!C4:C6",
+            "Arms!C2:C4; Master Excel Sheet!C4:C6",
             "Empa 10mg: 21, Empa 25mg: 20, Placebo: 19",
             "Empa 10mg: 20, Empa 25mg: 19, Placebo: 21",
             "PDF Table 1 (page 4), Abstract (page 1)",
@@ -61,7 +61,7 @@ def build_audit_excel():
         (
             "DEF-02",
             "Studies / Phase Classification",
-            "Studies!H2; Master_Extraction_Sheet!H4",
+            "Studies!H2; Master Excel Sheet!H4",
             "Phase III",
             "Not explicitly reported",
             "Full PDF text (Nishimura et al., 2015)",
