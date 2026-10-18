@@ -1497,7 +1497,7 @@ def get_default_cohort_preview():
     """
 
     default_student_abstract, default_student_visuals, default_student_hypotheses = get_default_student_express_lab()
-    student_excel_val = "outputs/Mixed_Metabolic_Cohort_Student_Express_Report.xlsx" if os.path.exists("outputs/Mixed_Metabolic_Cohort_Student_Express_Report.xlsx") else None
+    student_excel_val = None
 
     return (
         cohort_verdict_html,
@@ -2053,7 +2053,9 @@ def process_cohort(
     try:
         # Determine Cohort Name and Input Files (Strict Zero-Stale Isolation)
         force_fresh_extraction = False
-        if "Upload" in str(ingest_mode) and uploaded_files:
+        if "Upload" in str(ingest_mode):
+            if not uploaded_files:
+                raise ValueError("⚠️ Please upload at least one trial file (PDF or Excel) to run the cohort analysis. No default or mixed data will be processed.")
             if not isinstance(uploaded_files, list):
                 uploaded_files = [uploaded_files]
             clean_drug = re.sub(r'[^a-zA-Z0-9_\-]', '_', (custom_drug_name or "Custom_Drug").strip()).strip('_')
@@ -2497,25 +2499,32 @@ def process_cohort(
 
 
 def get_default_phase3_preview():
-    """Pre-loads benchmark Phase 3 research synthesis so the navigator UI is populated on initial view."""
-    try:
-        from src.phase3.orchestrator import Phase3NavigatorOrchestrator
-        dossier = Phase3NavigatorOrchestrator.process_research_navigator(files=[], skip_network_reality_check=True)
-        return Phase3NavigatorOrchestrator.format_ui_outputs(dossier)
-    except Exception as e:
-        import pandas as pd
-        print(f"[!] Notice: Phase 3 default preview initialized with baseline fallback: {e}")
-        return (
-            "<div style='padding: 16px; background: rgba(15,23,42,0.8); border: 1px solid #38BDF8; border-radius: 12px; color: #38BDF8;'><strong>🧭 Phase 3 Research Gap & Thesis Navigator:</strong> Ready to ingest trial documents.</div>",
-            pd.DataFrame([{"Notice": "Upload trial PDFs or Phase 1 Excel workbooks to generate cross-study matrix."}]),
-            pd.DataFrame([{"Notice": "Upload documents to discover underrepresented populations and comparator voids."}]),
-            "<p style='color: #94A3B8;'>Scholarly reality check will query ClinicalTrials.gov, OpenAlex, and PubMed upon execution.</p>",
-            pd.DataFrame([{"Notice": "Methodological quality will be appraised across Cochrane RoB 2.0 and CONSORT."}]),
-            "<p style='color: #94A3B8;'>Select a research gap to synthesize formal thesis titles and PICO blueprints.</p>",
-            "<p style='color: #94A3B8;'>Configure statistical power parameters to calculate sample size requirements.</p>",
-            None,
-            None
-        )
+    """Initializes Phase 3 UI in a clean, empty state with zero pre-loaded files or demo data."""
+    import pandas as pd
+    verdict_html = """
+    <div style='padding: 22px; background: rgba(15,23,42,0.85); border: 1px dashed rgba(56,189,248,0.3); border-radius: 14px; text-align: center; color: #94A3B8;'>
+      <span style='font-size: 28px;'>🧭</span>
+      <h4 style='color: #F8FAFC; margin: 8px 0 4px 0; font-size: 16px; font-weight: 700;'>Phase 3: Research Gap &amp; Thesis Navigator Ready</h4>
+      <p style='font-size: 13px; margin: 0; color: #94A3B8;'>Upload clinical trial PDFs or Phase 1 extraction Excel workbooks on the left to extract the cross-study evidence matrix, discover research gaps, and generate thesis proposals.</p>
+    </div>
+    """
+    matrix_df = pd.DataFrame({"Notice": ["Upload trial documents to construct cross-study evidence matrix."]})
+    gaps_df = pd.DataFrame({"Notice": ["Upload trial documents to discover underrepresented populations and comparator voids."]})
+    rc_html = "<div style='padding: 16px; background: rgba(15,23,42,0.7); border-radius: 10px; color: #94A3B8; text-align: center;'>Scholarly reality check will query ClinicalTrials.gov, OpenAlex, and PubMed upon running synthesis.</div>"
+    rob_df = pd.DataFrame({"Notice": ["Methodological Quality (RoB 2.0 / CONSORT) will be appraised upon document ingestion."]})
+    prop_html = "<div style='padding: 16px; background: rgba(15,23,42,0.7); border-radius: 10px; color: #94A3B8; text-align: center;'>Upload documents and select a research gap to generate formal thesis blueprints.</div>"
+    proto_html = "<div style='padding: 16px; background: rgba(15,23,42,0.7); border-radius: 10px; color: #94A3B8; text-align: center;'>Configure statistical power parameters to calculate sample size requirements and protocol outlines.</div>"
+    return (
+        verdict_html,
+        matrix_df,
+        gaps_df,
+        rc_html,
+        rob_df,
+        prop_html,
+        proto_html,
+        None,
+        None
+    )
 
 
 def process_phase3_ui(
@@ -2535,6 +2544,25 @@ def process_phase3_ui(
     """Processes uploaded files through the 5-pillar Phase 3 Research Gap & Thesis Navigator engine."""
     from src.phase3.orchestrator import Phase3NavigatorOrchestrator
     try:
+        import pandas as pd
+        if not files:
+            err_msg = (
+                "<div style='padding: 18px; background: rgba(239,68,68,0.15); border: 1px solid #EF4444; border-radius: 12px; color: #FCA5A5; text-align: center;'>"
+                "<strong>⚠️ Missing Input Documents:</strong> Please upload trial PDFs or Phase 1 Excel workbooks to run Phase 3. No default or synthetic data will be processed."
+                "</div>"
+            )
+            return (
+                err_msg,
+                pd.DataFrame({"Notice": ["Please upload trial documents first."]}),
+                pd.DataFrame({"Notice": ["Please upload trial documents first."]}),
+                "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
+                pd.DataFrame({"Notice": ["Please upload trial documents first."]}),
+                "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
+                "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
+                None,
+                None
+            )
+
         progress(0.12, desc="🔍 Ingesting documents & constructing cross-study evidence matrix...")
         gap_idx = 0
         if "Gap 2" in str(gap_choice):
@@ -2568,9 +2596,7 @@ def process_phase3_ui(
         progress(0.40, desc="🌐 Executing global scholarly & trial reality check (ClinicalTrials.gov / OpenAlex / PubMed)...")
         progress(0.70, desc="🛡️ Appraising Cochrane RoB 2.0 & formulating thesis blueprint...")
 
-        file_list = []
-        if files:
-            file_list = files if isinstance(files, list) else [files]
+        file_list = files if isinstance(files, list) else [files]
 
         dossier = Phase3NavigatorOrchestrator.process_research_navigator(
             files=file_list,

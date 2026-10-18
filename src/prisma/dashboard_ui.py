@@ -332,19 +332,24 @@ def run_prisma_analysis(file_objs: Optional[list[Any]] = None) -> tuple[
                 file_paths.append(p)
 
     if not file_paths:
-        file_paths = get_default_trial_files()
-
-    if not file_paths:
         empty_fig = go.Figure()
+        empty_fig.update_layout(
+            title="Upload clinical trial workbooks (.xlsx) to generate evidence density matrix",
+            paper_bgcolor="#0B0F19",
+            plot_bgcolor="#0B0F19",
+            font_color="#94A3B8"
+        )
         return (
-            "<p style='color: #F87171;'>⚠️ No valid .xlsx workbooks found or provided.</p>",
+            "<div style='padding: 18px; background: rgba(239,68,68,0.15); border: 1px solid #EF4444; border-radius: 12px; color: #FCA5A5; text-align: center;'>"
+            "<strong>⚠️ Missing Input Workbooks:</strong> Please upload one or more extracted Excel workbooks (.xlsx) to run PRISMA analysis. No default or historical files will be processed."
+            "</div>",
             empty_fig,
-            pd.DataFrame({"Message": ["No data loaded."]}),
-            "<p>No divergences.</p>",
+            pd.DataFrame({"Notice": ["Upload workbooks to view cross-trial comparison matrix."]}),
+            "<p style='color: #94A3B8;'>Upload workbooks to audit methodological divergences.</p>",
             [],
-            pd.DataFrame({"Message": ["No findings."]}),
-            "",
-            "",
+            pd.DataFrame({"Notice": ["No workbooks loaded."]}),
+            None,
+            None,
             ["None"],
         )
 
@@ -467,7 +472,7 @@ def build_prisma_tab() -> None:
         with gr.Row():
             with gr.Column(scale=3):
                 workbook_files_input = gr.File(
-                    label="📂 Ingest Extracted RCT Workbooks (.xlsx) - Select Multiple or Leave Empty to Analyze Existing Outputs",
+                    label="📂 Ingest Extracted RCT Workbooks (.xlsx) - Select Multiple Trial Workbooks",
                     file_count="multiple",
                     file_types=[".xlsx"],
                     type="filepath",
@@ -475,10 +480,18 @@ def build_prisma_tab() -> None:
             with gr.Column(scale=1):
                 gr.Markdown("### ⚡ Execute PRISMA Pipeline")
                 run_prisma_btn = gr.Button("🚀 Ingest & Synthesize Evidence", variant="primary", elem_classes=["extract-btn"])
-                load_defaults_btn = gr.Button("🔄 Reset to Default Extracted Cohort", variant="secondary")
+                clear_prisma_btn = gr.Button("🧹 Clear & Reset View", variant="secondary")
 
         # Dynamic PRISMA Flow Diagram Container
-        flow_container = gr.HTML(value="<p style='color: #94A3B8;'>Click 'Ingest & Synthesize Evidence' or wait for initial load...</p>")
+        flow_container = gr.HTML(
+            value="""
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(0, 245, 212, 0.3); border-radius: 14px; padding: 20px; text-align: center; color: #94A3B8;">
+              <span style="font-size: 26px;">📊</span>
+              <h4 style="color: #00F5D4; margin: 8px 0 4px 0; font-size: 16px; font-weight: 700;">PRISMA Intelligence Engine Ready</h4>
+              <p style="font-size: 13px; margin: 0; color: #94A3B8;">Upload one or more extracted RCT Excel workbooks (.xlsx) above and click 'Ingest &amp; Synthesize Evidence' to begin analysis. No default or historical data will be mixed.</p>
+            </div>
+            """
+        )
 
         # Sub-tabs for PRISMA features
         with gr.Tabs(elem_id="prisma-sub-tabs"):
@@ -608,10 +621,44 @@ def build_prisma_tab() -> None:
             ]
         )
 
-        load_defaults_btn.click(
-            fn=lambda: on_run_clicked(None),
+        def on_clear_clicked():
+            PrismaSessionState.trials.clear()
+            PrismaSessionState.validation_findings.clear()
+            PrismaSessionState.overview_metrics.clear()
+            empty_fig = go.Figure()
+            empty_fig.update_layout(
+                title="Evidence Density Matrix (Awaiting Upload)",
+                paper_bgcolor="#0B0F19",
+                plot_bgcolor="#0B0F19",
+                font_color="#94A3B8"
+            )
+            initial_flow = """
+            <div style="background: rgba(15, 23, 42, 0.85); border: 1px dashed rgba(0, 245, 212, 0.3); border-radius: 14px; padding: 20px; text-align: center; color: #94A3B8;">
+              <span style="font-size: 26px;">📊</span>
+              <h4 style="color: #00F5D4; margin: 8px 0 4px 0; font-size: 16px; font-weight: 700;">PRISMA Intelligence Engine Ready</h4>
+              <p style="font-size: 13px; margin: 0; color: #94A3B8;">Upload one or more extracted RCT Excel workbooks (.xlsx) above and click 'Ingest &amp; Synthesize Evidence' to begin analysis. No default or historical data will be mixed.</p>
+            </div>
+            """
+            return (
+                None,  # workbook_files_input
+                initial_flow,  # flow_container
+                empty_fig,  # density_plot_output
+                pd.DataFrame({"Notice": ["Upload workbooks to view cross-trial comparison matrix."]}),
+                "<p style='color: #94A3B8;'>Upload workbooks to audit methodological divergences.</p>",
+                pd.DataFrame({"Notice": ["Upload workbooks to view harmonized outcome inventory."]}),
+                pd.DataFrame({"Notice": ["No validation findings logged."]}),
+                None,  # excel_dossier_download
+                None,  # html_dossier_download
+                gr.update(choices=["Primary Endpoint"], value="Primary Endpoint"),
+                "<p style='color: #94A3B8;'>Select an outcome to inspect statistical readiness.</p>",
+                pd.DataFrame(),
+            )
+
+        clear_prisma_btn.click(
+            fn=on_clear_clicked,
             inputs=[],
             outputs=[
+                workbook_files_input,
                 flow_container,
                 density_plot_output,
                 comparison_table_output,
