@@ -16761,5 +16761,28 @@
       "filename": "PRISMA(1).pdf",
       "role": "PRISMA source statement"
     }
-  ]
+  ],
+  "scientific_correction_and_excel_restructuring_20_rules": {
+    "rule_1_redesign_master_sheet": "First sheet must be Master Excel Sheet with clean outcome titles and per-arm rows",
+    "rule_2_separate_sample_size_columns": "Store N in dedicated columns: N Randomized, N Baseline Analyzed, N Outcome Analyzed",
+    "rule_3_baseline_sample_size": "Preserve baseline N per arm in dedicated columns",
+    "rule_4_insulin_auc_statistics": "GEOMETRIC_MEAN, GEOMETRIC_CV, ADJUSTED_GEOMETRIC_MEAN_RATIO, CI_LOWER, CI_UPPER, P_VALUE",
+    "rule_5_8_iso_pgf2a_classification": "Separate fasting and 24-hr; within-arm ADJUSTED_MEAN_CHANGE, between-arm ADJUSTED_MEAN_DIFFERENCE",
+    "rule_6_correct_published_treatment_effects": "Strict verification against source; do not calculate unadjusted diff and label as adjusted",
+    "rule_7_restore_missing_valid_outcomes": "Deduplicate on study, arm, comparator, endpoint, timepoint, population, estimate_type, subgroup",
+    "rule_8_correct_pico_and_eligibility": "Preserve exact criteria, thresholds, operators, units, durations",
+    "rule_9_remove_unsupported_demographics": "Do not infer 100% racial distribution; leave blank unless quantitatively reported",
+    "rule_10_remove_fabricated_information": "Leave study phase blank if not reported; placebo dose blank unless reported as 0 mg",
+    "rule_11_correct_mage_calculations": "Label simple diffs DERIVED_ARITHMETIC_DIFFERENCE; never invent CI/SE",
+    "rule_12_prevent_single_study_meta_analysis": "If k=1 independent RCT, prohibit pooling, I2, tau2, sensitivity, leave blank and mark NOT_APPLICABLE_SINGLE_STUDY",
+    "rule_13_prevent_double_counting": "Shared comparator arms must not be treated as independent or double-count control participants",
+    "rule_14_correct_effect_scales": "Linear scale for continuous MD; never put negative MD under Log Effect",
+    "rule_15_correct_p_values_and_cis": "Never export p=0; separate operator and numeric value",
+    "rule_16_correct_adverse_events": "Separate event count, denominator, percentage; do not classify AE as baseline",
+    "rule_17_separate_predictions_from_evidence": "Label results ORIGINAL_PUBLISHED_RESULT, CALCULATED_FROM_PUBLISHED_DATA, MODEL_PREDICTION, SYNTHETIC_DATA",
+    "rule_18_independent_pdf_validation": "Validate identity, arm, dose, sample size, timepoint, value, estimate type against PDF",
+    "rule_19_quality_scoring": "Explicit numerators and denominators for accuracy, completeness, duplicate error, PICO, meta-analysis validity",
+    "rule_20_permanent_future_application": "System-wide generalized rules, no hardcoded constants, applies to all future RCTs",
+    "user_upload_isolation_directive": "When user uploads files, ONLY process and analyze those files. Completely purge and isolate upload session directory so no old data or cached trials are blended."
+  }
 }

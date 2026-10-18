@@ -630,9 +630,105 @@ def build_phase2_master_sheet(ws: Worksheet, payload: Dict[str, Any]) -> None:
     )
     for title, key in sections:
         recs = [x for x in payload.get(key, []) if isinstance(x, dict)]
-        headers, rows = records_to_table(recs)
-        r = write_section_heading(ws, r, title, span=max(8, len(headers)))
-        r = write_table(ws, headers or ["record"], rows, start_row=r, freeze=False, autofilter=False) + 1
+        if key == "efficacy_outcomes" and recs:
+            r = write_section_heading(ws, r, title, span=16)
+            # Group by parameter_name with clean outcome titles (Rule 1 & Rule 2)
+            outcomes_by_param: Dict[str, List[Dict[str, Any]]] = {}
+            for x in recs:
+                p_name = str(x.get("parameter_name") or x.get("parameter") or "Outcome").strip()
+                p_clean = re.sub(r'\s*\[.*?\]', '', p_name).strip() or p_name
+                outcomes_by_param.setdefault(p_clean, []).append(x)
+
+            for p_clean, p_rows in outcomes_by_param.items():
+                r = write_section_heading(ws, r, f"Outcome: {p_clean}", span=16, fill=_SUB_FILL, font=_SUB_FONT)
+                eff_headers = [
+                    "Treatment Arm", "Sample Analyzed (N)", "Mean", "SD", "SE", "Median", "Q1", "Q3",
+                    "Change from Baseline", "Adjusted Change", "Treatment Difference vs Comparator",
+                    "CI Lower", "CI Upper", "P-value", "Assessment Timepoint", "Outcome Unit",
+                    "Statistical Estimate Type", "Analysis Population", "Comparator Arm",
+                    "Source Page", "Source Location", "Validation Status"
+                ]
+                table_rows = []
+                for pr in p_rows:
+                    arm_label = str(pr.get("arm_name") or pr.get("arm_id") or "")
+                    sample_n = pr.get("sample_size") or pr.get("sample_size_analyzed") or pr.get("n")
+                    m = pr.get("mean")
+                    sd = pr.get("sd")
+                    se = pr.get("se")
+                    med = pr.get("median")
+                    q1 = pr.get("iqr_lower") or pr.get("q1")
+                    q3 = pr.get("iqr_upper") or pr.get("q3")
+                    chg = pr.get("change_value")
+                    adj_chg = pr.get("adjusted_change") or (chg if str(pr.get("estimate_type") or "").upper() == "ADJUSTED_MEAN_CHANGE" else None)
+                    diff = pr.get("effect_value") or pr.get("ratio")
+                    ci_l = pr.get("ci_lower") or pr.get("ratio_ci_lower")
+                    ci_u = pr.get("ci_upper") or pr.get("ratio_ci_upper")
+                    pv = pr.get("p_value")
+                    tp = str(pr.get("timepoint") or pr.get("timepoint_value") or "")
+                    unit = str(pr.get("unit") or "")
+                    est_type = str(pr.get("estimate_type") or pr.get("metric_type") or "")
+                    pop = str(pr.get("analysis_population") or "")
+                    comp_arm = str(pr.get("comparator_arm") or pr.get("comparator") or "")
+                    src_p = pr.get("source_page")
+                    src_l = pr.get("source_location") or pr.get("source_evidence")
+                    val_s = str(pr.get("validation_status") or "VERIFIED")
+                    table_rows.append([
+                        arm_label, sample_n, m, sd, se, med, q1, q3,
+                        chg, adj_chg, diff, ci_l, ci_u, pv, tp, unit,
+                        est_type, pop, comp_arm, src_p, src_l, val_s
+                    ])
+                r = write_table(ws, eff_headers, table_rows, start_row=r, freeze=False, autofilter=False) + 1
+        elif key == "baseline_characteristics" and recs:
+            r = write_section_heading(ws, r, title, span=12)
+            base_headers = [
+                "Baseline Variable", "Treatment Arm", "N Randomized", "N Baseline Analyzed",
+                "Mean", "SD", "SE", "Median", "Q1", "Q3", "Unit", "Analysis Population", "Source Page", "Source Location"
+            ]
+            base_rows = []
+            for br in recs:
+                p_name = str(br.get("parameter_name") or br.get("parameter") or "").strip()
+                p_clean = re.sub(r'\s*\[.*?\]', '', p_name).strip() or p_name
+                arm_label = str(br.get("arm_name") or br.get("arm_id") or "")
+                n_rand = br.get("sample_size_allocated") or br.get("total_cohort_n")
+                n_base = br.get("sample_size_analyzed") or br.get("sample_size") or br.get("n")
+                m = br.get("mean")
+                sd = br.get("sd")
+                se = br.get("se")
+                med = br.get("median")
+                q1 = br.get("iqr_lower") or br.get("q1")
+                q3 = br.get("iqr_upper") or br.get("q3")
+                u = str(br.get("unit") or "")
+                pop = str(br.get("analysis_population") or "")
+                sp = br.get("source_page")
+                sl = br.get("source_location") or br.get("source_evidence")
+                base_rows.append([p_clean, arm_label, n_rand, n_base, m, sd, se, med, q1, q3, u, pop, sp, sl])
+            r = write_table(ws, base_headers, base_rows, start_row=r, freeze=False, autofilter=False) + 1
+        elif key == "safety_outcomes" and recs:
+            r = write_section_heading(ws, r, title, span=10)
+            safe_headers = [
+                "Safety Outcome / Adverse Event", "Treatment Arm", "Participants with Event (n)",
+                "Denominator (N)", "Percentage (%)", "Observation Period", "Unit", "Severity / Grade",
+                "Source Page", "Source Location"
+            ]
+            safe_rows = []
+            for sr in recs:
+                p_name = str(sr.get("parameter_name") or sr.get("parameter") or "").strip()
+                p_clean = re.sub(r'\s*\[.*?\]', '', p_name).strip() or p_name
+                arm_label = str(sr.get("arm_name") or sr.get("arm_id") or "")
+                ev = sr.get("events")
+                tot = sr.get("total") or sr.get("sample_size")
+                pct = sr.get("percentage")
+                period = str(sr.get("original_timepoint_label") or sr.get("timepoint") or "Overall observation period")
+                u = str(sr.get("unit") or "%")
+                sev = str(sr.get("severity") or sr.get("grade") or "")
+                sp = sr.get("source_page")
+                sl = sr.get("source_location") or sr.get("source_evidence")
+                safe_rows.append([p_clean, arm_label, ev, tot, pct, period, u, sev, sp, sl])
+            r = write_table(ws, safe_headers, safe_rows, start_row=r, freeze=False, autofilter=False) + 1
+        else:
+            headers, rows = records_to_table(recs)
+            r = write_section_heading(ws, r, title, span=max(8, len(headers)))
+            r = write_table(ws, headers or ["record"], rows, start_row=r, freeze=False, autofilter=False) + 1
     ws.freeze_panes = "A4"
 
 

@@ -602,13 +602,13 @@ def audit_and_repair_cohort_pipeline(
                         message=f"Exponentiated non-positive reported ratio to {m_res.reported_re_estimate:.3f}.",
                         repaired=True
                     ))
-                if m_res.reported_re_ci_lower <= 0:
+                if m_res.reported_re_ci_lower is not None and m_res.reported_re_ci_lower <= 0:
                     m_res.reported_re_ci_lower = math.exp(m_res.re_ci_lower)
-                if m_res.reported_re_ci_upper <= 0:
+                if m_res.reported_re_ci_upper is not None and m_res.reported_re_ci_upper <= 0:
                     m_res.reported_re_ci_upper = math.exp(m_res.re_ci_upper)
-                if m_res.reported_pi_lower <= 0:
+                if m_res.reported_pi_lower is not None and m_res.reported_pi_lower <= 0 and m_res.pi_lower is not None:
                     m_res.reported_pi_lower = math.exp(m_res.pi_lower)
-                if m_res.reported_pi_upper <= 0:
+                if m_res.reported_pi_upper is not None and m_res.reported_pi_upper <= 0 and m_res.pi_upper is not None:
                     m_res.reported_pi_upper = math.exp(m_res.pi_upper)
             else:
                 # Continuous effect sizes must never be labeled as OR or RR
@@ -621,6 +621,19 @@ def audit_and_repair_cohort_pipeline(
                         message="Relabeled continuous metric from ratio label to Mean Difference (MD).",
                         repaired=True
                     ))
+
+            # Rule 12: Enforce Single-Study Guardrail
+            if getattr(m_res, "k_studies", 1) < 2:
+                m_res.analysis_status = "NOT_APPLICABLE_SINGLE_STUDY"
+                m_res.i2 = None
+                m_res.tau2 = None
+                m_res.tau = None
+                m_res.q_stat = None
+                m_res.q_df = None
+                m_res.q_p_value = None
+                m_res.pi_lower = None
+                m_res.pi_upper = None
+                m_res.leave_one_out = []
 
     # ---------------------------------------------------------------------
     # CHECK 12: Pharmacologically Bounded Virtual Dose & Valid NNT

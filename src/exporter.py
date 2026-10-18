@@ -309,9 +309,9 @@ class ExcelTrialExporter:
             base = o.parameter_name.strip()
             if o.domain == "safety_adverse_events" and base.lower() in ["adverse events", "any adverse events", "any adverse event"]:
                 base = "Any Adverse Event"
-            if len(variants_per_param.get(o.parameter_name.strip(), set())) > 1 and _variant(o):
-                return f"{base} [{_variant(o)}]"
-            return base
+            # RULE 2 & RULE 9: Outcome headings must be clean without embedded sample sizes or demographics
+            clean_base = re.sub(r'\s*\[.*?\]', '', base).strip()
+            return clean_base or base
 
         group_members = {}
         for o in self.data.outcomes:

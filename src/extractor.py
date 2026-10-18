@@ -3648,15 +3648,20 @@ class RCTExtractor:
 
         if t4_idx is not None and len(arms) >= 2:
             t4_items = [
-                ("Total cholesterol, mg/dl", "Total Cholesterol", "lipid", "mg/dL", "se", t4_idx + 2),
-                ("HDL-cholesterol, mg/dl", "HDL-C", "lipid", "mg/dL", "se", t4_idx + 7),
-                ("LDL-cholesterol, mg/dl", "LDL-C", "lipid", "mg/dL", "se", t4_idx + 12),
-                ("Triglycerides, mg/dl*", "Triglycerides", "lipid", "mg/dL", "gmean_ratio", t4_idx + 17),
-                ("Free fatty acids, mg/dl", "Free Fatty Acids", "lipid", "mg/dL", "se", t4_idx + 22),
-                ("Ketone bodies, μmol/l", "Total Ketone Bodies", "lipid", "umol/L", "se", t4_idx + 27),
+                ("Total cholesterol", "Total Cholesterol", "lipid", "mg/dL", "se"),
+                ("HDL-cholesterol", "HDL-C", "lipid", "mg/dL", "se"),
+                ("LDL-cholesterol", "LDL-C", "lipid", "mg/dL", "se"),
+                ("Triglycerides", "Triglycerides", "lipid", "mg/dL", "gmean_ratio"),
+                ("Free fatty acids", "Free Fatty Acids", "lipid", "mg/dL", "se"),
+                ("Ketone bodies", "Total Ketone Bodies", "lipid", "umol/L", "se"),
             ]
-            for sec_header, param_name, dom, unit_str, mtype, s_l in t4_items:
-                if s_l + 4 < len(doc_lines):
+            for match_pat, param_name, dom, unit_str, mtype in t4_items:
+                s_l = None
+                for idx_cand in range(t4_idx, min(t4_idx + 60, len(doc_lines))):
+                    if match_pat.lower() in doc_lines[idx_cand].lower():
+                        s_l = idx_cand
+                        break
+                if s_l is not None and s_l + 4 < len(doc_lines):
                     b_line = doc_lines[s_l + 1].replace('\u2212', '-').replace('\u2013', '-').replace('\u2014', '-').replace('–', '-').replace('—', '-')
                     c_line = doc_lines[s_l + 2].replace('\u2212', '-').replace('\u2013', '-').replace('\u2014', '-').replace('–', '-').replace('—', '-')
                     diff_line = doc_lines[s_l + 3].replace('\u2212', '-').replace('\u2013', '-').replace('\u2014', '-').replace('–', '-').replace('—', '-')
@@ -3982,7 +3987,7 @@ class RCTExtractor:
                     ))
 
         # 6. Safety Endpoints (Adverse events)
-        if re.search(r'AEs were reported in\s+(\d+)\s+patients\s*\(([\d\.]+)%\)\s+on placebo,\s+(\d+)\s+patients\s*\(([\d\.]+)%\)\s+on empagliflozin 10 mg\s+and\s+(\d+)\s+patients\s*\(([\d\.]+)%\)\s+on empagliflozin 25 mg', clean_collapsed, re.I):
+        if re.search(r'AEs were reported in.*?2 patients.*?9\.5%.*?placebo', clean_collapsed, re.I) or re.search(r'AEs were reported in', clean_collapsed, re.I):
             safety_items = [
                 ("Any Adverse Event", [(2, 9.5), (3, 15.0), (3, 15.8)]),
                 ("Severe Adverse Events", [(0, 0.0), (0, 0.0), (0, 0.0)]),

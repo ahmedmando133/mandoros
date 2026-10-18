@@ -111,19 +111,20 @@ class MetaAnalysisResult:
     re_ci_upper: float
     re_p_value: float
     re_z: float
-    tau2: float
-    tau: float
-    i2: float
-    q_stat: float
-    q_df: int
-    q_p_value: float
-    pi_lower: float  # 95% Prediction Interval lower bound
-    pi_upper: float  # 95% Prediction Interval upper bound
+    tau2: Optional[float] = None
+    tau: Optional[float] = None
+    i2: Optional[float] = None
+    q_stat: Optional[float] = None
+    q_df: Optional[int] = None
+    q_p_value: Optional[float] = None
+    pi_lower: Optional[float] = None  # 95% Prediction Interval lower bound
+    pi_upper: Optional[float] = None  # 95% Prediction Interval upper bound
     reml_tau2: Optional[float] = None
     egger_t: Optional[float] = None
     egger_p: Optional[float] = None
     study_results: List[EffectSizeResult] = field(default_factory=list)
     leave_one_out: List[Dict[str, Any]] = field(default_factory=list)
+    analysis_status: str = "COMPLETED"
 
     @property
     def is_ratio(self) -> bool:
@@ -185,8 +186,10 @@ class MetaAnalysisResult:
         return float(self.fe_ci_upper)
 
     @property
-    def reported_pi_lower(self) -> float:
+    def reported_pi_lower(self) -> Optional[float]:
         """Reported natural-scale 95% Prediction Interval lower bound."""
+        if self.pi_lower is None:
+            return None
         if self.is_ratio:
             val = _safe_exp(self.pi_lower)
             assert val > 0
@@ -194,8 +197,10 @@ class MetaAnalysisResult:
         return float(self.pi_lower)
 
     @property
-    def reported_pi_upper(self) -> float:
+    def reported_pi_upper(self) -> Optional[float]:
         """Reported natural-scale 95% Prediction Interval upper bound."""
+        if self.pi_upper is None:
+            return None
         if self.is_ratio:
             val = _safe_exp(self.pi_upper)
             assert val > 0
@@ -447,14 +452,17 @@ def _calc_p_value_from_z(z: float) -> float:
     """Calculates two-tailed p-value from standard normal Z statistic."""
     try:
         from scipy.stats import norm
-        return float(2.0 * (1.0 - norm.cdf(abs(z))))
+        p = float(2.0 * (1.0 - norm.cdf(abs(z))))
+        # Rule 15: Never export calculated p-value as exact 0.0 due to numerical underflow
+        return float(max(1e-5, min(1.0, p)))
     except Exception:
         # Standard normal CDF approximation (Abramowitz & Stegun)
         x = abs(z) / math.sqrt(2.0)
         t = 1.0 / (1.0 + 0.3275911 * x)
         erf_approx = 1.0 - ((((1.061405429 * t - 1.453152027) * t + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * math.exp(-x * x)
         phi = 0.5 * (1.0 + erf_approx)
-        return float(max(0.0, min(1.0, 2.0 * (1.0 - phi))))
+        p = float(2.0 * (1.0 - phi))
+        return float(max(1e-5, min(1.0, p)))
 
 
 def _calc_q_p_value(q: float, df: int) -> float:
@@ -571,24 +579,26 @@ def run_meta_analysis(effects: List[EffectSizeResult]) -> Optional[MetaAnalysisR
     fe_p = _calc_p_value_from_z(fe_z)
 
     # 2. Heterogeneity Statistics (Cochran's Q & DerSimonian-Laird tau^2)
-    # UNIVERSAL LAW: For a single clinical trial (k_studies < 2), between-study heterogeneity is not estimable.
+    # UNIVERSAL LAW / MANDOROS Rule 12: For a single clinical trial (k_studies < 2), between-study heterogeneity is not estimable.
+    analysis_status = "COMPLETED"
     if k_studies < 2:
-        q_stat = 0.0
-        q_df = 0
-        q_p = 1.0
-        dl_tau2 = 0.0
-        reml_tau2 = 0.0
+        q_stat = None
+        q_df = None
+        q_p = None
+        dl_tau2 = None
+        reml_tau2 = None
         primary_tau2 = 0.0
-        i2 = 0.0
+        i2 = None
         re_est = fe_est
         re_se = fe_se
         re_ci_lower = fe_ci_lower
         re_ci_upper = fe_ci_upper
         re_z = fe_z
         re_p = fe_p
-        pi_lower = fe_ci_lower
-        pi_upper = fe_ci_upper
+        pi_lower = None
+        pi_upper = None
         w_re = w_fe.copy()
+        analysis_status = "NOT_APPLICABLE_SINGLE_STUDY"
     else:
         q_stat = float(np.sum(w_fe * ((yi - fe_est) ** 2)))
         q_df = k_comparisons - 1
@@ -702,19 +712,20 @@ def run_meta_analysis(effects: List[EffectSizeResult]) -> Optional[MetaAnalysisR
         re_ci_upper=re_ci_upper,
         re_p_value=re_p,
         re_z=re_z,
-        tau2=float(primary_tau2),
-        tau=float(math.sqrt(primary_tau2)),
+        tau2=None if k_studies < 2 else float(primary_tau2),
+        tau=None if k_studies < 2 else float(math.sqrt(primary_tau2)),
         i2=i2,
         q_stat=q_stat,
         q_df=q_df,
         q_p_value=q_p,
-        pi_lower=float(pi_lower),
-        pi_upper=float(pi_upper),
-        reml_tau2=float(reml_tau2),
+        pi_lower=None if k_studies < 2 else (float(pi_lower) if pi_lower is not None else None),
+        pi_upper=None if k_studies < 2 else (float(pi_upper) if pi_upper is not None else None),
+        reml_tau2=None if k_studies < 2 else (float(reml_tau2) if reml_tau2 is not None else None),
         egger_t=egger_t,
         egger_p=egger_p,
         study_results=valid,
-        leave_one_out=loo_list
+        leave_one_out=loo_list,
+        analysis_status=analysis_status
     )
 
 
@@ -1077,18 +1088,20 @@ class MetaPredictiveEngine:
 def generate_executive_verdict(meta_res: MetaAnalysisResult, predictor: Optional[MetaPredictiveEngine] = None) -> Dict[str, Any]:
     """
     Generates automated Cochrane/PRISMA executive clinical verdict.
-    Enforces mathematical scale integrity: strictly reports exponentiated ratio metrics
-    (assert > 0) with 1.0 as the null effect threshold.
+    Enforces Rule 12 single-study guardrail and mathematical scale integrity.
     """
     i2 = meta_res.i2
     tau2 = meta_res.tau2
     p_val = meta_res.re_p_value
     meas = meta_res.measure
     is_ratio_metric = meta_res.is_ratio
+    is_single_study = (meta_res.k_studies < 2)
 
-    if i2 < 30.0:
+    if is_single_study:
+        hetero_grade = "Not Applicable (Single Independent Study; between-study variance cannot be estimated)"
+    elif i2 is not None and i2 < 30.0:
         hetero_grade = "Low Heterogeneity (High Consistency across trials)"
-    elif i2 <= 65.0:
+    elif i2 is not None and i2 <= 65.0:
         hetero_grade = "Moderate Heterogeneity (Clinical variation observed across study populations)"
     else:
         hetero_grade = "Substantial Heterogeneity (Caution advised; dosage, duration, or demographic differences drive variance)"
@@ -1111,13 +1124,21 @@ def generate_executive_verdict(meta_res: MetaAnalysisResult, predictor: Optional
         # Clinical Direction for ratio metric (null = 1.0)
         direction = "favorable odds/risk reduction" if re_est < 1.0 else ("increase" if re_est > 1.0 else "neutral")
         pooled_str = f"{meas} {re_est:.2f} (95% CI: [{ci_l:.2f}, {ci_u:.2f}])"
-        pi_str = f"95% PI: [{pi_l:.2f}, {pi_u:.2f}]"
-        verdict_text = (
-            f"Across {meta_res.k_studies} clinical trials encompassing {meta_res.total_n:,} patients, the pooled random-effects "
-            f"summary effect size is {meas} = {re_est:.2f} (95% CI: [{ci_l:.2f}, {ci_u:.2f}], p = {p_val:.4f}), demonstrating a {direction}. "
-            f"Between-study variance was assessed at tau^2 = {tau2:.4f} with I^2 = {i2:.1f}% ({hetero_grade}). "
-            f"Future replications or unobserved trials are predicted to fall within the 95% Prediction Interval of [{pi_l:.2f}, {pi_u:.2f}]."
-        )
+        pi_str = f"95% PI: [{pi_l:.2f}, {pi_u:.2f}]" if (pi_l is not None and pi_u is not None) else "N/A (k=1)"
+
+        if is_single_study:
+            verdict_text = (
+                f"Evidence from a single randomized controlled trial ({meta_res.parameter_name}, N = {meta_res.total_n:,}). "
+                f"Observed effect size is {meas} = {re_est:.2f} (95% CI: [{ci_l:.2f}, {ci_u:.2f}], p = {p_val:.4f}), demonstrating a {direction}. "
+                f"Between-study variance (tau^2) and heterogeneity (I^2) are NOT_APPLICABLE for a single study (MANDOROS Rule 12 / Cochrane Handbook §23.3)."
+            )
+        else:
+            verdict_text = (
+                f"Across {meta_res.k_studies} clinical trials encompassing {meta_res.total_n:,} patients, the pooled random-effects "
+                f"summary effect size is {meas} = {re_est:.2f} (95% CI: [{ci_l:.2f}, {ci_u:.2f}], p = {p_val:.4f}), demonstrating a {direction}. "
+                f"Between-study variance was assessed at tau^2 = {tau2:.4f} with I^2 = {i2:.1f}% ({hetero_grade}). "
+                f"Future replications or unobserved trials are predicted to fall within the 95% Prediction Interval of [{pi_l:.2f}, {pi_u:.2f}]."
+            )
     else:
         re_est = meta_res.re_estimate
         ci_l = meta_res.re_ci_lower
@@ -1126,13 +1147,21 @@ def generate_executive_verdict(meta_res: MetaAnalysisResult, predictor: Optional
         pi_u = meta_res.pi_upper
         direction = "favorable reduction" if re_est < 0 else "increase"
         pooled_str = f"{meas} {re_est:+.2f} (95% CI: [{ci_l:+.2f}, {ci_u:+.2f}])"
-        pi_str = f"95% PI: [{pi_l:+.2f}, {pi_u:+.2f}]"
-        verdict_text = (
-            f"Across {meta_res.k_studies} clinical trials encompassing {meta_res.total_n:,} patients, the pooled random-effects "
-            f"summary effect size is {meas} = {re_est:+.2f} (95% CI: [{ci_l:+.2f}, {ci_u:+.2f}], p = {p_val:.4f}), demonstrating a {direction}. "
-            f"Between-study variance was assessed at tau^2 = {tau2:.4f} with I^2 = {i2:.1f}% ({hetero_grade}). "
-            f"Future replications or unobserved trials are predicted to fall within the 95% Prediction Interval of [{pi_l:+.2f}, {pi_u:+.2f}]."
-        )
+        pi_str = f"95% PI: [{pi_l:+.2f}, {pi_u:+.2f}]" if (pi_l is not None and pi_u is not None) else "N/A (k=1)"
+
+        if is_single_study:
+            verdict_text = (
+                f"Evidence from a single randomized controlled trial ({meta_res.parameter_name}, N = {meta_res.total_n:,}). "
+                f"Observed effect size is {meas} = {re_est:+.2f} (95% CI: [{ci_l:+.2f}, {ci_u:+.2f}], p = {p_val:.4f}), demonstrating a {direction}. "
+                f"Between-study variance (tau^2) and heterogeneity (I^2) are NOT_APPLICABLE for a single study (MANDOROS Rule 12 / Cochrane Handbook §23.3)."
+            )
+        else:
+            verdict_text = (
+                f"Across {meta_res.k_studies} clinical trials encompassing {meta_res.total_n:,} patients, the pooled random-effects "
+                f"summary effect size is {meas} = {re_est:+.2f} (95% CI: [{ci_l:+.2f}, {ci_u:+.2f}], p = {p_val:.4f}), demonstrating a {direction}. "
+                f"Between-study variance was assessed at tau^2 = {tau2:.4f} with I^2 = {i2:.1f}% ({hetero_grade}). "
+                f"Future replications or unobserved trials are predicted to fall within the 95% Prediction Interval of [{pi_l:+.2f}, {pi_u:+.2f}]."
+            )
 
     # Dose-response trend
     if predictor and getattr(predictor, "dose_slope_estimable", False) and predictor.fitted_model and "Dose_mg" in predictor.coefs:
@@ -1143,13 +1172,13 @@ def generate_executive_verdict(meta_res: MetaAnalysisResult, predictor: Optional
         dose_trend = "Single-dose cohort: Dose-response slope not estimable"
 
     return {
-        "verdict_title": f"Executive Meta-Analytic Verdict • {meta_res.parameter_name}",
+        "verdict_title": f"{'Single-Trial Evidence' if is_single_study else 'Executive Meta-Analytic Verdict'} • {meta_res.parameter_name}",
         "evidence_strength": evidence_strength,
         "heterogeneity_grade": hetero_grade,
         "pooled_effect": pooled_str,
         "prediction_interval": pi_str,
-        "i2_percent": f"{i2:.1f}%",
-        "tau2": f"{tau2:.4f}",
+        "i2_percent": "N/A (k=1)" if is_single_study else (f"{i2:.1f}%" if i2 is not None else "N/A"),
+        "tau2": "N/A (k=1)" if is_single_study else (f"{tau2:.4f}" if tau2 is not None else "N/A"),
         "dose_trend": dose_trend,
         "summary_narrative": verdict_text
     }

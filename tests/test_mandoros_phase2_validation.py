@@ -163,10 +163,10 @@ def test_meta_predictive_engine_no_false_study_inflation():
     assert res.k_studies == 1
     # total_n must NOT double count placebo 21: max per study is 20+21=41 or 19+21=40 -> 41
     assert res.total_n <= 60
-    # Between-study heterogeneity must be clamped to 0.0
-    assert res.i2 == 0.0
-    assert res.tau2 == 0.0
-    assert res.q_df == 0
+    # Between-study heterogeneity must be None (Rule 12: single-study meta-analysis prohibited)
+    assert res.i2 is None
+    assert res.tau2 is None
+    assert res.analysis_status == "NOT_APPLICABLE_SINGLE_STUDY"
 
 
 def test_discovery_engine_no_1440mg_dose_and_hypotheses_marked():

@@ -2051,7 +2051,8 @@ def process_cohort(
     progress(0.05, desc="🔍 Initializing Active Ingredient Cohort Pipeline...")
 
     try:
-        # Determine Cohort Name and Input Files
+        # Determine Cohort Name and Input Files (Strict Zero-Stale Isolation)
+        force_fresh_extraction = False
         if "Upload" in str(ingest_mode) and uploaded_files:
             if not isinstance(uploaded_files, list):
                 uploaded_files = [uploaded_files]
@@ -2060,12 +2061,29 @@ def process_cohort(
                 clean_drug = "Custom_Drug"
             cohort_name = clean_drug
             target_dir = Path("analysis") / cohort_name
+
+            # STRICT ISOLATION: Purge target input directory to prevent blending new files with old/prior runs
+            if target_dir.exists():
+                for old_f in target_dir.glob("*"):
+                    if old_f.is_file():
+                        try:
+                            old_f.unlink()
+                        except Exception:
+                            pass
             target_dir.mkdir(parents=True, exist_ok=True)
+
+            # STRICT ISOLATION: Purge target output directory and prior extracted_trials cache
+            out_target_dir = Path("outputs/analysis") / cohort_name
+            if out_target_dir.exists():
+                shutil.rmtree(out_target_dir, ignore_errors=True)
+            out_target_dir.mkdir(parents=True, exist_ok=True)
+
             for uf in uploaded_files:
                 src_f = Path(uf.name if hasattr(uf, "name") else str(uf))
                 orig_name = getattr(uf, "orig_name", None) or src_f.name
                 dst_f = target_dir / orig_name
                 shutil.copy2(src_f, dst_f)
+            force_fresh_extraction = True
         else:
             if not cohort_dropdown:
                 raise ValueError("No cohort selected. Please select an existing cohort folder from the dropdown or switch to 'Upload Multiple Files'.")
@@ -2095,7 +2113,8 @@ def process_cohort(
         pipeline = ActiveIngredientCohortPipeline(
             cohort_name=cohort_name,
             api_key=api_key.strip() if api_key else None,
-            model_name=model_name
+            model_name=model_name,
+            force_extract=force_fresh_extraction
         )
 
         res = pipeline.run_all(progress_callback=progress)

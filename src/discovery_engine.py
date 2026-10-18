@@ -922,7 +922,8 @@ class InSilicoDiscoveryEngine:
                 ))
 
         # 2. Pooled Meta-Estimate
-        if meta_res:
+        if meta_res and meta_res.re_estimate is not None:
+            pi_desc = f"[{meta_res.pi_lower:+.2f}, {meta_res.pi_upper:+.2f}]" if (meta_res.pi_lower is not None and meta_res.pi_upper is not None) else "N/A"
             fig.add_trace(go.Scatter(
                 x=[meta_res.re_estimate],
                 y=["Pooled Meta-Analysis"],
@@ -930,7 +931,7 @@ class InSilicoDiscoveryEngine:
                 mode='markers',
                 marker=dict(size=15, color='#10B981', symbol='diamond'),
                 name="Pooled Meta-Estimate",
-                hovertemplate=f"<b>Pooled Meta-Analysis (RE)</b><br>Estimate: {meta_res.re_estimate:+.2f}<br>95% CI: [{meta_res.re_ci_lower:+.2f}, {meta_res.re_ci_upper:+.2f}]<br>95% PI: [{meta_res.pi_lower:+.2f}, {meta_res.pi_upper:+.2f}]<extra></extra>"
+                hovertemplate=f"<b>Pooled Meta-Analysis (RE)</b><br>Estimate: {meta_res.re_estimate:+.2f}<br>95% CI: [{meta_res.re_ci_lower:+.2f}, {meta_res.re_ci_upper:+.2f}]<br>95% PI: {pi_desc}<extra></extra>"
             ))
 
         # 3. Newly Synthesized De-Novo Virtual Trial Arm

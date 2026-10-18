@@ -315,6 +315,36 @@ class ActiveIngredientCohortPipeline:
         out_root = Path("outputs")
         out_root.mkdir(parents=True, exist_ok=True)
 
+        # STRICT USER UPLOAD ISOLATION (MANDOROS Phase 2 Rule 12 & Zero-Contamination Directive):
+        # Determine all valid trial stems strictly from the files currently placed in self.input_dir.
+        current_input_stems = set()
+        for f in self.input_dir.glob("*"):
+            if f.is_file() and f.suffix.lower() in [".pdf", ".xlsx"]:
+                clean_s = re.sub(r'[^a-zA-Z0-9_\-]', '_', f.stem).strip('_').lower()
+                base_s = re.sub(r'(_structured_extracted|_extracted)$', '', clean_s).strip('_')
+                current_input_stems.add(clean_s)
+                current_input_stems.add(base_s)
+
+        if getattr(self, "force_extract", False):
+            # Wipe target extracted_trials directory completely for fresh upload session
+            for old_f in self.extracted_trials_dir.glob("*"):
+                if old_f.is_file():
+                    try:
+                        old_f.unlink()
+                    except Exception:
+                        pass
+        elif current_input_stems:
+            # Purge any leftover or stale workbooks from prior runs that are not in current_input_stems
+            for existing_f in self.extracted_trials_dir.glob("*"):
+                if existing_f.is_file() and existing_f.suffix.lower() in [".xlsx", ".json"]:
+                    c_stem = re.sub(r'[^a-zA-Z0-9_\-]', '_', existing_f.stem).strip('_').lower()
+                    b_stem = re.sub(r'(_structured_extracted|_extracted)$', '', c_stem).strip('_')
+                    if c_stem not in current_input_stems and b_stem not in current_input_stems:
+                        try:
+                            existing_f.unlink()
+                        except Exception:
+                            pass
+
         # Check for pre-existing .xlsx files placed directly in the cohort folder
         for xf in self.input_dir.glob("*.xlsx"):
             target_dst = self.extracted_trials_dir / xf.name
@@ -374,7 +404,24 @@ class ActiveIngredientCohortPipeline:
 
     def _load_cohort_trials(self):
         """Loads all extracted trial Excel workbooks in extracted_trials/ and combines into pooled DataFrames."""
-        self.trial_workbooks = list(self.extracted_trials_dir.glob("*.xlsx"))
+        # STRICT ISOLATION: Only load workbooks corresponding to files currently in self.input_dir
+        current_input_stems = set()
+        for f in self.input_dir.glob("*"):
+            if f.is_file() and f.suffix.lower() in [".pdf", ".xlsx"]:
+                clean_s = re.sub(r'[^a-zA-Z0-9_\-]', '_', f.stem).strip('_').lower()
+                base_s = re.sub(r'(_structured_extracted|_extracted)$', '', clean_s).strip('_')
+                current_input_stems.add(clean_s)
+                current_input_stems.add(base_s)
+
+        all_candidate_wbs = sorted(list(self.extracted_trials_dir.glob("*.xlsx")))
+        if current_input_stems:
+            self.trial_workbooks = [
+                wb for wb in all_candidate_wbs
+                if re.sub(r'[^a-zA-Z0-9_\-]', '_', wb.stem).strip('_').lower() in current_input_stems
+                or re.sub(r'(_structured_extracted|_extracted)$', '', re.sub(r'[^a-zA-Z0-9_\-]', '_', wb.stem).strip('_')).lower() in current_input_stems
+            ]
+        else:
+            self.trial_workbooks = all_candidate_wbs
 
         studies_list = []
         arms_list = []
@@ -1602,16 +1649,16 @@ class ActiveIngredientCohortPipeline:
             rep_ci_l = m_res.reported_re_ci_lower
             rep_ci_u = m_res.reported_re_ci_upper
             rep_pi_l = m_res.reported_pi_lower
-            rep_pi_u = m_res.reported_pi_upper
-
-            if m_res.is_ratio:
+            if is_single_study or rep_pi_l is None or rep_pi_u is None:
+                pi_fmt = "N/A (k=1)" if is_single_study else "N/A"
+            elif m_res.is_ratio:
                 assert rep_est > 0 and rep_ci_l > 0 and rep_ci_u > 0, f"Reported ratio estimate must be strictly positive: {rep_est}"
                 pi_fmt = f"[{rep_pi_l:.2f}, {rep_pi_u:.2f}]"
             else:
                 pi_fmt = f"[{rep_pi_l:+.2f}, {rep_pi_u:+.2f}]"
 
-            i2_disp = "N/A (k=1)" if is_single_study else f"{m_res.i2:.1f}%"
-            tau2_disp = "N/A (k=1)" if is_single_study else round(m_res.tau2, 4)
+            i2_disp = "N/A (k=1)" if is_single_study or m_res.i2 is None else f"{m_res.i2:.1f}%"
+            tau2_disp = "N/A (k=1)" if is_single_study or m_res.tau2 is None else round(m_res.tau2, 4)
             pi_disp = "N/A (k=1)" if is_single_study else pi_fmt
             narrative_disp = (
                 f"Single trial: {param} demonstrated favorable treatment effect. Between-study heterogeneity is mathematically not estimable (k=1)."
@@ -1702,14 +1749,16 @@ class ActiveIngredientCohortPipeline:
             rep_pi_l = m_res.reported_pi_lower
             rep_pi_u = m_res.reported_pi_upper
 
-            if m_res.is_ratio:
+            if is_single_study or rep_pi_l is None or rep_pi_u is None:
+                pi_fmt = "N/A (k=1)" if is_single_study else "N/A"
+            elif m_res.is_ratio:
                 assert rep_est > 0 and rep_ci_l > 0 and rep_ci_u > 0, f"Reported ratio estimate must be strictly positive: {rep_est}"
                 pi_fmt = f"[{rep_pi_l:.2f}, {rep_pi_u:.2f}]"
             else:
                 pi_fmt = f"[{rep_pi_l:+.2f}, {rep_pi_u:+.2f}]"
 
-            i2_disp = "N/A (k=1)" if is_single_study else f"{m_res.i2:.1f}%"
-            tau2_disp = "N/A (k=1)" if is_single_study else round(m_res.tau2, 4)
+            i2_disp = "N/A (k=1)" if is_single_study or m_res.i2 is None else f"{m_res.i2:.1f}%"
+            tau2_disp = "N/A (k=1)" if is_single_study or m_res.tau2 is None else round(m_res.tau2, 4)
             pi_disp = "N/A (k=1)" if is_single_study else pi_fmt
             hetero_assess = "NOT_ESTIMABLE_SINGLE_TRIAL" if is_single_study else verd.get("heterogeneity_grade", "Moderate")
 
@@ -1901,7 +1950,7 @@ class ActiveIngredientCohortPipeline:
                     round(sub.ci_lower, 3),
                     round(sub.ci_upper, 3),
                     round(sub.p_value, 5),
-                    f"{sub.i2:.1f}%",
+                    f"{sub.i2:.1f}%" if sub.i2 is not None else "N/A",
                     f"p_between={sg_res.p_between:.4f}" if sg_res.p_between is not None else "—"
                 ]
                 for c_idx, val in enumerate(vals, 1):
@@ -1916,7 +1965,8 @@ class ActiveIngredientCohortPipeline:
                 for dropped_eff in m_res.study_results:
                     rem_effs = [e for e in m_res.study_results if e.study_id != dropped_eff.study_id]
                     if rem_effs:
-                        rem_weights = [1.0 / (e.vi + m_res.tau2) for e in rem_effs]
+                        tau2_val = m_res.tau2 if m_res.tau2 is not None else 0.0
+                        rem_weights = [1.0 / (e.vi + tau2_val) for e in rem_effs]
                         sum_w = sum(rem_weights)
                         rem_est = sum(w * e.yi for w, e in zip(rem_weights, rem_effs)) / sum_w if sum_w > 0 else 0.0
                         rem_se = math.sqrt(1.0 / sum_w) if sum_w > 0 else 0.0
@@ -1935,7 +1985,7 @@ class ActiveIngredientCohortPipeline:
                             round(rem_ci_l, 3),
                             round(rem_ci_u, 3),
                             round(rem_p, 5),
-                            f"{m_res.i2:.1f}%",
+                            f"{m_res.i2:.1f}%" if m_res.i2 is not None else "N/A",
                             "Robust Estimate" if (rem_ci_l > 0 or rem_ci_u < 0) == (m_res.re_ci_lower > 0 or m_res.re_ci_upper < 0) else "Sensitive to this trial"
                         ]
                         for c_idx, val in enumerate(vals, 1):
@@ -2079,7 +2129,7 @@ class ActiveIngredientCohortPipeline:
                     pred_effect_str = round(proj.predicted_effect, 3)
                     ci_l_str = round(proj.ci_lower, 3)
                     ci_u_str = round(proj.ci_upper, 3)
-                    pi_str = f"[{proj.pi_lower:+.2f}, {proj.pi_upper:+.2f}]"
+                    pi_str = f"[{proj.pi_lower:+.2f}, {proj.pi_upper:+.2f}]" if (proj.pi_lower is not None and proj.pi_upper is not None) else "NOT_ESTIMABLE"
 
                 vals = [
                     param,
@@ -2335,7 +2385,7 @@ class ActiveIngredientCohortPipeline:
                         round(sub.ci_lower, 3),
                         round(sub.ci_upper, 3),
                         round(sub.p_value, 5),
-                        f"{sub.i2:.1f}%",
+                        f"{sub.i2:.1f}%" if sub.i2 is not None else "N/A",
                         round(sg_res.q_between, 3),
                         sg_res.q_between_df,
                         round(sg_res.p_between, 5),
@@ -2568,6 +2618,7 @@ class ActiveIngredientCohortPipeline:
                     ))
 
                 # Pooled diamond / marker
+                pi_str = f"[{m_res.pi_lower:+.2f}, {m_res.pi_upper:+.2f}]" if (m_res.pi_lower is not None and m_res.pi_upper is not None) else "N/A (k=1)"
                 fig_forest.add_trace(go.Scatter(
                     x=[m_res.re_estimate],
                     y=["RE Pooled Effect"],
@@ -2575,18 +2626,20 @@ class ActiveIngredientCohortPipeline:
                     mode='markers',
                     marker=dict(size=14, color='#10b981', symbol='diamond'),
                     name="RE Pooled",
-                    hovertemplate=f"<b>Pooled Random-Effects</b><br>{m_res.measure}: {m_res.re_estimate:+.2f}<br>95% CI: [{m_res.re_ci_lower:+.2f}, {m_res.re_ci_upper:+.2f}]<br>95% PI: [{m_res.pi_lower:+.2f}, {m_res.pi_upper:+.2f}]<extra></extra>"
+                    hovertemplate=f"<b>Pooled Random-Effects</b><br>{m_res.measure}: {m_res.re_estimate:+.2f}<br>95% CI: [{m_res.re_ci_lower:+.2f}, {m_res.re_ci_upper:+.2f}]<br>95% PI: {pi_str}<extra></extra>"
                 ))
 
-                fig_forest.add_shape(
-                    type="line",
-                    x0=m_res.pi_lower, x1=m_res.pi_upper,
-                    y0="RE Pooled Effect", y1="RE Pooled Effect",
-                    line=dict(color="#f59e0b", width=2, dash="dot")
-                )
+                if m_res.pi_lower is not None and m_res.pi_upper is not None:
+                    fig_forest.add_shape(
+                        type="line",
+                        x0=m_res.pi_lower, x1=m_res.pi_upper,
+                        y0="RE Pooled Effect", y1="RE Pooled Effect",
+                        line=dict(color="#f59e0b", width=2, dash="dot")
+                    )
                 fig_forest.add_vline(x=0, line_dash="dash", line_color="#94a3b8")
+                hetero_info = f"I² = {m_res.i2:.1f}% (τ² = {m_res.tau2:.3f}, p = {m_res.re_p_value:.4f})" if (m_res.i2 is not None and m_res.tau2 is not None) else "Single-Trial Observation (Heterogeneity N/A)"
                 fig_forest.update_layout(
-                    title=f"Forest Plot • {param} ({m_res.measure}) | I² = {m_res.i2:.1f}% (τ² = {m_res.tau2:.3f}, p = {m_res.re_p_value:.4f})",
+                    title=f"Forest Plot • {param} ({m_res.measure}) | {hetero_info}",
                     paper_bgcolor='rgba(15,23,42,0.95)',
                     plot_bgcolor='rgba(30,41,59,0.7)',
                     font=dict(color='#f8fafc', family="Plus Jakarta Sans, sans-serif"),
@@ -2719,8 +2772,8 @@ class ActiveIngredientCohortPipeline:
                     </svg>
                   </div>
                   <div style="margin-top: 10px; font-size: 12px; color: #94A3B8;">
-                    <strong>Heterogeneity:</strong> I² = {m_res.i2:.1f}%, τ² = {m_res.tau2:.4f}, Cochran's Q = {m_res.q_stat:.2f} (p = {m_res.q_p_value:.4f}) • 
-                    <strong>95% Prediction Interval:</strong> [{m_res.pi_lower:+.2f}, {m_res.pi_upper:+.2f}]
+                    <strong>Heterogeneity:</strong> {f"I² = {m_res.i2:.1f}%, τ² = {m_res.tau2:.4f}, Cochran's Q = {m_res.q_stat:.2f} (p = {m_res.q_p_value:.4f})" if (m_res.i2 is not None and m_res.tau2 is not None) else "N/A (Single Study / k < 2)"} • 
+                    <strong>95% Prediction Interval:</strong> {f"[{m_res.pi_lower:+.2f}, {m_res.pi_upper:+.2f}]" if (m_res.pi_lower is not None and m_res.pi_upper is not None) else "N/A (k < 3)"}
                   </div>
                 </div>
                 """)
@@ -2874,6 +2927,8 @@ class ActiveIngredientCohortPipeline:
             subgroup_rows = []
             for sg in getattr(self, "subgroup_results", []):
                 for sub in sg.subgroups:
+                    sub_i2_str = f"{sub.i2:.1f}%" if sub.i2 is not None else "N/A"
+                    q_str = f"Q={sg.q_between:.2f} (p={sg.p_between:.4f})" if (sg.q_between is not None and sg.p_between is not None) else "N/A"
                     subgroup_rows.append(f"""
                     <tr>
                       <td style="font-weight: 700; color: #38BDF8;">{sg.subgroup_variable}</td>
@@ -2882,8 +2937,8 @@ class ActiveIngredientCohortPipeline:
                       <td>{sub.total_n:,}</td>
                       <td style="font-weight: 700; color: #A5B4FC;">{sub.pooled_estimate:+.3f} [{sub.ci_lower:+.3f}, {sub.ci_upper:+.3f}]</td>
                       <td>{sub.p_value:.4f}</td>
-                      <td>{sub.i2:.1f}%</td>
-                      <td>Q={sg.q_between:.2f} (p={sg.p_between:.4f})</td>
+                      <td>{sub_i2_str}</td>
+                      <td>{q_str}</td>
                       <td style="color: #cbd5e1; font-size: 12px;">{sg.interpretation}</td>
                     </tr>
                     """)
@@ -3184,8 +3239,8 @@ class ActiveIngredientCohortPipeline:
         pooled_eff_str = verd.get("pooled_effect", (f"{m_res.re_estimate:+.2f} ({m_res.measure})" if m_res else "Statistically Significant Delta"))
         ci_str = f"[{m_res.re_ci_lower:+.2f}, {m_res.re_ci_upper:+.2f}]" if m_res else "[Lower CI, Upper CI]"
         p_val_str = f"{m_res.re_p_value:.4f}" if m_res else "<0.001"
-        i2_str = verd.get("i2_percent", f"{m_res.i2:.1f}%" if m_res else "0.0%")
-        tau2_str = verd.get("tau2", f"{m_res.tau2:.4f}" if m_res and hasattr(m_res, 'tau2') and m_res.tau2 is not None else "0.0000")
+        i2_str = verd.get("i2_percent") or (f"{m_res.i2:.1f}%" if (m_res and m_res.i2 is not None) else "N/A (k=1)")
+        tau2_str = verd.get("tau2") or (f"{m_res.tau2:.4f}" if (m_res and hasattr(m_res, 'tau2') and m_res.tau2 is not None) else "N/A (k=1)")
         evid_str = verd.get("evidence_strength", "Statistically Significant Favoring Treatment")
 
         # ==========================================
