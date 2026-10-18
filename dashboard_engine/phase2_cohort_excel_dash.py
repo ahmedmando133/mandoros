@@ -161,7 +161,7 @@ def build_phase2_multi_trial_dashboard(
         safe_base = os.path.splitext(os.path.basename(master_xlsx_path))[0]
         output_html_path = os.path.join(out_dir, f"{safe_base}_Phase2_Executive_Dashboard.html")
 
-    instant_banner = build_instant_download_banner(output_html_path, master_xlsx_path, phase_label="Phase 2 Multi-Trial")
+    instant_banner = build_instant_download_banner(None, master_xlsx_path, phase_label="Phase 2 Multi-Trial")
 
     full_html = f"""<!DOCTYPE html>
 <html lang="en">

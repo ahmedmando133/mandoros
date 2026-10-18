@@ -12,6 +12,7 @@ from __future__ import annotations
 import base64
 import json
 import os
+import urllib.parse
 from typing import Any, Dict, List, Optional
 import pandas as pd
 
@@ -66,11 +67,17 @@ def build_instant_download_banner(
         with open(html_file_path, "rb") as f:
             b64_html = base64.b64encode(f.read()).decode("utf-8")
         fname = os.path.basename(html_file_path)
+        norm_h = urllib.parse.quote(html_file_path.replace("\\", "/"), safe="/:")
         buttons_html.append(f'''
             <a href="data:text/html;base64,{b64_html}" download="{fname}"
                style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(16,185,129,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                ⚡ Instant Download {phase_label} Interactive Dashboard (.html)
+            </a>
+            <a href="/gradio_api/file={norm_h}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#06B6D4,#0891B2);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(6,182,212,0.35);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+               🌐 Open Full Dashboard (New Tab)
             </a>
         ''')
     if xlsx_file_path and os.path.exists(xlsx_file_path):

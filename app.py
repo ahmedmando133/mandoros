@@ -8,6 +8,8 @@ import sys
 import re
 import json
 import functools
+import tempfile
+import urllib.parse
 from pathlib import Path
 from typing import Any
 import gradio as gr
@@ -371,10 +373,8 @@ def process_pdf(
             if p1_banner:
                 summary_md = f"{p1_banner}\n\n{summary_md}"
             if p1_html_path and os.path.exists(p1_html_path):
-                with open(p1_html_path, "r", encoding="utf-8") as hf:
-                    h_code = hf.read()
-                import html as py_html
-                preview_iframe = f"<iframe srcdoc='{py_html.escape(h_code)}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
+                norm_p1 = urllib.parse.quote(p1_html_path.replace("\\", "/"), safe="/:")
+                preview_iframe = f"<iframe src='/gradio_api/file={norm_p1}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
         except Exception as dash_err:
             print(f"[!] Warning generating Phase 1 dashboard: {dash_err}")
 
@@ -416,9 +416,8 @@ def convert_phase1_excel_shortcut(excel_file):
         from dashboard_engine.phase1_trial_dashboard import _read_excel_sheets, _find_sheet_df
         html_path, banner = auto_generate_dashboard_for_excel(f_path, phase_hint="Phase 1")
 
-        with open(html_path, "r", encoding="utf-8") as hf:
-            h_code = hf.read()
-        iframe = f"<iframe srcdoc='{py_html.escape(h_code)}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
+        norm_path = urllib.parse.quote(html_path.replace("\\", "/"), safe="/:")
+        iframe = f"<iframe src='/gradio_api/file={norm_path}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
 
         sheets = _read_excel_sheets(f_path)
         df_m = _find_sheet_df(sheets, ["Master", "Sheet 1"])
@@ -2424,9 +2423,11 @@ def process_cohort(
         if hasattr(pipeline, "forest_htmls") and pipeline.forest_htmls:
             forest_html = pipeline.forest_htmls[0]
         else:
-            with open(res["html_path"], "r", encoding="utf-8") as hf:
-                content = hf.read()
-                forest_html = f"<iframe srcdoc='{html.escape(content)}' style='width: 100%; height: 550px; border: none; border-radius: 14px;'></iframe>"
+            if res.get("html_path") and os.path.exists(res["html_path"]):
+                norm_h = urllib.parse.quote(res["html_path"].replace("\\", "/"), safe="/:")
+                forest_html = f"<iframe src='/gradio_api/file={norm_h}' style='width: 100%; height: 550px; border: none; border-radius: 14px;'></iframe>"
+            else:
+                forest_html = "<p style='color:#94A3B8;'>Forest plot preview ready.</p>"
 
         # Drug and parameter choices
         drug_choices = ["Pooled Cohort Average"] + sorted(list(res.get("divergence_report", {}).get("normalized_drugs", [])))
@@ -5496,7 +5497,7 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=port,
         favicon_path=fav,
-        allowed_paths=["assets"],
+        allowed_paths=["assets", "outputs", tempfile.gettempdir(), os.path.abspath("outputs")],
         prevent_thread_lock=True
     )
 

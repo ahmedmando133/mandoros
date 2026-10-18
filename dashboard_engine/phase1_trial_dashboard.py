@@ -330,7 +330,7 @@ def build_phase1_single_trial_dashboard(
         safe_base = os.path.splitext(os.path.basename(xlsx_path))[0]
         output_html_path = os.path.join(out_dir, f"{safe_base}_Phase1_Trial_Dashboard.html")
 
-    instant_banner = build_instant_download_banner(output_html_path, xlsx_path, phase_label="Phase 1 Single-Trial")
+    instant_banner = build_instant_download_banner(None, xlsx_path, phase_label="Phase 1 Single-Trial")
 
     full_html = f"""<!DOCTYPE html>
 <html lang="en">

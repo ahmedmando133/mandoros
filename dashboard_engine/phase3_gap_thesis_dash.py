@@ -108,7 +108,7 @@ def build_phase3_gap_thesis_dashboard(
         safe_base = os.path.splitext(os.path.basename(phase3_xlsx_path))[0]
         output_html_path = os.path.join(out_dir, f"{safe_base}_Thesis_Navigator_Dashboard.html")
 
-    instant_banner = build_instant_download_banner(output_html_path, phase3_xlsx_path, phase_label="Phase 3 Gap & Thesis")
+    instant_banner = build_instant_download_banner(None, phase3_xlsx_path, phase_label="Phase 3 Gap & Thesis")
 
     full_html = f"""<!DOCTYPE html>
 <html lang="en">
