@@ -3438,6 +3438,209 @@ def build_app():
     .footer-bottom-dot {
         color: #475569;
     }
+
+    /* ========================================================================= */
+    /* 3-PHASE INTERACTIVE NAVIGATION STRIP & 3-COLUMN TABS                      */
+    /* ========================================================================= */
+    .mandoros-phases-banner {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr auto 1fr;
+        align-items: center;
+        gap: 12px;
+        background: rgba(15, 23, 42, 0.85);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 18px;
+        padding: 14px 20px;
+        margin: 18px 0 16px 0;
+        box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+    }
+
+    .phase-banner-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 16px;
+        border-radius: 12px;
+        background: rgba(30, 41, 59, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        cursor: pointer;
+        transition: all 0.25s ease;
+    }
+
+    .phase-banner-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .item-p1:hover {
+        background: rgba(0, 245, 212, 0.12);
+        border-color: #00F5D4;
+    }
+
+    .item-p2:hover {
+        background: rgba(56, 189, 248, 0.12);
+        border-color: #38BDF8;
+    }
+
+    .item-p3:hover {
+        background: rgba(192, 132, 252, 0.12);
+        border-color: #C084FC;
+    }
+
+    .phase-banner-dot {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        flex-shrink: 0;
+    }
+
+    .dot-p1 {
+        background: #00F5D4;
+        box-shadow: 0 0 10px #00F5D4;
+    }
+
+    .dot-p2 {
+        background: #38BDF8;
+        box-shadow: 0 0 10px #38BDF8;
+    }
+
+    .dot-p3 {
+        background: #C084FC;
+        box-shadow: 0 0 10px #C084FC;
+    }
+
+    .phase-banner-content {
+        display: flex;
+        flex-direction: column;
+        line-height: 1.25;
+    }
+
+    .phase-banner-label {
+        font-size: 10px;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+    }
+
+    .item-p1 .phase-banner-label { color: #00F5D4; }
+    .item-p2 .phase-banner-label { color: #38BDF8; }
+    .item-p3 .phase-banner-label { color: #C084FC; }
+
+    .phase-banner-title {
+        font-size: 13.5px;
+        font-weight: 700;
+        color: #F8FAFC;
+    }
+
+    .phase-banner-arrow {
+        color: #475569;
+        font-size: 18px;
+        font-weight: 800;
+        text-align: center;
+        user-select: none;
+    }
+
+    /* 3-PHASE MASTER TABS - SPREAD EQUALLY IN 3 COLUMNS */
+    #main-phases-tabs {
+        margin-top: 6px !important;
+    }
+
+    #main-phases-tabs > div.tab-nav,
+    #main-phases-tabs > div[role="tablist"],
+    #main-phases-tabs > .tabs {
+        display: grid !important;
+        grid-template-columns: repeat(3, 1fr) !important;
+        gap: 12px !important;
+        background: rgba(15, 23, 42, 0.90) !important;
+        padding: 8px !important;
+        border-radius: 18px !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        margin-bottom: 24px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    #main-phases-tabs button[role="tab"],
+    #main-phases-tabs .tab-nav > button {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        font-size: 15px !important;
+        font-weight: 800 !important;
+        padding: 14px 16px !important;
+        border-radius: 12px !important;
+        background: rgba(30, 41, 59, 0.7) !important;
+        color: #94A3B8 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        text-align: center !important;
+        white-space: normal !important;
+        line-height: 1.3 !important;
+        min-height: 54px !important;
+    }
+
+    #main-phases-tabs button[role="tab"]:hover,
+    #main-phases-tabs .tab-nav > button:hover {
+        background: rgba(51, 65, 85, 0.9) !important;
+        color: #F8FAFC !important;
+        transform: translateY(-2px) !important;
+    }
+
+    /* Tab 1: Cyan */
+    #main-phases-tabs button[role="tab"]:nth-child(1),
+    #main-phases-tabs .tab-nav > button:nth-child(1) {
+        border-bottom: 4px solid #00F5D4 !important;
+    }
+    #main-phases-tabs button[role="tab"]:nth-child(1).selected,
+    #main-phases-tabs .tab-nav > button:nth-child(1).selected {
+        background: linear-gradient(135deg, rgba(0, 245, 212, 0.22), rgba(15, 23, 42, 0.95)) !important;
+        color: #00F5D4 !important;
+        border-color: #00F5D4 !important;
+        box-shadow: 0 4px 22px rgba(0, 245, 212, 0.3) !important;
+    }
+
+    /* Tab 2: Sky Blue */
+    #main-phases-tabs button[role="tab"]:nth-child(2),
+    #main-phases-tabs .tab-nav > button:nth-child(2) {
+        border-bottom: 4px solid #38BDF8 !important;
+    }
+    #main-phases-tabs button[role="tab"]:nth-child(2).selected,
+    #main-phases-tabs .tab-nav > button:nth-child(2).selected {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.95)) !important;
+        color: #38BDF8 !important;
+        border-color: #38BDF8 !important;
+        box-shadow: 0 4px 22px rgba(56, 189, 248, 0.3) !important;
+    }
+
+    /* Tab 3: Purple */
+    #main-phases-tabs button[role="tab"]:nth-child(3),
+    #main-phases-tabs .tab-nav > button:nth-child(3) {
+        border-bottom: 4px solid #C084FC !important;
+    }
+    #main-phases-tabs button[role="tab"]:nth-child(3).selected,
+    #main-phases-tabs .tab-nav > button:nth-child(3).selected {
+        background: linear-gradient(135deg, rgba(192, 132, 252, 0.22), rgba(15, 23, 42, 0.95)) !important;
+        color: #C084FC !important;
+        border-color: #C084FC !important;
+        box-shadow: 0 4px 22px rgba(192, 132, 252, 0.3) !important;
+    }
+
+    @media (max-width: 900px) {
+        .mandoros-phases-banner {
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        .phase-banner-arrow {
+            display: none;
+        }
+        #main-phases-tabs > div.tab-nav,
+        #main-phases-tabs > div[role="tablist"] {
+            grid-template-columns: 1fr !important;
+        }
+    }
     """
 
     custom_head_tags = """
@@ -3470,6 +3673,24 @@ def build_app():
     <link rel="icon" type="image/x-icon" href="https://raw.githubusercontent.com/ahmedmando133/MANDOROS/main/assets/favicon.ico" />
     <link rel="icon" type="image/png" sizes="128x128" href="https://raw.githubusercontent.com/ahmedmando133/MANDOROS/main/assets/mr_logo_favicon.png" />
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/ahmedmando133/MANDOROS/main/assets/mr_logo_master.png" />
+
+    <!-- Interactive Phase Navigation Bridge -->
+    <script>
+    window.selectMandorosPhase = function(idx) {
+        try {
+            const tabs = document.querySelectorAll('#main-phases-tabs button[role="tab"], #main-phases-tabs .tab-nav > button');
+            if (tabs && tabs[idx]) {
+                tabs[idx].click();
+                const container = document.getElementById('main-phases-tabs');
+                if (container) {
+                    container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
+            }
+        } catch(e) {
+            console.error("Tab switch error:", e);
+        }
+    };
+    </script>
     """
 
     with gr.Blocks(
@@ -3643,7 +3864,7 @@ def build_app():
                   <!-- ========================================================================= -->
                   <div class="product-phases-matrix">
                     <!-- Phase 1 Card -->
-                    <div class="product-phase-card card-phase-1">
+                    <div class="product-phase-card card-phase-1" onclick="window.selectMandorosPhase(0)" style="cursor: pointer;" title="Click to navigate directly to Phase 1">
                       <div>
                         <div class="pillar-top-row">
                           <span class="pillar-numeral-badge p-badge-1">PHASE 1</span>
@@ -3664,10 +3885,14 @@ def build_app():
                       <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
                         Standardized 7-sheet relational workbook with explicit <code>not_reported</code> epistemic boundaries.
                       </div>
+                      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(0, 245, 212, 0.25); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 11.5px; font-weight: 800; color: #00F5D4;">Open Phase 1 Engine ›</span>
+                        <span style="font-size: 10px; color: #94A3B8; background: rgba(0,245,212,0.12); padding: 2px 6px; border-radius: 4px;">Click to View</span>
+                      </div>
                     </div>
 
                     <!-- Phase 2 Card -->
-                    <div class="product-phase-card card-phase-2">
+                    <div class="product-phase-card card-phase-2" onclick="window.selectMandorosPhase(1)" style="cursor: pointer;" title="Click to navigate directly to Phase 2">
                       <div>
                         <div class="pillar-top-row">
                           <span class="pillar-numeral-badge p-badge-2">PHASE 2</span>
@@ -3688,10 +3913,14 @@ def build_app():
                       <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
                         Generates consolidated 10-sheet Master Cohort workbooks and publication-grade forest &amp; funnel plots.
                       </div>
+                      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(56, 189, 248, 0.25); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 11.5px; font-weight: 800; color: #38BDF8;">Open Phase 2 Engine ›</span>
+                        <span style="font-size: 10px; color: #94A3B8; background: rgba(56,189,248,0.12); padding: 2px 6px; border-radius: 4px;">Click to View</span>
+                      </div>
                     </div>
 
                     <!-- Phase 3 Card -->
-                    <div class="product-phase-card card-phase-3">
+                    <div class="product-phase-card card-phase-3" onclick="window.selectMandorosPhase(2)" style="cursor: pointer;" title="Click to navigate directly to Phase 3">
                       <div>
                         <div class="pillar-top-row">
                           <span class="pillar-numeral-badge p-badge-3">PHASE 3</span>
@@ -3711,6 +3940,10 @@ def build_app():
                       </div>
                       <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
                         Synthesizes 7-sheet Phase 3 research packages, formal thesis proposals, and draft SPIRIT protocols.
+                      </div>
+                      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(192, 132, 252, 0.25); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 11.5px; font-weight: 800; color: #C084FC;">Open Phase 3 Engine ›</span>
+                        <span style="font-size: 10px; color: #94A3B8; background: rgba(192,132,252,0.12); padding: 2px 6px; border-radius: 4px;">Click to View</span>
                       </div>
                     </div>
                   </div>
@@ -3906,11 +4139,41 @@ def build_app():
             p3_init_md
         ) = get_default_phase3_preview()
 
-        with gr.Tabs() as main_nav_tabs:
+        gr.HTML(
+            """
+            <div class="mandoros-phases-banner">
+              <div class="phase-banner-item item-p1" onclick="window.selectMandorosPhase(0)" title="Jump to Phase 1">
+                <div class="phase-banner-dot dot-p1"></div>
+                <div class="phase-banner-content">
+                  <span class="phase-banner-label">PHASE 1 ENGINE</span>
+                  <span class="phase-banner-title">🩺 Clinical Trial Deep Extractor</span>
+                </div>
+              </div>
+              <div class="phase-banner-arrow">→</div>
+              <div class="phase-banner-item item-p2" onclick="window.selectMandorosPhase(1)" title="Jump to Phase 2">
+                <div class="phase-banner-dot dot-p2"></div>
+                <div class="phase-banner-content">
+                  <span class="phase-banner-label">PHASE 2 ENGINE</span>
+                  <span class="phase-banner-title">🔬 Meta-Analysis & Evidence Synthesis</span>
+                </div>
+              </div>
+              <div class="phase-banner-arrow">→</div>
+              <div class="phase-banner-item item-p3" onclick="window.selectMandorosPhase(2)" title="Jump to Phase 3">
+                <div class="phase-banner-dot dot-p3"></div>
+                <div class="phase-banner-content">
+                  <span class="phase-banner-label">PHASE 3 ENGINE</span>
+                  <span class="phase-banner-title">🧭 Research Gap & Thesis Navigator</span>
+                </div>
+              </div>
+            </div>
+            """
+        )
+
+        with gr.Tabs(elem_id="main-phases-tabs") as main_nav_tabs:
             # ==========================================
             # TAB 1: PHASE 1 SINGLE-STUDY DEEP EXTRACTOR
             # ==========================================
-            with gr.TabItem("🩺 Single-Study Deep Extractor (Phase 1)"):
+            with gr.TabItem("🩺 Phase 1: Clinical Trial Deep Extractor", id="tab_phase_1"):
                 with gr.Row():
                     # Left Column: Upload & Parameters
                     with gr.Column(scale=1):
@@ -4033,7 +4296,7 @@ def build_app():
             # =========================================================================
             # TAB 2: PHASE 2 MULTI-TRIAL COHORT, META-ANALYSIS & PREDICTIVE DASHBOARD
             # =========================================================================
-            with gr.TabItem("🚀 MANDOROS Multi-Trial Cohort, Meta-Analysis & Predictive Executive Lab (Phase 2)"):
+            with gr.TabItem("🔬 Phase 2: Multi-Trial Meta-Analysis & Synthesis", id="tab_phase_2"):
                 with gr.Row():
                     # Left Column: Cohort Selection & Configuration
                     with gr.Column(scale=1):
@@ -4412,7 +4675,7 @@ def build_app():
             # =========================================================================
             # TAB 3: PHASE 3 RESEARCH GAP & THESIS NAVIGATOR (PILLARS I - V)
             # =========================================================================
-            with gr.TabItem("🧭 Research Gap & Thesis Navigator (Phase 3)"):
+            with gr.TabItem("🧭 Phase 3: Research Gap & Thesis Navigator", id="tab_phase_3"):
                 with gr.Row():
                     # Left Column: Upload, Gap Configuration & Sample Size Controls
                     with gr.Column(scale=1):
