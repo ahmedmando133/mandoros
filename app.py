@@ -3011,18 +3011,25 @@ def build_app():
     }
 
     /* ========================================================================= */
-    /* 3-PHASE CLEAN PRODUCT ARCHITECTURE SHOWCASE (SECTION 6 SPECIFICATION)     */
+    /* 4-PHASE CLEAN PRODUCT ARCHITECTURE SHOWCASE                               */
     /* ========================================================================= */
     .product-phases-matrix {
         display: grid;
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, 1fr);
         gap: 16px;
-        max-width: 1360px;
+        max-width: 1440px;
         margin: 24px auto 26px auto;
         text-align: left;
     }
 
-    @media (max-width: 1024px) {
+    @media (max-width: 1200px) {
+        .product-phases-matrix {
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+        }
+    }
+
+    @media (max-width: 700px) {
         .product-phases-matrix {
             grid-template-columns: 1fr;
             gap: 14px;
@@ -3440,11 +3447,11 @@ def build_app():
     }
 
     /* ========================================================================= */
-    /* 3-PHASE INTERACTIVE NAVIGATION STRIP & 3-COLUMN TABS                      */
+    /* 4-PHASE INTERACTIVE NAVIGATION STRIP & 4-COLUMN TABS                      */
     /* ========================================================================= */
     .mandoros-phases-banner {
         display: grid;
-        grid-template-columns: 1fr auto 1fr auto 1fr;
+        grid-template-columns: 1fr auto 1fr auto 1fr auto 1fr;
         align-items: center;
         gap: 12px;
         background: rgba(15, 23, 42, 0.85);
@@ -3487,6 +3494,11 @@ def build_app():
         border-color: #C084FC;
     }
 
+    .item-prisma:hover {
+        background: rgba(245, 158, 11, 0.12);
+        border-color: #F59E0B;
+    }
+
     .phase-banner-dot {
         width: 14px;
         height: 14px;
@@ -3509,6 +3521,11 @@ def build_app():
         box-shadow: 0 0 10px #C084FC;
     }
 
+    .dot-prisma {
+        background: #F59E0B;
+        box-shadow: 0 0 10px #F59E0B;
+    }
+
     .phase-banner-content {
         display: flex;
         flex-direction: column;
@@ -3525,6 +3542,7 @@ def build_app():
     .item-p1 .phase-banner-label { color: #00F5D4; }
     .item-p2 .phase-banner-label { color: #38BDF8; }
     .item-p3 .phase-banner-label { color: #C084FC; }
+    .item-prisma .phase-banner-label { color: #FBBF24; }
 
     .phase-banner-title {
         font-size: 13.5px;
@@ -3540,7 +3558,7 @@ def build_app():
         user-select: none;
     }
 
-    /* 3-PHASE MASTER TABS - SPREAD EQUALLY IN 3 COLUMNS */
+    /* 4-PHASE MASTER TABS - SPREAD EQUALLY IN 4 COLUMNS */
     #main-phases-tabs {
         margin-top: 6px !important;
     }
@@ -3549,7 +3567,7 @@ def build_app():
     #main-phases-tabs > div[role="tablist"],
     #main-phases-tabs > .tabs {
         display: grid !important;
-        grid-template-columns: repeat(3, 1fr) !important;
+        grid-template-columns: repeat(4, 1fr) !important;
         gap: 12px !important;
         background: rgba(15, 23, 42, 0.90) !important;
         padding: 8px !important;
@@ -3568,9 +3586,9 @@ def build_app():
         align-items: center !important;
         justify-content: center !important;
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-        font-size: 15px !important;
+        font-size: 14.5px !important;
         font-weight: 800 !important;
-        padding: 14px 16px !important;
+        padding: 14px 14px !important;
         border-radius: 12px !important;
         background: rgba(30, 41, 59, 0.7) !important;
         color: #94A3B8 !important;
@@ -3628,7 +3646,27 @@ def build_app():
         box-shadow: 0 4px 22px rgba(192, 132, 252, 0.3) !important;
     }
 
-    @media (max-width: 900px) {
+    /* Tab 4: Amber / Gold */
+    #main-phases-tabs button[role="tab"]:nth-child(4),
+    #main-phases-tabs .tab-nav > button:nth-child(4) {
+        border-bottom: 4px solid #F59E0B !important;
+    }
+    #main-phases-tabs button[role="tab"]:nth-child(4).selected,
+    #main-phases-tabs .tab-nav > button:nth-child(4).selected {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(15, 23, 42, 0.95)) !important;
+        color: #FBBF24 !important;
+        border-color: #F59E0B !important;
+        box-shadow: 0 4px 22px rgba(245, 158, 11, 0.3) !important;
+    }
+
+    @media (max-width: 1200px) {
+        #main-phases-tabs > div.tab-nav,
+        #main-phases-tabs > div[role="tablist"] {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+    }
+
+    @media (max-width: 800px) {
         .mandoros-phases-banner {
             grid-template-columns: 1fr;
             gap: 10px;
@@ -3946,6 +3984,34 @@ def build_app():
                         <span style="font-size: 10px; color: #94A3B8; background: rgba(192,132,252,0.12); padding: 2px 6px; border-radius: 4px;">Click to View</span>
                       </div>
                     </div>
+
+                    <!-- PRISMA Intelligence Card -->
+                    <div class="product-phase-card card-phase-prisma" onclick="window.selectMandorosPhase(3)" style="cursor: pointer;" title="Click to navigate directly to PRISMA Dashboard">
+                      <div>
+                        <div class="pillar-top-row">
+                          <span class="pillar-numeral-badge" style="background: rgba(245, 158, 11, 0.2); border: 1px solid #F59E0B; color: #FBBF24;">PRISMA</span>
+                          <span class="pillar-stage-tag">Trial Intelligence</span>
+                        </div>
+                        <div class="pillar-title" style="font-size: 16px; margin-top: 4px;">Trial Intelligence &amp; Visualization</div>
+                        <div class="pillar-subtitle" style="font-size: 11.5px; color: #FBBF24; margin-bottom: 10px;">PRISMA 2020 Flow, Cross-Trial Comparator &amp; Readiness</div>
+                        <p style="font-size: 12.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 14px;">
+                          Ingest multiple extracted clinical trial workbooks, explore evidence density heatmaps, conduct side-by-side trial comparisons, audit regimen divergences, and certify statistical synthesis readiness.
+                        </p>
+                        <div class="pillar-pills-container">
+                          <span class="academic-pill">PRISMA 2020 Flow</span>
+                          <span class="academic-pill">Evidence Density</span>
+                          <span class="academic-pill">Scale Harmonization</span>
+                          <span class="academic-pill">Zero Mutation Audit</span>
+                        </div>
+                      </div>
+                      <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
+                        Interactive Plotly matrices, arm-by-arm data ledgers, and downloadable multi-sheet PRISMA Excel &amp; HTML dossiers.
+                      </div>
+                      <div style="margin-top: 12px; padding-top: 10px; border-top: 1px solid rgba(245, 158, 11, 0.25); display: flex; align-items: center; justify-content: space-between;">
+                        <span style="font-size: 11.5px; font-weight: 800; color: #FBBF24;">Open PRISMA Engine ›</span>
+                        <span style="font-size: 10px; color: #94A3B8; background: rgba(245, 158, 11, 0.12); padding: 2px 6px; border-radius: 4px;">Click to View</span>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- ========================================================================= -->
@@ -4163,6 +4229,14 @@ def build_app():
                 <div class="phase-banner-content">
                   <span class="phase-banner-label">PHASE 3 ENGINE</span>
                   <span class="phase-banner-title">🧭 Research Gap & Thesis Navigator</span>
+                </div>
+              </div>
+              <div class="phase-banner-arrow">→</div>
+              <div class="phase-banner-item item-prisma" onclick="window.selectMandorosPhase(3)" title="Jump to PRISMA Intelligence">
+                <div class="phase-banner-dot dot-prisma"></div>
+                <div class="phase-banner-content">
+                  <span class="phase-banner-label">PRISMA INTELLIGENCE</span>
+                  <span class="phase-banner-title">📊 Trial Intelligence &amp; Visualization</span>
                 </div>
               </div>
             </div>
@@ -4797,6 +4871,13 @@ def build_app():
                     ],
                     show_progress="full"
                 )
+
+            # =========================================================================
+            # TAB 4: PRISMA CLINICAL TRIAL INTELLIGENCE & VISUALIZATION (ISOLATED)
+            # =========================================================================
+            with gr.TabItem("📊 PRISMA: Clinical Trial Intelligence & Visualization", id="tab_prisma"):
+                from src.prisma.dashboard_ui import build_prisma_tab
+                build_prisma_tab()
 
         gr.HTML(
             """
