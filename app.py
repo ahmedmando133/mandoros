@@ -2481,7 +2481,7 @@ def get_default_phase3_preview():
     """Pre-loads benchmark Phase 3 research synthesis so the navigator UI is populated on initial view."""
     try:
         from src.phase3.orchestrator import Phase3NavigatorOrchestrator
-        dossier = Phase3NavigatorOrchestrator.process_research_navigator(files=[])
+        dossier = Phase3NavigatorOrchestrator.process_research_navigator(files=[], skip_network_reality_check=True)
         return Phase3NavigatorOrchestrator.format_ui_outputs(dossier)
     except Exception as e:
         import pandas as pd
@@ -4667,9 +4667,19 @@ if __name__ == "__main__":
     demo.queue(default_concurrency_limit=5, max_size=25)
     port = int(os.environ.get("PORT", 7860))
     fav = "assets/favicon.ico" if os.path.exists("assets/favicon.ico") else None
-    demo.launch(
+    app_obj, _, _ = demo.launch(
         server_name="0.0.0.0",
         server_port=port,
         favicon_path=fav,
-        allowed_paths=["assets"]
+        allowed_paths=["assets"],
+        prevent_thread_lock=True
     )
+
+    # Ultra-fast health check endpoints for Render cloud monitoring & keep-alive probes
+    @app_obj.get("/health")
+    @app_obj.get("/healthz")
+    @app_obj.get("/api/health")
+    def health_check():
+        return {"status": "healthy", "service": "MANDOROS", "port": port}
+
+    demo.block_thread()

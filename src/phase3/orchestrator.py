@@ -52,7 +52,8 @@ class Phase3NavigatorOrchestrator:
         alpha: float = 0.05,
         power: float = 0.80,
         attrition_rate: float = 0.15,
-        primary_outcome_name: str = "Primary Clinical Biomarker"
+        primary_outcome_name: str = "Primary Clinical Biomarker",
+        skip_network_reality_check: bool = False
     ) -> Phase3Dossier:
         """
         Executes the complete 5-pillar Phase 3 pipeline end-to-end.
@@ -106,7 +107,15 @@ class Phase3NavigatorOrchestrator:
         if 0 <= selected_gap_index < len(gaps):
             selected_gap = gaps[selected_gap_index]
 
-        reality_report = RealityCheckEngine.execute_reality_check(selected_gap, max_results_per_source=5)
+        if skip_network_reality_check:
+            reality_report = RealityCheckEngine._generate_graceful_offline_report(
+                selected_gap,
+                f"{selected_gap.candidate_pico.get('intervention', 'Target Drug')} {target_topic}",
+                timestamp,
+                []
+            )
+        else:
+            reality_report = RealityCheckEngine.execute_reality_check(selected_gap, max_results_per_source=5)
 
         # -------------------------------------------------------------
         # Pillar III: Methodological Quality Appraisal (RoB 2.0 / CONSORT)
