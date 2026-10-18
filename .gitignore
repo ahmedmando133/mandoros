@@ -10,6 +10,7 @@ venv/
 outputs/*.xlsx
 outputs/*.json
 outputs/*.csv
+outputs/*.md
 outputs/pdf_text/
 outputs/*.zip
 # outputs/analysis/

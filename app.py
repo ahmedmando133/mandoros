@@ -2477,6 +2477,100 @@ def process_cohort(
         )
 
 
+def get_default_phase3_preview():
+    """Pre-loads benchmark Phase 3 research synthesis so the navigator UI is populated on initial view."""
+    try:
+        from src.phase3.orchestrator import Phase3NavigatorOrchestrator
+        dossier = Phase3NavigatorOrchestrator.process_research_navigator(files=[])
+        return Phase3NavigatorOrchestrator.format_ui_outputs(dossier)
+    except Exception as e:
+        import pandas as pd
+        print(f"[!] Notice: Phase 3 default preview initialized with baseline fallback: {e}")
+        return (
+            "<div style='padding: 16px; background: rgba(15,23,42,0.8); border: 1px solid #38BDF8; border-radius: 12px; color: #38BDF8;'><strong>🧭 Phase 3 Research Gap & Thesis Navigator:</strong> Ready to ingest trial documents.</div>",
+            pd.DataFrame([{"Notice": "Upload trial PDFs or Phase 1 Excel workbooks to generate cross-study matrix."}]),
+            pd.DataFrame([{"Notice": "Upload documents to discover underrepresented populations and comparator voids."}]),
+            "<p style='color: #94A3B8;'>Scholarly reality check will query ClinicalTrials.gov, OpenAlex, and PubMed upon execution.</p>",
+            pd.DataFrame([{"Notice": "Methodological quality will be appraised across Cochrane RoB 2.0 and CONSORT."}]),
+            "<p style='color: #94A3B8;'>Select a research gap to synthesize formal thesis titles and PICO blueprints.</p>",
+            "<p style='color: #94A3B8;'>Configure statistical power parameters to calculate sample size requirements.</p>",
+            None,
+            None
+        )
+
+
+def process_phase3_ui(
+    files,
+    gap_choice,
+    design_choice,
+    alpha,
+    power,
+    attrition,
+    mean_diff,
+    pooled_sd,
+    p1_rate,
+    p2_rate,
+    ni_margin,
+    progress=gr.Progress(track_tqdm=True)
+):
+    """Processes uploaded files through the 5-pillar Phase 3 Research Gap & Thesis Navigator engine."""
+    from src.phase3.orchestrator import Phase3NavigatorOrchestrator
+    try:
+        progress(0.12, desc="🔍 Ingesting documents & constructing cross-study evidence matrix...")
+        gap_idx = 0
+        if "Gap 2" in str(gap_choice):
+            gap_idx = 1
+        elif "Gap 3" in str(gap_choice):
+            gap_idx = 2
+        elif "Gap 4" in str(gap_choice):
+            gap_idx = 3
+        elif "Gap 5" in str(gap_choice):
+            gap_idx = 4
+
+        design_type = "two_sample_continuous"
+        if "Binary" in str(design_choice):
+            if "Non-Inferiority" in str(design_choice):
+                design_type = "non_inferiority_binary"
+            else:
+                design_type = "two_sample_binary"
+        elif "Non-Inferiority" in str(design_choice):
+            design_type = "non_inferiority_continuous"
+
+        params = {
+            "mean_difference": float(mean_diff or 5.0),
+            "pooled_sd": float(pooled_sd or 10.0),
+            "p1_experimental": float(p1_rate or 0.45),
+            "p2_control": float(p2_rate or 0.25),
+            "non_inferiority_margin": float(ni_margin or 2.5),
+            "non_inferiority_margin_prop": float(ni_margin or 0.10),
+            "baseline_event_rate": float(p1_rate or 0.45)
+        }
+
+        progress(0.40, desc="🌐 Executing global scholarly & trial reality check (ClinicalTrials.gov / OpenAlex / PubMed)...")
+        progress(0.70, desc="🛡️ Appraising Cochrane RoB 2.0 & formulating thesis blueprint...")
+
+        file_list = []
+        if files:
+            file_list = files if isinstance(files, list) else [files]
+
+        dossier = Phase3NavigatorOrchestrator.process_research_navigator(
+            files=file_list,
+            selected_gap_index=gap_idx,
+            design_type=design_type,
+            sample_size_params=params,
+            alpha=float(alpha or 0.05),
+            power=float(power or 0.80),
+            attrition_rate=float(attrition or 0.15)
+        )
+
+        progress(0.95, desc="📦 Packaging 7-sheet Excel workbook and Markdown dossier...")
+        return Phase3NavigatorOrchestrator.format_ui_outputs(dossier)
+    except Exception as e:
+        import pandas as pd
+        err_msg = f"<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'><strong>Phase 3 Notice:</strong> {str(e)}</div>"
+        return err_msg, pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None
+
+
 def build_app():
     custom_css = """
     /* Apple.com Flagship Dark Architecture & Futuristic Biotech Aesthetic */
@@ -2895,6 +2989,68 @@ def build_app():
         border: 1px solid rgba(56, 189, 248, 0.25) !important;
         border-radius: 14px !important;
         background: rgba(15, 23, 42, 0.8) !important;
+    }
+
+    /* ========================================================================= */
+    /* 3-PHASE CLEAN PRODUCT ARCHITECTURE SHOWCASE (SECTION 6 SPECIFICATION)     */
+    /* ========================================================================= */
+    .product-phases-matrix {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        max-width: 1360px;
+        margin: 24px auto 26px auto;
+        text-align: left;
+    }
+
+    @media (max-width: 1024px) {
+        .product-phases-matrix {
+            grid-template-columns: 1fr;
+            gap: 14px;
+        }
+    }
+
+    .product-phase-card {
+        background: rgba(11, 22, 44, 0.78) !important;
+        border: 1px solid rgba(148, 163, 184, 0.18) !important;
+        border-radius: 20px !important;
+        padding: 22px 20px !important;
+        backdrop-filter: blur(20px) saturate(180%) !important;
+        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .product-phase-card:hover {
+        transform: translateY(-3px) scale(1.008) !important;
+    }
+
+    .card-phase-1 {
+        border-top: 3px solid #00F5D4 !important;
+        box-shadow: 0 14px 40px -10px rgba(0, 245, 212, 0.24) !important;
+    }
+    .card-phase-1:hover {
+        box-shadow: 0 18px 48px -8px rgba(0, 245, 212, 0.40) !important;
+    }
+
+    .card-phase-2 {
+        border-top: 3px solid #38BDF8 !important;
+        box-shadow: 0 14px 40px -10px rgba(56, 189, 248, 0.24) !important;
+    }
+    .card-phase-2:hover {
+        box-shadow: 0 18px 48px -8px rgba(56, 189, 248, 0.40) !important;
+    }
+
+    .card-phase-3 {
+        border-top: 3px solid #A855F7 !important;
+        box-shadow: 0 14px 40px -10px rgba(168, 85, 247, 0.24) !important;
+    }
+    .card-phase-3:hover {
+        box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.40) !important;
     }
 
     /* ========================================================================= */
@@ -3464,6 +3620,83 @@ def build_app():
                   </div>
 
                   <!-- ========================================================================= -->
+                  <!-- 3-PHASE CLEAN PRODUCT ARCHITECTURE SHOWCASE (SECTION 6 SPECIFICATION)     -->
+                  <!-- ========================================================================= -->
+                  <div class="product-phases-matrix">
+                    <!-- Phase 1 Card -->
+                    <div class="product-phase-card card-phase-1">
+                      <div>
+                        <div class="pillar-top-row">
+                          <span class="pillar-numeral-badge p-badge-1">PHASE 1</span>
+                          <span class="pillar-stage-tag">Single-Study Extraction</span>
+                        </div>
+                        <div class="pillar-title" style="font-size: 16px; margin-top: 4px;">Clinical Trial Extraction</div>
+                        <div class="pillar-subtitle" style="font-size: 11.5px; color: #00F5D4; margin-bottom: 10px;">Atomic CONSORT/PRISMA-Grade Curation</div>
+                        <p style="font-size: 12.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 14px;">
+                          Upload a trial PDF and extract structured, source-grounded clinical research data into the existing standardized multi-sheet Excel workbook with verbatim chunk provenance.
+                        </p>
+                        <div class="pillar-pills-container">
+                          <span class="academic-pill">88 Atomic Fields</span>
+                          <span class="academic-pill">Verbatim Provenance</span>
+                          <span class="academic-pill">Zero Mental Math Gate</span>
+                          <span class="academic-pill">Cochrane RoB 2.0</span>
+                        </div>
+                      </div>
+                      <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
+                        Standardized 7-sheet relational workbook with explicit <code>not_reported</code> epistemic boundaries.
+                      </div>
+                    </div>
+
+                    <!-- Phase 2 Card -->
+                    <div class="product-phase-card card-phase-2">
+                      <div>
+                        <div class="pillar-top-row">
+                          <span class="pillar-numeral-badge p-badge-2">PHASE 2</span>
+                          <span class="pillar-stage-tag">Multi-Trial Synthesis</span>
+                        </div>
+                        <div class="pillar-title" style="font-size: 16px; margin-top: 4px;">Meta-Analysis &amp; Prediction</div>
+                        <div class="pillar-subtitle" style="font-size: 11.5px; color: #38BDF8; margin-bottom: 10px;">metafor-Grade REML, SUCRA &amp; Virtual Trials</div>
+                        <p style="font-size: 12.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 14px;">
+                          Upload multiple trial workbooks to compare studies, conduct supported meta-analyses, compute SUCRA rankings, and explore predictive in-silico analyses.
+                        </p>
+                        <div class="pillar-pills-container">
+                          <span class="academic-pill">REML &amp; DL Pooling</span>
+                          <span class="academic-pill">Cochran's Q &amp; I²</span>
+                          <span class="academic-pill">Bucher NMA Comparison</span>
+                          <span class="academic-pill">In-Silico Virtual Trials</span>
+                        </div>
+                      </div>
+                      <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
+                        Generates consolidated 10-sheet Master Cohort workbooks and publication-grade forest &amp; funnel plots.
+                      </div>
+                    </div>
+
+                    <!-- Phase 3 Card -->
+                    <div class="product-phase-card card-phase-3">
+                      <div>
+                        <div class="pillar-top-row">
+                          <span class="pillar-numeral-badge p-badge-3">PHASE 3</span>
+                          <span class="pillar-stage-tag">Discovery &amp; Planning</span>
+                        </div>
+                        <div class="pillar-title" style="font-size: 16px; margin-top: 4px;">Research Gap &amp; Thesis Navigator</div>
+                        <div class="pillar-subtitle" style="font-size: 11.5px; color: #C084FC; margin-bottom: 10px;">Evidence Mapping, Reality Check &amp; Protocol Design</div>
+                        <p style="font-size: 12.5px; color: #E2E8F0; line-height: 1.5; margin-bottom: 14px;">
+                          Explore the existing evidence, identify potential research gaps, verify relevant publications and ongoing trials, assess study limitations, and develop structured research and protocol drafts.
+                        </p>
+                        <div class="pillar-pills-container">
+                          <span class="academic-pill">Cross-Study Matrix</span>
+                          <span class="academic-pill">5 Gap Archetypes</span>
+                          <span class="academic-pill">ClinicalTrials.gov &amp; PubMed</span>
+                          <span class="academic-pill">Power &amp; Sample Size</span>
+                        </div>
+                      </div>
+                      <div class="pillar-desc" style="margin-top: 12px; font-size: 11px;">
+                        Synthesizes 7-sheet Phase 3 research packages, formal thesis proposals, and draft SPIRIT protocols.
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- ========================================================================= -->
                   <!-- ADDITIVE: ACADEMIC & METHODOLOGICAL POWER MATRIX (APPLE BENTO SHOWCASE)    -->
                   <!-- ========================================================================= -->
                   <div class="academic-power-matrix">
@@ -3642,6 +3875,17 @@ def build_app():
         sim_drug_init_val = sim_drug_update.get('value', 'Pooled Cohort Average') if isinstance(sim_drug_update, dict) else 'Pooled Cohort Average'
         sim_param_choices = sim_param_update.get('choices', ['Primary Efficacy Endpoint']) if isinstance(sim_param_update, dict) else ['Primary Efficacy Endpoint']
         sim_param_init_val = sim_param_update.get('value', 'Primary Efficacy Endpoint') if isinstance(sim_param_update, dict) else 'Primary Efficacy Endpoint'
+        (
+            p3_init_verdict,
+            p3_init_matrix,
+            p3_init_gaps,
+            p3_init_rc,
+            p3_init_rob,
+            p3_init_prop,
+            p3_init_proto,
+            p3_init_xl,
+            p3_init_md
+        ) = get_default_phase3_preview()
 
         with gr.Tabs() as main_nav_tabs:
             # ==========================================
@@ -4146,6 +4390,132 @@ def build_app():
                     outputs=[sim_result_html]
                 )
 
+            # =========================================================================
+            # TAB 3: PHASE 3 RESEARCH GAP & THESIS NAVIGATOR (PILLARS I - V)
+            # =========================================================================
+            with gr.TabItem("🧭 Research Gap & Thesis Navigator (Phase 3)"):
+                with gr.Row():
+                    # Left Column: Upload, Gap Configuration & Sample Size Controls
+                    with gr.Column(scale=1):
+                        gr.Markdown("### 📂 Step 1: Upload Literature Evidence Base")
+                        gr.HTML(
+                            """
+                            <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px;">
+                              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                                <span style="font-size: 18px;">💡</span>
+                                <span style="color: #38BDF8; font-weight: 700; font-size: 13px;">Universal Document Support</span>
+                              </div>
+                              <p style="color: #94A3B8; font-size: 12px; margin: 0;">Upload 1, 2, 3+ clinical trial PDFs or compatible Phase 1 Excel workbooks. The engine automatically maps the evidence matrix across all studies.</p>
+                            </div>
+                            """
+                        )
+                        p3_upload_files = gr.File(
+                            label="📄 Upload Trial PDFs or Phase 1 Workbooks (.pdf, .xlsx)",
+                            file_count="multiple",
+                            file_types=[".pdf", ".xlsx"]
+                        )
+
+                        gr.Markdown("### 🎯 Step 2: Research Gap & Design Strategy")
+                        p3_gap_selector = gr.Dropdown(
+                            choices=[
+                                "Gap 1: Active Comparator Void (Comparative Effectiveness)",
+                                "Gap 2: Unmeasured Patient-Reported Outcomes (PROs & QoL)",
+                                "Gap 3: High-Risk Subpopulations (Renal eGFR < 30 / Geriatric)",
+                                "Gap 4: Long-Term Durability & Maintenance (> 52 Weeks)",
+                                "Gap 5: Personalized Dose-Titration vs Fixed-Dose Optimization"
+                            ],
+                            value="Gap 1: Active Comparator Void (Comparative Effectiveness)",
+                            label="📍 Select Target Candidate Research Gap for Investigation"
+                        )
+
+                        p3_design_selector = gr.Dropdown(
+                            choices=[
+                                "Two-Sample Superiority Trial (Continuous Endpoint)",
+                                "Two-Sample Superiority Trial (Binary Proportions)",
+                                "Non-Inferiority Trial (Continuous Endpoint)",
+                                "Non-Inferiority Trial (Binary Proportions)"
+                            ],
+                            value="Two-Sample Superiority Trial (Continuous Endpoint)",
+                            label="📐 Statistical Study Design Architecture"
+                        )
+
+                        gr.Markdown("### ⚙️ Step 3: Statistical Power & Sample Size Parameters")
+                        with gr.Row():
+                            p3_alpha_slider = gr.Slider(0.01, 0.10, value=0.05, step=0.01, label="Alpha (α)")
+                            p3_power_slider = gr.Slider(0.70, 0.95, value=0.80, step=0.05, label="Power (1-β)")
+                            p3_attrition_slider = gr.Slider(0.05, 0.30, value=0.15, step=0.05, label="Attrition Buffer")
+
+                        with gr.Row():
+                            p3_mean_diff = gr.Number(value=5.0, label="Target Difference (δ)")
+                            p3_pooled_sd = gr.Number(value=10.0, label="Pooled SD (σ)")
+
+                        with gr.Row():
+                            p3_p1_rate = gr.Number(value=0.45, label="Experimental Rate (p1)")
+                            p3_p2_rate = gr.Number(value=0.25, label="Control Rate (p2)")
+                            p3_ni_margin = gr.Number(value=2.5, label="Non-Inferiority Margin (Δ_NI)")
+
+                        p3_run_btn = gr.Button("🚀 Run Full Phase 3 Evidence Synthesis & Thesis Blueprint", variant="primary", elem_classes=["extract-btn"])
+
+                        gr.Markdown("### 📥 Step 4: Export Deliverables")
+                        p3_excel_download = gr.File(label="📊 Download 7-Sheet Phase 3 Research Package (.xlsx)", value=p3_init_xl)
+                        p3_md_download = gr.File(label="📝 Download Standalone Thesis Dossier (.md)", value=p3_init_md)
+
+                    # Right Column: Interactive 5-Pillar Workspaces
+                    with gr.Column(scale=2):
+                        p3_verdict_html = gr.HTML(value=p3_init_verdict)
+
+                        with gr.Tabs():
+                            with gr.TabItem("📑 Pillar I: Evidence Matrix & Discovered Gaps"):
+                                gr.Markdown("#### 📊 Cross-Study Evidence Matrix")
+                                p3_matrix_table = gr.DataFrame(value=p3_init_matrix, interactive=False, wrap=True, max_height=320)
+                                gr.Markdown("#### 📍 Algorithmically Discovered Research Gaps")
+                                p3_gaps_table = gr.DataFrame(value=p3_init_gaps, interactive=False, wrap=True, max_height=300)
+
+                            with gr.TabItem("🌐 Pillar II: Scholarly & Trial Reality Check"):
+                                gr.Markdown("#### 🔍 Real-Time Evidence Verification (ClinicalTrials.gov, OpenAlex, PubMed)")
+                                p3_reality_html = gr.HTML(value=p3_init_rc)
+
+                            with gr.TabItem("🛡️ Pillar III: Methodological Quality (RoB 2.0 / CONSORT)"):
+                                gr.Markdown("#### ⚖️ Methodological Risk of Bias & Reporting Completeness Appraisal")
+                                p3_rob_table = gr.DataFrame(value=p3_init_rob, interactive=False, wrap=True, max_height=420)
+
+                            with gr.TabItem("🎓 Pillar IV: Thesis Proposal & FINER Blueprint"):
+                                gr.Markdown("#### 🏛️ Academic Research Blueprint & Feasibility Appraisal")
+                                p3_proposal_html = gr.HTML(value=p3_init_prop)
+
+                            with gr.TabItem("📐 Pillar V: Protocol Outline & Biostatistical Planning"):
+                                gr.Markdown("#### 🔬 Biostatistical Sample Size & Reproducible Search Strategy")
+                                p3_protocol_html = gr.HTML(value=p3_init_proto)
+
+                p3_run_btn.click(
+                    fn=process_phase3_ui,
+                    inputs=[
+                        p3_upload_files,
+                        p3_gap_selector,
+                        p3_design_selector,
+                        p3_alpha_slider,
+                        p3_power_slider,
+                        p3_attrition_slider,
+                        p3_mean_diff,
+                        p3_pooled_sd,
+                        p3_p1_rate,
+                        p3_p2_rate,
+                        p3_ni_margin
+                    ],
+                    outputs=[
+                        p3_verdict_html,
+                        p3_matrix_table,
+                        p3_gaps_table,
+                        p3_reality_html,
+                        p3_rob_table,
+                        p3_proposal_html,
+                        p3_protocol_html,
+                        p3_excel_download,
+                        p3_md_download
+                    ],
+                    show_progress="full"
+                )
+
         gr.HTML(
             """
             <footer class="mandoros-institutional-footer">
@@ -4239,6 +4609,10 @@ def build_app():
                   <div class="footer-group">
                     <div class="footer-group-label">In-Silico Emergent Synthesis</div>
                     <div class="footer-text">Cross-study surrogate covariance imputation, therapeutic sweet-spot discovery, and de-novo virtual clinical trial synthesis.</div>
+                  </div>
+                  <div class="footer-group">
+                    <div class="footer-group-label">Phase-3 Research Gap &amp; Thesis Navigator</div>
+                    <div class="footer-text">Cross-study evidence matrix, 5-state epistemic reality check (ClinicalTrials.gov/PubMed), RoB 2.0 / GRADE appraisal, and sample-size planning.</div>
                   </div>
                 </div>
 
