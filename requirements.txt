@@ -18,6 +18,13 @@ statsmodels>=0.14.0
 gradio>=4.0.0
 plotly>=5.18.0
 requests>=2.31.0
+httpx>=0.25.0
+curl_cffi>=0.7.0
+pyalex>=0.15.0
+pytrials>=1.0.0
+sweetviz>=2.3.0
+pygwalker>=0.4.0
+great_tables>=0.5.0
 # LLM providers (keys are read from environment variables only)
 google-generativeai>=0.8.0
 openai>=1.0.0

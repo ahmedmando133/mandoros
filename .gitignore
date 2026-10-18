@@ -11,6 +11,7 @@ outputs/*.xlsx
 outputs/*.json
 outputs/*.csv
 outputs/*.md
+outputs/*.html
 outputs/pdf_text/
 outputs/*.zip
 # outputs/analysis/

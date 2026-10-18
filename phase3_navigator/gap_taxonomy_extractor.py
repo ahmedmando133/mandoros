@@ -49,6 +49,30 @@ class ScientificGap:
     openalex_top_works: List[Dict[str, Any]] = field(default_factory=list)
     actionable_recommendation: str = ""
 
+    @property
+    def cell_coordinate(self) -> str:
+        return f"{self.source_sheet} {self.row_coord}".strip()
+
+    @property
+    def source_quote(self) -> str:
+        return self.exact_extracted_value_or_quote
+
+    @property
+    def priority_score(self) -> float:
+        return 9.2 if self.traffic_light_color == "GREEN" else (7.5 if self.traffic_light_color == "YELLOW" else 5.0)
+
+    @property
+    def taxonomy(self) -> GapCategory:
+        return self.category
+
+    @property
+    def reality_verdict(self) -> Any:
+        return getattr(self, "_reality_verdict", None)
+
+    @reality_verdict.setter
+    def reality_verdict(self, val: Any):
+        self._reality_verdict = val
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "gap_id": self.gap_id,

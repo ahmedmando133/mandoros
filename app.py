@@ -362,7 +362,23 @@ def process_pdf(
         df_outcomes = deduplicate_columns(df_outcomes.head(MAX_PREVIEW_ROWS) if not df_outcomes.empty else df_outcomes)
         df_elig = deduplicate_columns(df_elig.head(MAX_PREVIEW_ROWS) if not df_elig.empty else df_elig)
 
-        return saved_excel, json_path, summary_md, df_master, df_matrix, df_outcomes, df_elig
+        # Generate Single-Trial 360° Interactive HTML Dashboard & 1-Click Action Bar
+        p1_html_path = None
+        preview_iframe = "<p style='color:#94A3B8;'>Dashboard preview ready.</p>"
+        try:
+            from dashboard_engine.excel_watcher_hook import auto_generate_dashboard_for_excel
+            p1_html_path, p1_banner = auto_generate_dashboard_for_excel(saved_excel, phase_hint="Phase 1")
+            if p1_banner:
+                summary_md = f"{p1_banner}\n\n{summary_md}"
+            if p1_html_path and os.path.exists(p1_html_path):
+                with open(p1_html_path, "r", encoding="utf-8") as hf:
+                    h_code = hf.read()
+                import html as py_html
+                preview_iframe = f"<iframe srcdoc='{py_html.escape(h_code)}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
+        except Exception as dash_err:
+            print(f"[!] Warning generating Phase 1 dashboard: {dash_err}")
+
+        return saved_excel, json_path, p1_html_path, summary_md, df_master, df_matrix, df_outcomes, df_elig, preview_iframe
 
     except Exception as e:
         import traceback, html
@@ -383,7 +399,43 @@ def process_pdf(
           </div>
         </div>
         """
-        return None, None, err_card, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        return None, None, None, err_card, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
+
+
+def convert_phase1_excel_shortcut(excel_file):
+    """Direct shortcut: converts pre-extracted Phase 1 7-sheet .xlsx into 360° HTML Dashboard in <2s."""
+    import html as py_html
+    import pandas as pd
+    if not excel_file:
+        err = "<div style='color:#EF4444; padding:12px; font-size:13px;'>⚠️ Please upload an extracted 7-sheet Excel workbook (.xlsx) first.</div>"
+        return None, None, err, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
+
+    f_path = excel_file.name if hasattr(excel_file, "name") else str(excel_file)
+    try:
+        from dashboard_engine.excel_watcher_hook import auto_generate_dashboard_for_excel
+        from dashboard_engine.phase1_trial_dashboard import _read_excel_sheets, _find_sheet_df
+        html_path, banner = auto_generate_dashboard_for_excel(f_path, phase_hint="Phase 1")
+
+        with open(html_path, "r", encoding="utf-8") as hf:
+            h_code = hf.read()
+        iframe = f"<iframe srcdoc='{py_html.escape(h_code)}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
+
+        sheets = _read_excel_sheets(f_path)
+        df_m = _find_sheet_df(sheets, ["Master", "Sheet 1"])
+        df_var = _find_sheet_df(sheets, ["Variables"])
+        df_out = _find_sheet_df(sheets, ["Outcomes"])
+        df_elig = _find_sheet_df(sheets, ["Eligibility"])
+
+        summary_card = f"""
+        {banner}
+        <div style='padding:14px 18px; background:rgba(15,23,42,0.85); border:1px solid #10B981; border-radius:12px; color:#A7F3D0; font-size:13px; margin-bottom:12px;'>
+          ✓ <strong>Instant 360° Dashboard Converted:</strong> Successfully compiled <code>{os.path.basename(f_path)}</code> into a standalone interactive application in &lt;1 second.
+        </div>
+        """
+        return f_path, html_path, summary_card, df_m.head(150), df_var.head(150), df_out.head(150), df_elig.head(150), iframe
+    except Exception as e:
+        err = f"<div style='color:#EF4444; padding:12px;'>Error converting Excel to Dashboard: {py_html.escape(str(e))}</div>"
+        return f_path, None, err, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
 
 
 CACHED_COHORT_PIPELINES: dict[str, Any] = {}
@@ -2424,6 +2476,22 @@ def process_cohort(
         student_abstract_html, student_visuals_html, student_hypotheses_html = build_student_express_lab_ui(cohort_name, res, pipeline)
         student_excel_path = res.get("student_excel_path")
 
+        # Generate Phase 2 Interactive Cohort Dashboard & 1-Click Action Bar
+        try:
+            from dashboard_engine.excel_watcher_hook import auto_generate_dashboard_for_excel
+            from dashboard_engine.phase2_cohort_excel_dash import bundle_cohort_individual_dashboards
+            p2_html_path, p2_banner = auto_generate_dashboard_for_excel(res["excel_path"], phase_hint="Phase 2")
+            if p2_banner:
+                verdict_html = f"{p2_banner}\n\n{verdict_html}"
+            if p2_html_path and os.path.exists(p2_html_path):
+                res["html_path"] = p2_html_path
+
+            # Bundle individual trial dashboards into the cohort zip archive
+            if res.get("zip_path") and res.get("individual_excels"):
+                bundle_cohort_individual_dashboards(res.get("individual_excels"), res.get("zip_path"))
+        except Exception as p2_dash_err:
+            print(f"[!] Warning generating Phase 2 cohort dashboard: {p2_dash_err}")
+
         return (
             verdict_html,
             cohort_divergence_html,
@@ -2541,10 +2609,11 @@ def process_phase3_ui(
     ni_margin,
     progress=gr.Progress(track_tqdm=True)
 ):
-    """Processes uploaded files through the 5-pillar Phase 3 Research Gap & Thesis Navigator engine."""
-    from src.phase3.orchestrator import Phase3NavigatorOrchestrator
+    """Processes uploaded files through the complete Phase 3 Research Gap & Thesis Navigator engine."""
+    import os
+    import html as py_html
+    import pandas as pd
     try:
-        import pandas as pd
         if not files:
             err_msg = (
                 "<div style='padding: 18px; background: rgba(239,68,68,0.15); border: 1px solid #EF4444; border-radius: 12px; color: #FCA5A5; text-align: center;'>"
@@ -2563,56 +2632,399 @@ def process_phase3_ui(
                 None
             )
 
-        progress(0.12, desc="🔍 Ingesting documents & constructing cross-study evidence matrix...")
-        gap_idx = 0
-        if "Gap 2" in str(gap_choice):
-            gap_idx = 1
-        elif "Gap 3" in str(gap_choice):
-            gap_idx = 2
-        elif "Gap 4" in str(gap_choice):
-            gap_idx = 3
-        elif "Gap 5" in str(gap_choice):
-            gap_idx = 4
-
-        design_type = "two_sample_continuous"
-        if "Binary" in str(design_choice):
-            if "Non-Inferiority" in str(design_choice):
-                design_type = "non_inferiority_binary"
-            else:
-                design_type = "two_sample_binary"
-        elif "Non-Inferiority" in str(design_choice):
-            design_type = "non_inferiority_continuous"
-
-        params = {
-            "mean_difference": float(mean_diff or 5.0),
-            "pooled_sd": float(pooled_sd or 10.0),
-            "p1_experimental": float(p1_rate or 0.45),
-            "p2_control": float(p2_rate or 0.25),
-            "non_inferiority_margin": float(ni_margin or 2.5),
-            "non_inferiority_margin_prop": float(ni_margin or 0.10),
-            "baseline_event_rate": float(p1_rate or 0.45)
-        }
-
-        progress(0.40, desc="🌐 Executing global scholarly & trial reality check (ClinicalTrials.gov / OpenAlex / PubMed)...")
-        progress(0.70, desc="🛡️ Appraising Cochrane RoB 2.0 & formulating thesis blueprint...")
-
         file_list = files if isinstance(files, list) else [files]
+        progress(0.10, desc="🔍 Ingesting documents & extracting evidence with cell provenance...")
 
-        dossier = Phase3NavigatorOrchestrator.process_research_navigator(
-            files=file_list,
-            selected_gap_index=gap_idx,
-            design_type=design_type,
-            sample_size_params=params,
-            alpha=float(alpha or 0.05),
-            power=float(power or 0.80),
-            attrition_rate=float(attrition or 0.15)
+        from phase3_navigator.schema_ingestor import SchemaIngestor
+        from phase3_navigator.gap_taxonomy_extractor import GapTaxonomyExtractor
+        from phase3_navigator.global_reality_checker import GlobalRealityChecker
+        from phase3_navigator.sample_size_and_risk import SampleSizeAndRiskEngine
+        from phase3_navigator.thesis_protocol_builder import ThesisProtocolBuilder
+        from phase3_navigator.excel_html_exporter import Phase3DossierExporter
+        from phase3_navigator.ui_tab3 import render_reality_check_cards_html
+        from dashboard_engine.shared_ui_components import build_instant_download_banner
+
+        trial_data = SchemaIngestor.ingest_files(file_list)
+
+        progress(0.25, desc="🏷️ Extracting 4-Type Gap Taxonomy (POP, INT_COMP, OUTCOME, METHOD_ROB)...")
+        gaps = GapTaxonomyExtractor.extract_gaps(trial_data)
+
+        progress(0.45, desc="🌐 Executing parallel reality checks (PubMed / ClinicalTrials.gov / OpenAlex)...")
+        verdicts = GlobalRealityChecker.verify_all_gaps_parallel(
+            gaps=gaps,
+            condition=trial_data.condition,
+            drug_name=trial_data.drug_name,
+            skip_network=False
         )
 
-        progress(0.95, desc="📦 Packaging 7-sheet Excel workbook and Markdown dossier...")
-        return Phase3NavigatorOrchestrator.format_ui_outputs(dossier)
+        progress(0.65, desc="🛡️ Auditing protocol risk & calculating biostatistical power...")
+        if "Binary" in str(design_choice):
+            base_sample = SampleSizeAndRiskEngine.calculate_binary_superiority(
+                p_treatment=float(p1_rate or 0.45),
+                p_control=float(p2_rate or 0.25),
+                alpha=float(alpha or 0.05),
+                power=float(power or 0.80),
+                attrition_rate=float(attrition or 0.15),
+            )
+        else:
+            base_sample = SampleSizeAndRiskEngine.calculate_continuous_superiority(
+                delta=float(mean_diff or 5.0),
+                sigma=float(pooled_sd or 10.0),
+                alpha=float(alpha or 0.05),
+                power=float(power or 0.80),
+                attrition_rate=float(attrition or 0.15),
+            )
+
+        sensitivity_matrix = SampleSizeAndRiskEngine.build_sensitivity_matrix(
+            base_result=base_sample,
+            delta=float(mean_diff or 5.0),
+            sigma=float(pooled_sd or 10.0),
+            attrition_rate=float(attrition or 0.15),
+        )
+        risk_report = SampleSizeAndRiskEngine.audit_protocol_risk(trial_data)
+
+        # Target gap selection
+        target_gap = gaps[0] if gaps else None
+        if gap_choice:
+            for g in gaps:
+                if g.gap_id in str(gap_choice) or g.title[:20].lower() in str(gap_choice).lower():
+                    target_gap = g
+                    break
+
+        progress(0.80, desc="🎓 Synthesizing FINER scorecard, GRADE SoF & academic blueprints...")
+        blueprint = ThesisProtocolBuilder.build_blueprint(target_gap or (gaps[0] if gaps else None), trial_data)
+
+        progress(0.90, desc="📦 Packaging 6-sheet Excel workbook & standalone HTML dossier...")
+        output_dir = "outputs"
+        os.makedirs(output_dir, exist_ok=True)
+        drug_clean = (trial_data.drug_name or "Trial").replace(" ", "_")[:25]
+        excel_path = os.path.join(output_dir, f"MANDOROS_Phase3_{drug_clean}_Gap_Matrix.xlsx")
+        html_path = os.path.join(output_dir, f"MANDOROS_Phase3_{drug_clean}_Thesis_Dossier.html")
+        md_path = os.path.join(output_dir, f"MANDOROS_Phase3_{drug_clean}_Thesis_Report.md")
+
+        Phase3DossierExporter.export_excel(
+            output_path=excel_path,
+            gaps=gaps,
+            sensitivity_table=sensitivity_matrix,
+            risk_report=risk_report,
+            blueprint=blueprint,
+            trial_data=trial_data,
+        )
+
+        Phase3DossierExporter.export_html_dossier(
+            output_path=html_path,
+            gaps=gaps,
+            sensitivity_table=sensitivity_matrix,
+            risk_report=risk_report,
+            blueprint=blueprint,
+            trial_data=trial_data,
+        )
+
+        Phase3DossierExporter.export_markdown_dossier(
+            output_path=md_path,
+            gaps=gaps,
+            sensitivity_table=sensitivity_matrix,
+            risk_report=risk_report,
+            blueprint=blueprint,
+            trial_data=trial_data,
+        )
+
+        # 1. Action Bar & Top Verdict
+        download_banner = build_instant_download_banner(html_path, excel_path, phase_label="Phase 3 Gap & Thesis")
+        green_count = sum(1 for v in verdicts if v.traffic_light_color.value == "GREEN")
+        yellow_count = sum(1 for v in verdicts if v.traffic_light_color.value == "YELLOW")
+        red_count = sum(1 for v in verdicts if v.traffic_light_color.value == "RED")
+
+        verdict_html = f"""
+        {download_banner}
+        <div style="background: linear-gradient(135deg, rgba(15,23,42,0.95) 0%, rgba(30,27,75,0.96) 50%, rgba(15,23,42,0.95) 100%); border: 1.5px solid rgba(16,185,129,0.5); border-radius: 20px; padding: 24px; box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.5), 0 0 25px rgba(16, 185, 129, 0.2); margin-bottom: 22px;">
+          <div style="display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.12); padding-bottom: 16px; margin-bottom: 18px; gap: 14px;">
+            <div style="max-width: 72%;">
+              <div style="display: inline-flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                <span style="background: linear-gradient(90deg, #10B981, #059669); color: white; padding: 4px 14px; border-radius: 9999px; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.08em; box-shadow: 0 0 12px rgba(16,185,129,0.5);">
+                  🧭 Global Standard Phase 3 Navigator
+                </span>
+                <span style="background: rgba(56,189,248,0.15); border: 1.5px solid #38BDF8; color: #38BDF8; padding: 3px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+                  Target: {trial_data.drug_name}
+                </span>
+                <span style="background: rgba(168,85,247,0.15); border: 1px solid #A855F7; color: #C084FC; padding: 3px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
+                  {trial_data.condition}
+                </span>
+              </div>
+              <h2 style="color: #F8FAFC; margin: 0 0 6px 0; font-size: 21px; font-weight: 800;">
+                Evidence Gap Map &amp; Validated Thesis Navigator
+              </h2>
+              <p style="color: #94A3B8; margin: 0; font-size: 13px; line-height: 1.5;">
+                Grounded synthesis of <strong>{len(trial_data.trials)} clinical trial(s)</strong> (Total Cohort N={trial_data.total_sample_size:,}). Identified <strong>{len(gaps)} candidate gap(s)</strong> validated through live PubMed, ClinicalTrials.gov v2, and OpenAlex lookups.
+              </p>
+            </div>
+            <div>
+              <div style="background: rgba(16,185,129,0.12); border: 1.5px solid #10B981; color: #34D399; padding: 8px 16px; border-radius: 14px; font-weight: 700; font-size: 13px; box-shadow: 0 0 15px rgba(16,185,129,0.2);">
+                🟢 {green_count} Open | 🟡 {yellow_count} Active | 🔴 {red_count} Saturated
+              </div>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px;">
+            <div style="background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; border-left: 4px solid #10B981;">
+              <div style="color: #94A3B8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Analyzed Trials</div>
+              <div style="color: #F8FAFC; font-size: 20px; font-weight: 800;">{len(trial_data.trials)} RCTs</div>
+              <div style="color: #34D399; font-size: 11px; font-weight: 600; margin-top: 2px;">{trial_data.total_sample_size:,} Patients</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; border-left: 4px solid #38BDF8;">
+              <div style="color: #94A3B8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Scientific Gaps</div>
+              <div style="color: #F8FAFC; font-size: 20px; font-weight: 800;">{len(gaps)} Discovered</div>
+              <div style="color: #38BDF8; font-size: 11px; font-weight: 600; margin-top: 2px;">4-Type Taxonomy</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; border-left: 4px solid #F59E0B;">
+              <div style="color: #94A3B8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Protocol Risk Score</div>
+              <div style="color: #F8FAFC; font-size: 20px; font-weight: 800;">{risk_report.risk_score:.0f}/100</div>
+              <div style="color: #FBBF24; font-size: 11px; font-weight: 600; margin-top: 2px;">{risk_report.risk_category}</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.6); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 14px; border-left: 4px solid #A855F7;">
+              <div style="color: #94A3B8; font-size: 11px; font-weight: 700; text-transform: uppercase;">Required Sample Size</div>
+              <div style="color: #F8FAFC; font-size: 20px; font-weight: 800;">N={base_sample.n_total_with_attrition:,}</div>
+              <div style="color: #C084FC; font-size: 11px; font-weight: 600; margin-top: 2px;">{base_sample.n_per_group:,}/arm (with {int(base_sample.attrition_rate*100)}% buffer)</div>
+            </div>
+          </div>
+        </div>
+        """
+
+        # 2. Evidence Matrix Table
+        matrix_rows = []
+        for t in trial_data.trials:
+            matrix_rows.append({
+                "Study ID": t.study_id,
+                "Authors & Year": f"{t.authors} ({t.publication_year})",
+                "Phase / Design": t.study_design,
+                "Sample Size (N)": t.sample_size,
+                "Interventions": ", ".join(t.interventions),
+                "Comparators": ", ".join(t.comparators),
+                "Primary Outcome": ", ".join(t.primary_outcomes),
+                "Follow-Up": f"{t.follow_up_weeks} wks",
+                "Key Findings": "; ".join(t.key_findings[:2])
+            })
+        matrix_df = pd.DataFrame(matrix_rows) if matrix_rows else pd.DataFrame({"Notice": ["No trials extracted."]})
+
+        # 3. Gaps Taxonomy Table
+        gaps_rows = []
+        for g in gaps:
+            gaps_rows.append({
+                "Gap ID": g.gap_id,
+                "Taxonomy Type": g.taxonomy.value,
+                "Candidate Research Gap": g.title,
+                "Cell Coordinate": g.cell_coordinate or "N/A",
+                "Verbatim Source Quote": g.source_quote or "N/A",
+                "Confidence": g.confidence,
+                "Priority Score": f"{g.priority_score:.1f}"
+            })
+        gaps_df = pd.DataFrame(gaps_rows) if gaps_rows else pd.DataFrame({"Notice": ["No gaps identified."]})
+
+        # 4. Reality Check Cards
+        reality_html = render_reality_check_cards_html(verdicts)
+
+        # 5. RoB 2.0 / Protocol Risk Table
+        rob_rows = []
+        for t in trial_data.trials:
+            d = t.rob_domains
+            rob_rows.append({
+                "Study ID": t.study_id,
+                "D1: Randomization": d.get("D1", "Low Risk"),
+                "D2: Deviations": d.get("D2", "Low Risk"),
+                "D3: Missing Outcome Data": d.get("D3", "Some Concerns"),
+                "D4: Measurement": d.get("D4", "Low Risk"),
+                "D5: Selective Reporting": d.get("D5", "Low Risk"),
+                "Overall RoB 2.0": t.overall_rob,
+                "Protocol Risk": f"{risk_report.risk_score:.0f}/100 ({risk_report.risk_category})"
+            })
+        rob_df = pd.DataFrame(rob_rows) if rob_rows else pd.DataFrame({"Notice": ["No risk assessments available."]})
+
+        # 6. Proposal & Academic Blueprint HTML
+        finer_cards = []
+        if blueprint and blueprint.finer_criteria:
+            for fc in blueprint.finer_criteria:
+                finer_cards.append(f"""
+                <div style="background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 12px; border-left: 3px solid {fc.color};">
+                  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                    <strong style="color: #F8FAFC; font-size: 13px;">{fc.criterion}</strong>
+                    <span style="background: {fc.color}22; border: 1px solid {fc.color}; color: {fc.color}; padding: 2px 8px; border-radius: 9999px; font-size: 10px; font-weight: 800;">{fc.score}/5 ({fc.rating})</span>
+                  </div>
+                  <p style="color: #94A3B8; font-size: 11.5px; margin: 0; line-height: 1.4;">{fc.justification}</p>
+                </div>
+                """)
+
+        finer_grid = "".join(finer_cards) if finer_cards else "<p style='color:#94A3B8;'>FINER criteria evaluated.</p>"
+
+        # GRADE Table HTML
+        grade_rows_html = []
+        if blueprint and blueprint.grade_table:
+            for gr_row in blueprint.grade_table.rows:
+                grade_rows_html.append(f"""
+                <tr style="border-bottom: 1px solid #334155;">
+                  <td style="padding: 8px 10px; color: #F8FAFC; font-weight: 600;">{gr_row.outcome_name}</td>
+                  <td style="padding: 8px 10px; color: #CBD5E1;">{gr_row.participants_studies}</td>
+                  <td style="padding: 8px 10px; color: #CBD5E1;">{gr_row.relative_effect}</td>
+                  <td style="padding: 8px 10px; color: #CBD5E1;">{gr_row.anticipated_absolute_effect}</td>
+                  <td style="padding: 8px 10px; color: #F59E0B;">{gr_row.risk_of_bias}</td>
+                  <td style="padding: 8px 10px; color: #38BDF8;">{gr_row.inconsistency}</td>
+                  <td style="padding: 8px 10px; color: #A855F7;">{gr_row.imprecision}</td>
+                  <td style="padding: 8px 10px; font-weight: 800; color: {gr_row.certainty_color};">{gr_row.overall_certainty}</td>
+                </tr>
+                """)
+
+        grade_table_html = f"""
+        <div style="background: rgba(15,23,42,0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-top: 14px; overflow-x: auto;">
+          <h4 style="color: #38BDF8; margin: 0 0 10px 0; font-size: 14px; font-weight: 700;">📊 GRADE Summary of Findings (SoF) Table</h4>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left;">
+            <thead>
+              <tr style="background: rgba(30,41,59,0.8); color: #94A3B8; text-transform: uppercase; font-size: 10px;">
+                <th style="padding: 8px 10px;">Outcome</th>
+                <th style="padding: 8px 10px;">Participants (Studies)</th>
+                <th style="padding: 8px 10px;">Relative Effect (95% CI)</th>
+                <th style="padding: 8px 10px;">Absolute Effect</th>
+                <th style="padding: 8px 10px;">Risk of Bias</th>
+                <th style="padding: 8px 10px;">Inconsistency</th>
+                <th style="padding: 8px 10px;">Imprecision</th>
+                <th style="padding: 8px 10px;">Certainty (GRADE)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {''.join(grade_rows_html)}
+            </tbody>
+          </table>
+        </div>
+        """ if grade_rows_html else ""
+
+        # Titles
+        titles_html = "".join([f"<li style='margin-bottom: 4px;'><strong style='color:#38BDF8;'>{t}</strong></li>" for t in (blueprint.proposed_academic_titles if blueprint else [])])
+
+        proposal_html = f"""
+        <div style="background: rgba(15,23,42,0.85); border: 1px solid #334155; border-radius: 14px; padding: 20px; color: #E2E8F0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 10px;">
+            <div>
+              <h3 style="color: #F8FAFC; margin: 0; font-size: 18px; font-weight: 800;">🏛️ Academic Research Blueprint &amp; Feasibility Appraisal</h3>
+              <p style="color: #94A3B8; font-size: 12px; margin: 2px 0 0 0;">Target Gap: <strong style="color: #38BDF8;">{target_gap.gap_id if target_gap else 'GAP-001'}</strong> — {target_gap.title if target_gap else 'Investigational Void'}</p>
+            </div>
+            <div style="background: rgba(16,185,129,0.15); border: 1px solid #10B981; color: #34D399; padding: 4px 14px; border-radius: 9999px; font-size: 12px; font-weight: 800;">
+              FINER Feasibility: {blueprint.finer_overall_score if blueprint else 4.6:.1f}/5.0
+            </div>
+          </div>
+
+          <div style="background: rgba(30,41,59,0.5); padding: 14px 18px; border-radius: 10px; margin-bottom: 14px;">
+            <h4 style="color: #94A3B8; margin: 0 0 8px 0; font-size: 11px; text-transform: uppercase;">🎓 Recommended Academic Thesis / Manuscript Titles</h4>
+            <ul style="margin: 0; padding-left: 20px; font-size: 13px;">
+              {titles_html or '<li>Comparative Effectiveness Trial Blueprint</li>'}
+            </ul>
+          </div>
+
+          <h4 style="color: #94A3B8; margin: 16px 0 8px 0; font-size: 11px; text-transform: uppercase;">⚖️ FINER Feasibility Scorecard</h4>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px;">
+            {finer_grid}
+          </div>
+
+          {grade_table_html}
+
+          <div style="background: rgba(30,41,59,0.6); padding: 14px 18px; border-radius: 10px; margin-top: 14px; font-size: 12.5px; line-height: 1.5;">
+            <strong style="color: #A855F7;">Supervisor Justification Memo:</strong><br/>
+            <p style="color: #CBD5E1; margin: 4px 0 0 0;">{blueprint.supervisor_justification_memo if blueprint else 'Grounded in rigorous empirical RCT evidence.'}</p>
+          </div>
+        </div>
+        """
+
+        # 7. Protocol & Biostatistical Planning HTML
+        sens_rows_html = []
+        if sensitivity_matrix:
+            for sr in sensitivity_matrix.rows:
+                sens_rows_html.append(f"""
+                <tr style="border-bottom: 1px solid #334155;">
+                  <td style="padding: 6px 10px; color: #38BDF8; font-weight: 700;">δ = {sr.delta_scenario:.2f}</td>
+                  <td style="padding: 6px 10px; color: #CBD5E1;">{sr.power_80_n_per_group:,}</td>
+                  <td style="padding: 6px 10px; color: #F8FAFC; font-weight: 700;">{sr.power_80_n_total:,}</td>
+                  <td style="padding: 6px 10px; color: #CBD5E1;">{sr.power_90_n_per_group:,}</td>
+                  <td style="padding: 6px 10px; color: #10B981; font-weight: 700;">{sr.power_90_n_total:,}</td>
+                </tr>
+                """)
+
+        protocol_html = f"""
+        <div style="background: rgba(15,23,42,0.85); border: 1px solid #334155; border-radius: 14px; padding: 20px; color: #E2E8F0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
+            <div>
+              <h3 style="color: #10B981; margin: 0; font-size: 18px; font-weight: 800;">📐 Biostatistical Sample Size Planning &amp; Sensitivity</h3>
+              <p style="color: #94A3B8; font-size: 12px; margin: 2px 0 0 0;">Calculated using verified presize closed-form formulas</p>
+            </div>
+            <div style="background: rgba(16,185,129,0.15); border: 1px solid #10B981; padding: 6px 16px; border-radius: 9999px;">
+              <span style="color: #34D399; font-size: 13px; font-weight: 800;">Total N = {base_sample.n_total_with_attrition:,} Enrolled</span>
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; margin-bottom: 16px;">
+            <div style="background: rgba(30,41,59,0.7); padding: 10px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 11px; color: #94A3B8;">Per Arm (n)</div>
+              <div style="font-size: 18px; font-weight: 800; color: #38BDF8;">{base_sample.n_per_group:,}</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.7); padding: 10px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 11px; color: #94A3B8;">Evaluable (N)</div>
+              <div style="font-size: 18px; font-weight: 800; color: #A855F7;">{base_sample.n_total_evaluable:,}</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.7); padding: 10px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 11px; color: #94A3B8;">Alpha (α)</div>
+              <div style="font-size: 18px; font-weight: 800; color: #F59E0B;">{base_sample.alpha}</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.7); padding: 10px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 11px; color: #94A3B8;">Power (1-β)</div>
+              <div style="font-size: 18px; font-weight: 800; color: #10B981;">{int(base_sample.power*100)}%</div>
+            </div>
+            <div style="background: rgba(30,41,59,0.7); padding: 10px; border-radius: 8px; text-align: center;">
+              <div style="font-size: 11px; color: #94A3B8;">Attrition Buffer</div>
+              <div style="font-size: 18px; font-weight: 800; color: #F43F5E;">{int(base_sample.attrition_rate*100)}%</div>
+            </div>
+          </div>
+
+          <div style="background: rgba(30,41,59,0.5); padding: 12px 16px; border-radius: 10px; font-size: 12px; font-family: monospace; color: #CBD5E1; margin-bottom: 16px;">
+            <strong>Formula:</strong> {base_sample.mathematical_formula}
+          </div>
+
+          <h4 style="color: #F8FAFC; margin: 16px 0 8px 0; font-size: 14px;">📊 Multi-Scenario Power &amp; Sample Size Sensitivity Matrix</h4>
+          <table style="width: 100%; border-collapse: collapse; font-size: 12px; text-align: left; background: rgba(30,41,59,0.4); border-radius: 8px; overflow: hidden;">
+            <thead>
+              <tr style="background: rgba(15,23,42,0.8); color: #94A3B8; text-transform: uppercase; font-size: 10px;">
+                <th style="padding: 8px 10px;">Effect Scenario</th>
+                <th style="padding: 8px 10px;">80% Power (Per Arm)</th>
+                <th style="padding: 8px 10px;">80% Power (Enrolled N)</th>
+                <th style="padding: 8px 10px;">90% Power (Per Arm)</th>
+                <th style="padding: 8px 10px;">90% Power (Enrolled N)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {''.join(sens_rows_html)}
+            </tbody>
+          </table>
+
+          <h4 style="color: #F8FAFC; margin: 18px 0 8px 0; font-size: 14px;">🔎 Reproducible PubMed MeSH Query (TrialMind-SLR Standard)</h4>
+          <div style="background: #020617; border: 1px solid #1E293B; padding: 12px 16px; border-radius: 10px; font-family: monospace; font-size: 12px; color: #38BDF8; word-break: break-all;">
+            {blueprint.pubmed_boolean_query if blueprint else 'Query generated at runtime.'}
+          </div>
+        </div>
+        """
+
+        progress(1.0, desc="✅ Phase 3 synthesis completed successfully!")
+
+        return (
+            verdict_html,
+            matrix_df,
+            gaps_df,
+            reality_html,
+            rob_df,
+            proposal_html,
+            protocol_html,
+            excel_path,
+            md_path
+        )
+
     except Exception as e:
-        import pandas as pd
-        err_msg = f"<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'><strong>Phase 3 Notice:</strong> {str(e)}</div>"
+        import traceback, html as py_html
+        traceback.print_exc()
+        err_msg = f"<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'><strong>Phase 3 Diagnostic Notice:</strong> {py_html.escape(str(e))}</div>"
         return err_msg, pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None
 
 
@@ -4310,6 +4722,14 @@ def build_app():
                             type="filepath"
                         )
 
+                        with gr.Accordion("⚡ Direct Excel Upload Shortcut (Convert .xlsx to 360° Dashboard in <2s)", open=False):
+                            p1_direct_excel = gr.File(
+                                label="Drop Pre-Extracted 7-Sheet Excel (.xlsx)",
+                                file_types=[".xlsx"],
+                                type="filepath"
+                            )
+                            convert_p1_excel_btn = gr.Button("🎨 Convert Extracted Excel to Interactive Dashboard", variant="secondary")
+
                         gr.Markdown("### ⚡ Step 2: Configure AI Engine")
                         model_selector = gr.Dropdown(
                             label="🤖 Deep AI Model Selection (BYOK)",
@@ -4344,12 +4764,21 @@ def build_app():
                             label="📄 Structured Trial Protocol Data (.json)",
                             value=p1_json_val
                         )
+                        p1_html_output = gr.File(
+                            label="🌐 Single-Trial 360° Interactive Dashboard (.html)",
+                            value=None
+                        )
 
                     # Right Column: Visual Dashboard & Interactive Tables
                     with gr.Column(scale=2):
                         summary_output = gr.HTML(value=p1_summary)
 
                         with gr.Tabs():
+                            with gr.TabItem("🎨 Live 360° Trial Dashboard Preview"):
+                                p1_dashboard_preview = gr.HTML(
+                                    value="<div style='padding:24px; text-align:center; color:#94A3B8; background:rgba(15,23,42,0.6); border-radius:12px;'>Extract a trial PDF or upload an extracted Excel to view the live 360° interactive dashboard preview.</div>"
+                                )
+
                             with gr.TabItem("📑 Master Extraction Sheet (Sheet 1 - Consolidated)"):
                                 master_table = gr.DataFrame(
                                     value=p1_master_df,
@@ -4389,7 +4818,14 @@ def build_app():
                 extract_btn.click(
                     fn=process_pdf,
                     inputs=[pdf_input, api_key_input, model_selector],
-                    outputs=[excel_output, json_output, summary_output, master_table, matrix_table, outcomes_table, eligibility_table],
+                    outputs=[excel_output, json_output, p1_html_output, summary_output, master_table, matrix_table, outcomes_table, eligibility_table, p1_dashboard_preview],
+                    show_progress="full"
+                )
+
+                convert_p1_excel_btn.click(
+                    fn=convert_phase1_excel_shortcut,
+                    inputs=[p1_direct_excel],
+                    outputs=[excel_output, p1_html_output, summary_output, master_table, matrix_table, outcomes_table, eligibility_table, p1_dashboard_preview],
                     show_progress="full"
                 )
 

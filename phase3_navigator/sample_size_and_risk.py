@@ -37,6 +37,18 @@ class SampleSizeResult:
     formula_plain: str
     justification_narrative: str
 
+    @property
+    def n_total_with_attrition(self) -> int:
+        return self.n_total_enrolled
+
+    @property
+    def n_per_group(self) -> int:
+        return self.n_per_arm_enrolled
+
+    @property
+    def mathematical_formula(self) -> str:
+        return self.formula_plain
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "design_name": self.design_name,
@@ -61,6 +73,11 @@ class SampleSizeSensitivityTable:
     scenarios: List[Dict[str, Any]] = field(default_factory=list)
     dataframe: Optional[pd.DataFrame] = None
 
+    @property
+    def rows(self) -> List[Dict[str, Any]]:
+        return self.scenarios
+
+
 
 @dataclass
 class ProtocolRiskFactor:
@@ -81,6 +98,14 @@ class ProtocolRiskReport:
     domains: List[ProtocolRiskFactor] = field(default_factory=list)
     methodology_citation: str = "Wood & McNair (2023) / fastdatascience clinical_trial_risk standard"
     executive_summary: str = ""
+
+    @property
+    def risk_score(self) -> float:
+        return self.total_score
+
+    @property
+    def risk_explanation(self) -> str:
+        return self.executive_summary or f"{self.risk_category}: Protocol evaluated per Wood & McNair (2023)."
 
     def to_dataframe(self) -> pd.DataFrame:
         rows = []
@@ -351,6 +376,9 @@ class SampleSizeAndRiskEngine:
         4. Control Arm Appropriateness & Blinding Rigor
         5. Statistical Multiplicity & Missing Data Strategy
         """
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else IngestedTrialData()
+
         domains: List[ProtocolRiskFactor] = []
 
         # Domain 1: Sample Size Adequacy (0-20)

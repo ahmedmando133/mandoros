@@ -156,16 +156,13 @@ def run_phase3_pipeline(
     # 2. Extract gaps into 4-Type Taxonomy
     gaps = GapTaxonomyExtractor.extract_gaps(trial_data)
 
-    # 3. Execute live reality check across PubMed, ClinicalTrials.gov, and OpenAlex
-    verdicts: List[RealityCheckVerdict] = []
-    for g in gaps:
-        v = GlobalRealityChecker.verify_gap(
-            gap=g,
-            condition=trial_data.condition,
-            drug_name=trial_data.drug_name,
-            skip_network=skip_network
-        )
-        verdicts.append(v)
+    # 3. Execute live parallel reality check across PubMed, ClinicalTrials.gov, and OpenAlex (<3 seconds)
+    verdicts = GlobalRealityChecker.verify_all_gaps_parallel(
+        gaps=gaps,
+        condition=trial_data.condition,
+        drug_name=trial_data.drug_name,
+        skip_network=skip_network
+    )
 
     # 4. Generate Plotly Figures: EGM Bubble Map and Cochrane robvis
     egm_fig = EGMRobvisPlotter.build_egm_bubble_matrix(gaps, trial_data)
@@ -236,7 +233,11 @@ def run_phase3_pipeline(
     )
 
     # Build UI Summaries
+    from dashboard_engine.shared_ui_components import build_instant_download_banner
+    download_banner = build_instant_download_banner(html_path, excel_path, phase_label="Phase 3 Gap & Thesis")
+
     status_html = f"""
+    {download_banner}
     <div style="background: rgba(15,23,42,0.85); border: 1.5px solid #10B981; border-radius: 14px; padding: 18px 24px; margin-bottom: 16px; box-shadow: 0 10px 25px rgba(0,0,0,0.5);">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
         <div>

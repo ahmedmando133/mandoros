@@ -90,6 +90,20 @@ class ThesisBlueprint:
     spirit_protocol_synopsis: Dict[str, str] # Path B: Clinical Trial Protocol (33 items)
     supervisor_justification_memo: str
 
+    @property
+    def thesis_title(self) -> str:
+        return self.proposed_academic_titles[0] if self.proposed_academic_titles else "Optimized Comparative Clinical Trial"
+
+    @property
+    def spirit_protocol_outline(self) -> str:
+        items = [f"- **{k}:** {v}" for k, v in self.spirit_protocol_synopsis.items()]
+        return "\n".join(items) if items else "SPIRIT 2013 protocol mapped."
+
+    @property
+    def prospero_framework(self) -> str:
+        items = [f"- **{k}:** {v}" for k, v in self.prospero_protocol_draft.items()]
+        return "\n".join(items) if items else "PROSPERO 22-item framework mapped."
+
 
 class ThesisProtocolBuilder:
     """
@@ -104,6 +118,9 @@ class ThesisProtocolBuilder:
         trial_data: IngestedTrialData,
     ) -> ThesisBlueprint:
         """Generates a complete thesis blueprint for the specified gap and trial data."""
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else IngestedTrialData()
+
         drug = trial_data.drug_name or "Investigational Therapy"
         condition = trial_data.condition or "Target Medical Condition"
         comparator = trial_data.comparator_name or "Standard of Care"

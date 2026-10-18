@@ -60,6 +60,9 @@ class Phase3DossierExporter:
         Sheet 5: GRADE Summary of Findings
         Sheet 6: Search Strategies & Blueprints
         """
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else None
+
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         wb = openpyxl.Workbook()
 
@@ -362,6 +365,9 @@ class Phase3DossierExporter:
         """
         Exports a standalone, publication-quality HTML research dossier.
         """
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else None
+
         os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
         timestamp = datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S UTC")
         drug = trial_data.drug_name if trial_data else "Investigational Agent"
@@ -561,3 +567,115 @@ class Phase3DossierExporter:
             f.write(html_content)
 
         return output_path
+
+    @classmethod
+    def export_markdown_dossier(
+        cls,
+        output_path: str,
+        gaps: List[ScientificGap],
+        sensitivity_table: Optional[SampleSizeSensitivityTable],
+        risk_report: Optional[ProtocolRiskReport],
+        blueprint: Optional[ThesisBlueprint],
+        trial_data: Optional[IngestedTrialData] = None,
+    ) -> str:
+        """Exports the Phase 3 dossier into a formatted Markdown thesis report."""
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else None
+
+        os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
+        cond = trial_data.condition if trial_data else "Clinical Evidence Base"
+        drug = trial_data.drug_name if trial_data else "Investigational Agent"
+        n_tot = trial_data.total_sample_size if trial_data else 0
+
+        lines = [
+            f"# MANDOROS Phase 3: Research Gap & Thesis Navigator Dossier",
+            f"**Evidence Base Indication:** {cond} | **Target Intervention:** {drug} | **Pooled Cohort N:** {n_tot:,}",
+            f"**Generated:** {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')} | **Methodological Standard:** Cochrane / PRISMA / SPIRIT 2013",
+            "",
+            "---",
+            "",
+            "## 1. Executive Summary & Discovered Research Gaps",
+            f"Automated ingestion processed {1 if trial_data else 0} trial(s) and classified {len(gaps)} candidate scientific gap(s).",
+            "",
+            "| Gap ID | Taxonomy Category | Title | Cell / Provenance | Priority |",
+            "|---|---|---|---|---|",
+        ]
+
+        for g in gaps:
+            coord = g.cell_coordinate or "N/A"
+            lines.append(f"| `{g.gap_id}` | `{g.taxonomy.value}` | **{g.title}** | `{coord}` | {g.priority_score:.1f} |")
+
+        lines.extend([
+            "",
+            "---",
+            "",
+            "## 2. 4-Type Scientific Gap Taxonomy & External Reality Check",
+            ""
+        ])
+
+        for g in gaps:
+            v = g.reality_verdict
+            v_badge = f"{v.traffic_light_color.value}: {v.badge_label}" if v else "Pending"
+            lines.extend([
+                f"### [{g.gap_id}] {g.title}",
+                f"- **Taxonomy Type:** `{g.taxonomy.value}`",
+                f"- **Verbatim Quote:** *\"{g.source_quote}\"*",
+                f"- **Cell Provenance:** `{g.cell_coordinate or 'N/A'}`",
+                f"- **External Reality Verdict:** **{v_badge}**",
+                f"- **Scholarly Saturation:** PubMed RCTs: `{v.pubmed_rct_count if v else 0}` | ClinicalTrials.gov: `{v.ctgov_total_count if v else 0}` (Ongoing: `{v.ctgov_ongoing_count if v else 0}`) | OpenAlex: `{v.openalex_count if v else 0}`",
+                f"- **Actionable Recommendation:** {v.actionable_recommendation if v else 'Conduct focused exploratory pilot.'}",
+                ""
+            ])
+
+        lines.extend([
+            "---",
+            "",
+            "## 3. Biostatistical Power & Sample Size Architecture",
+            ""
+        ])
+
+        if sensitivity_table:
+            lines.extend([
+                f"**Base Specification:** Required N = **{sensitivity_table.base_result.n_total_with_attrition:,} enrolled** ({sensitivity_table.base_result.n_per_group:,} per arm) at α = {sensitivity_table.base_result.alpha}, Power = {int(sensitivity_table.base_result.power*100)}%, Attrition Buffer = {int(sensitivity_table.base_result.attrition_rate*100)}%.",
+                f"**Mathematical Formula:** `{sensitivity_table.base_result.mathematical_formula}`",
+                "",
+                "### Multi-Scenario Sensitivity Matrix",
+                "",
+                "| Effect Scenario | Target Δ | Alpha (α) | Power (1-β) | n / arm (Evaluable) | N Total (Enrolled) |",
+                "|---|---|---|---|---|---|",
+            ])
+            for sc in (sensitivity_table.scenarios if sensitivity_table.scenarios else []):
+                n_enrolled_key = [k for k in sc.keys() if "Enrolled" in k]
+                n_enrolled_val = sc[n_enrolled_key[0]] if n_enrolled_key else sc.get("N Total (evaluable)", 0)
+                lines.append(f"| {sc.get('Effect Scenario', '')} | {sc.get('Target Δ', '')} | {sc.get('Alpha (α)', '')} | {sc.get('Power (1-β)', '')} | {sc.get('n / arm (evaluable)', 0):,} | {n_enrolled_val:,} |")
+
+
+        lines.extend([
+            "",
+            "---",
+            "",
+            "## 4. Methodological Quality & Protocol Risk Audit",
+            f"- **Wood & McNair (2023) Protocol Risk Score:** `{risk_report.risk_score:.1f}/100` ({risk_report.risk_category if risk_report else 'Informative'})",
+            f"- **Risk Classification:** {risk_report.risk_explanation if risk_report else 'Low likelihood of trial uninformativeness.'}",
+            "",
+            "---",
+            "",
+            "## 5. Thesis Protocol Blueprint & Reproducible MeSH Query",
+            f"### Proposed Study Title: {blueprint.thesis_title if blueprint else 'Optimized Comparative Clinical Trial'}",
+            "",
+            "```sql",
+            f"{blueprint.pubmed_boolean_query if blueprint else 'Search query unavailable.'}",
+            "```",
+            "",
+            "### SPIRIT 2013 Protocol Outline",
+            f"{blueprint.spirit_protocol_outline if blueprint else 'Protocol outline ready.'}",
+            "",
+            "### PROSPERO Registration Framework",
+            f"{blueprint.prospero_framework if blueprint else 'PROSPERO fields mapped.'}"
+        ])
+
+        with open(output_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(lines))
+
+        return output_path
+
