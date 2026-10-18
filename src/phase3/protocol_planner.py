@@ -50,22 +50,33 @@ class ProtocolPlannerEngine:
         """
         inputs = param_inputs or {}
 
+        # Gate G: Validate statistical parameters and preconditions
+        from src.quality_gates import QualityGates
+        QualityGates.enforce_gate_g(inputs={"alpha": alpha, "power": power})
+
         if design_type == "two_sample_binary":
-            return cls._calc_two_sample_binary(
+            spec = cls._calc_two_sample_binary(
                 primary_outcome_name, alpha, power, allocation_ratio, attrition_rate, inputs
             )
         elif design_type == "non_inferiority_continuous":
-            return cls._calc_non_inferiority_continuous(
+            spec = cls._calc_non_inferiority_continuous(
                 primary_outcome_name, alpha, power, allocation_ratio, attrition_rate, inputs
             )
         elif design_type == "non_inferiority_binary":
-            return cls._calc_non_inferiority_binary(
+            spec = cls._calc_non_inferiority_binary(
                 primary_outcome_name, alpha, power, allocation_ratio, attrition_rate, inputs
             )
         else:
-            return cls._calc_two_sample_continuous(
+            spec = cls._calc_two_sample_continuous(
                 primary_outcome_name, alpha, power, allocation_ratio, attrition_rate, inputs
             )
+
+        # Gate G: Validate output sample size sanity
+        QualityGates.enforce_gate_g(
+            inputs={"alpha": alpha, "power": power},
+            results={"total_sample_size": spec.n_total_with_attrition, "sample_size_per_arm": spec.n_per_group}
+        )
+        return spec
 
     @classmethod
     def _calc_two_sample_continuous(

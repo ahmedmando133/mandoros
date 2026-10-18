@@ -169,23 +169,44 @@ class ExcelTrialExporter:
         # Final export gate: no NaN / None / 'nan' / raw dict cells anywhere
         sanitize_workbook_cells(self.wb)
 
+        # Gate D: Validate workbook structure before saving
+        from src.quality_gates import QualityGates
+        gate_d = QualityGates.enforce_gate_d(self.wb, phase=1)
+        if not gate_d.passed:
+            print(f"[!] Gate D notice: {gate_d.errors}")
+
         import os
         parent_dir = os.path.dirname(output_path)
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
 
+        saved_path = output_path
         try:
             try:
                 self.wb.save(output_path)
                 print(f"Exported clean structured Excel workbook to: {output_path}")
-                return output_path
+                saved_path = output_path
             except PermissionError:
                 base, ext = os.path.splitext(output_path)
                 alt_path = f"{base}_updated{ext}"
                 self.wb.save(alt_path)
                 print(f"[!] Primary file '{output_path}' is currently OPEN in Excel.")
                 print(f"[OK] Saved updated version to: {alt_path}")
-                return alt_path
+                saved_path = alt_path
+
+            # Gate E: Post-Export Reopening & Cell Reconciliation Guard
+            gate_e = QualityGates.enforce_gate_e(saved_path, self.data)
+            if not gate_e.passed:
+                print(f"[!] Gate E reconciliation notice: {gate_e.errors}")
+            else:
+                print(f"[+] Gate E verified: {gate_e.metrics.get('total_cells_audited', 0)} cells reconciled.")
+
+            # Gate H: Final Artifact & Export Readiness Guard
+            gate_h = QualityGates.enforce_gate_h(saved_path)
+            if not gate_h.passed:
+                print(f"[!] Gate H notice: {gate_h.errors}")
+
+            return saved_path
         finally:
             try:
                 self.wb.close()

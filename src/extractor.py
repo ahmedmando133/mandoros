@@ -89,7 +89,15 @@ class RCTExtractor:
         Runs the extraction pipeline:
         - If an AI API Key (Gemini, Claude, or OpenAI) is present, executes Multi-Stage Decomposed AI Extraction.
         - If API fails or is absent, executes the robust Smart Pharmacology Local Engine.
+        - Enforces Universal Quality Gates A, B, and C.
         """
+        # Gate A: Ingestion & Document Pre-Flight Guard
+        from src.quality_gates import QualityGates
+        if hasattr(self, "pdf_path") and self.pdf_path:
+            gate_a = QualityGates.enforce_gate_a(self.pdf_path)
+            if not gate_a.passed:
+                print(f"[!] Gate A notice: {gate_a.errors}")
+
         full_text = self.doc.get_full_text()
         sections = self.doc.search_sections()
 
@@ -102,7 +110,10 @@ class RCTExtractor:
                 ai_data = self._extract_with_llm(study_id, sections)
                 if ai_data and len(ai_data.outcomes) > 0:
                     from src.scientific_referee import scientific_referee_audit_and_repair
-                    return scientific_referee_audit_and_repair(ai_data, full_text=full_text)
+                    repaired = scientific_referee_audit_and_repair(ai_data, full_text=full_text)
+                    QualityGates.enforce_gate_b(repaired)
+                    QualityGates.enforce_gate_c(repaired)
+                    return repaired
             except Exception as e:
                 err_msg = str(e)
                 print(f"[!] Multi-Stage AI Extraction notice: {err_msg}; falling back to Smart Local Engine.")
@@ -154,7 +165,17 @@ class RCTExtractor:
             doc_pages=self.doc.pages
         )
         from src.scientific_referee import scientific_referee_audit_and_repair
-        return scientific_referee_audit_and_repair(qa_data, full_text=full_text)
+        final_data = scientific_referee_audit_and_repair(qa_data, full_text=full_text)
+
+        # Enforce Gate B (Extraction Completeness) & Gate C (Normalization)
+        gate_b = QualityGates.enforce_gate_b(final_data)
+        gate_c = QualityGates.enforce_gate_c(final_data)
+        if not gate_b.passed:
+            print(f"[!] Gate B notice: {gate_b.errors}")
+        if not gate_c.passed:
+            print(f"[!] Gate C notice: {gate_c.errors}")
+
+        return final_data
 
     def _audit_and_sanitize_biomarkers(self, outcomes: List[OutcomeMeasurement]) -> List[OutcomeMeasurement]:
         """
@@ -3386,7 +3407,38 @@ class RCTExtractor:
             "stroke": ("Stroke", "safety_adverse_events", "%"),
 
             # 9. Demographics
-            "male": ("Sex: Male", "demographic", "%")
+            "male": ("Sex: Male", "demographic", "%"),
+            "female": ("Sex: Female", "demographic", "%"),
+            "age": ("Age", "demographic", "years"),
+
+            # 10. Universal Adverse Events & Safety Endpoints
+            "any adverse event": ("Any Adverse Event", "safety_adverse_events", "%"),
+            "any adverse events": ("Any Adverse Event", "safety_adverse_events", "%"),
+            "serious adverse event": ("Serious Adverse Events", "safety_adverse_events", "%"),
+            "serious adverse events": ("Serious Adverse Events", "safety_adverse_events", "%"),
+            "discontinuation due to adverse event": ("Discontinuation Due to Adverse Event", "safety_adverse_events", "%"),
+            "discontinuation due to adverse events": ("Discontinuation Due to Adverse Event", "safety_adverse_events", "%"),
+            "hypoglycemia": ("Hypoglycemia", "safety_adverse_events", "%"),
+            "hypoglycaemia": ("Hypoglycemia", "safety_adverse_events", "%"),
+            "nasopharyngitis": ("Nasopharyngitis", "safety_adverse_events", "%"),
+            "headache": ("Headache", "safety_adverse_events", "%"),
+            "diarrhea": ("Diarrhea", "safety_adverse_events", "%"),
+            "diarrhoea": ("Diarrhea", "safety_adverse_events", "%"),
+            "nausea": ("Nausea", "safety_adverse_events", "%"),
+            "vomiting": ("Vomiting", "safety_adverse_events", "%"),
+            "urinary tract infection": ("Urinary Tract Infection", "safety_adverse_events", "%"),
+            "upper respiratory tract infection": ("Upper Respiratory Tract Infection", "safety_adverse_events", "%"),
+            "dizziness": ("Dizziness", "safety_adverse_events", "%"),
+            "constipation": ("Constipation", "safety_adverse_events", "%"),
+            "fatigue": ("Fatigue", "safety_adverse_events", "%"),
+            "rash": ("Rash", "safety_adverse_events", "%"),
+            "back pain": ("Back Pain", "safety_adverse_events", "%"),
+            "arthralgia": ("Arthralgia", "safety_adverse_events", "%"),
+            "dyspepsia": ("Dyspepsia", "safety_adverse_events", "%"),
+            "cough": ("Cough", "safety_adverse_events", "%"),
+            "edema": ("Edema", "safety_adverse_events", "%"),
+            "gout flares": ("Gout Flares", "safety_adverse_events", "%"),
+            "gout flare": ("Gout Flares", "safety_adverse_events", "%")
         }
 
         # Sort known endpoints by length of key descending so longer phrases match first
@@ -4016,6 +4068,10 @@ class RCTExtractor:
         # Generic Fallback Table & Line Parser for Other Unmatched Endpoints
         # -------------------------------------------------------------------------
         already_extracted_postbase = {o.parameter_name.strip().lower() for o in outcomes if not o.is_baseline}
+        already_extracted_tuples = {
+            (str(o.parameter_name).strip().lower(), str(o.arm_id).strip(), str(o.timepoint_value or "").strip().lower())
+            for o in outcomes
+        }
 
         for p in all_pages:
             p_num = getattr(p, "page_number", 1)
@@ -4071,16 +4127,17 @@ class RCTExtractor:
 
                     line_has_se = is_se_table or bool(re.search(r'\b(?:se|standard\s*error)\b|\(se\)', line, re.I))
 
-                    dichot_matches = re.findall(r'(\d+)\s*\(([\d\.]+)\s*%\)', line)
+                    is_safety_or_event = (domain == "safety_adverse_events") or bool(re.search(r'\b(?:no\.?|patients?|events?|n)\s*\([%\d]', line, re.I)) or ("%" in line)
+                    dichot_matches = re.findall(r'(\d+)\s*\(([\d\.]+)(?:\s*%)?\)', line)
                     cont_matches = re.findall(r'(-?\d+(?:\.\d+)?)\s*(?:±|\+/-|\()\s*(\d+(?:\.\d+)?)\)?', line)
 
-                    if dichot_matches and len(dichot_matches) >= len(arms):
+                    if dichot_matches and len(dichot_matches) >= len(arms) and (is_safety_or_event or not ("±" in line or "+/-" in line or line_has_se)):
                         for idx_a, arm in enumerate(arms):
-                            tup = dichot_matches[idx_a]
-                            dedupe_k = (std_name, tp_val, arm.arm_id, tup[0], tup[1])
-                            if dedupe_k in extracted_keys:
+                            arm_tp_key = (std_name.strip().lower(), str(arm.arm_id).strip(), str(tp_val).strip().lower())
+                            if arm_tp_key in already_extracted_tuples:
                                 continue
-                            extracted_keys.add(dedupe_k)
+                            already_extracted_tuples.add(arm_tp_key)
+                            tup = dichot_matches[idx_a]
                             ev = int(tup[0])
                             pct = float(tup[1])
                             outcomes.append(OutcomeMeasurement(
@@ -4095,11 +4152,11 @@ class RCTExtractor:
 
                     elif cont_matches and len(cont_matches) >= len(arms):
                         for idx_a, arm in enumerate(arms):
-                            num_tuple = cont_matches[idx_a]
-                            dedupe_k = (std_name, tp_val, arm.arm_id, num_tuple[0], num_tuple[1])
-                            if dedupe_k in extracted_keys:
+                            arm_tp_key = (std_name.strip().lower(), str(arm.arm_id).strip(), str(tp_val).strip().lower())
+                            if arm_tp_key in already_extracted_tuples:
                                 continue
-                            extracted_keys.add(dedupe_k)
+                            already_extracted_tuples.add(arm_tp_key)
+                            num_tuple = cont_matches[idx_a]
                             mean_val = float(num_tuple[0])
                             disp_val = float(num_tuple[1])
                             sd_v = None if line_has_se else disp_val
