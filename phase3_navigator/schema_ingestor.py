@@ -667,23 +667,23 @@ class SchemaIngestor:
             return []
 
         ws = wb[sheet_name]
-        rows = list(ws.iter_rows(values_only=False))
+        rows = list(ws.iter_rows(values_only=True))
         if len(rows) < 2:
             return []
 
-        headers = [c.value for c in rows[0]]
+        headers = [c for c in rows[0]]
         cleaned_headers = [str(h).strip() if h is not None else f"col_{i}" for i, h in enumerate(headers)]
 
         results = []
         for r_idx, row in enumerate(rows[1:], start=2):
-            row_vals = [c.value for c in row]
+            row_vals = [c for c in row]
             if not any(v is not None and str(v).strip() != "" for v in row_vals):
                 continue
 
             r_dict: Dict[str, Any] = {}
-            for c_idx, cell in enumerate(row):
+            for c_idx, val in enumerate(row):
                 if c_idx < len(cleaned_headers):
-                    r_dict[cleaned_headers[c_idx]] = cell.value
+                    r_dict[cleaned_headers[c_idx]] = val
 
             col_letter = get_column_letter(len(row))
             r_dict["_prov_citation"] = f"Workbook: {file_name} | Sheet: {sheet_name} | Row {r_idx} (A{r_idx}:{col_letter}{r_idx})"

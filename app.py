@@ -400,6 +400,9 @@ def process_pdf(
         </div>
         """
         return None, None, None, err_card, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
+    finally:
+        import gc
+        gc.collect()
 
 
 def convert_phase1_excel_shortcut(excel_file):
@@ -435,6 +438,9 @@ def convert_phase1_excel_shortcut(excel_file):
     except Exception as e:
         err = f"<div style='color:#EF4444; padding:12px;'>Error converting Excel to Dashboard: {py_html.escape(str(e))}</div>"
         return f_path, None, err, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
+    finally:
+        import gc
+        gc.collect()
 
 
 def convert_phase3_excel_shortcut(excel_files):
@@ -463,6 +469,9 @@ def convert_phase3_excel_shortcut(excel_files):
     except Exception as e:
         err = f"<div style='color:#EF4444; padding:12px;'>Error converting Excel to Dashboard: {py_html.escape(str(e))}</div>"
         return err, "", f_path, None
+    finally:
+        import gc
+        gc.collect()
 
 
 CACHED_COHORT_PIPELINES: dict[str, Any] = {}
@@ -2593,6 +2602,9 @@ def process_cohort(
             "",
             ""
         )
+    finally:
+        import gc
+        gc.collect()
 
 
 def get_default_phase3_preview():
@@ -3112,6 +3124,9 @@ def process_phase3_ui(
         traceback.print_exc()
         err_msg = f"<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'><strong>Phase 3 Diagnostic Notice:</strong> {py_html.escape(str(e))}</div>"
         return err_msg, "<p>Error</p>", pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None, None
+    finally:
+        import gc
+        gc.collect()
 
 
 def build_app():
