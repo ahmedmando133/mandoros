@@ -333,8 +333,9 @@ def test_phase3_empty_state_isolation():
         ni_margin=2.5,
     )
 
-    verdict_html, matrix_df, gaps_df, rc_html, rob_df, prop_html, proto_html, xl_dl, md_dl = res
+    verdict_html, preview_html, matrix_df, gaps_df, rc_html, rob_df, prop_html, proto_html, xl_dl, html_dl, md_dl = res
 
     assert "Missing Input Documents" in verdict_html
     assert xl_dl is None, "Download file must be None on empty upload"
+    assert html_dl is None, "Download HTML dashboard must be None on empty upload"
     assert md_dl is None, "Download file must be None on empty upload"

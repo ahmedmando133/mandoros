@@ -437,6 +437,34 @@ def convert_phase1_excel_shortcut(excel_file):
         return f_path, None, err, pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
 
 
+def convert_phase3_excel_shortcut(excel_files):
+    """Direct shortcut: converts uploaded Phase 3 Excel into Interactive HTML Dashboard in <2s."""
+    import os, urllib.parse, html as py_html
+    if not excel_files:
+        err = "<div style='color:#EF4444; padding:12px; font-size:13px;'>⚠️ Please upload an extracted Phase 3 Excel workbook (.xlsx) first.</div>"
+        return err, "", None, None
+
+    f_item = excel_files[0] if isinstance(excel_files, list) else excel_files
+    f_path = f_item.name if hasattr(f_item, "name") else str(f_item)
+    try:
+        from dashboard_engine.excel_watcher_hook import auto_generate_dashboard_for_excel
+        html_path, banner = auto_generate_dashboard_for_excel(f_path, phase_hint="Phase 3", force_refresh=True)
+
+        norm_path = urllib.parse.quote(html_path.replace("\\", "/"), safe="/:")
+        iframe = f"<iframe src='/gradio_api/file={norm_path}' style='width: 100%; height: 850px; border: none; border-radius: 14px;'></iframe>"
+
+        summary_card = f"""
+        {banner}
+        <div style='padding:14px 18px; background:rgba(15,23,42,0.85); border:1px solid #10B981; border-radius:12px; color:#A7F3D0; font-size:13px; margin-bottom:12px;'>
+          ✓ <strong>Instant Phase 3 Thesis Dashboard Converted:</strong> Successfully compiled <code>{os.path.basename(f_path)}</code> into a standalone interactive application in &lt;1 second.
+        </div>
+        """
+        return summary_card, iframe, f_path, html_path
+    except Exception as e:
+        err = f"<div style='color:#EF4444; padding:12px;'>Error converting Excel to Dashboard: {py_html.escape(str(e))}</div>"
+        return err, "", f_path, None
+
+
 CACHED_COHORT_PIPELINES: dict[str, Any] = {}
 
 
@@ -2592,6 +2620,7 @@ def get_default_phase3_preview():
         prop_html,
         proto_html,
         None,
+        None,
         None
     )
 
@@ -2623,12 +2652,14 @@ def process_phase3_ui(
             )
             return (
                 err_msg,
+                "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
                 pd.DataFrame({"Notice": ["Please upload trial documents first."]}),
                 pd.DataFrame({"Notice": ["Please upload trial documents first."]}),
                 "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
                 pd.DataFrame({"Notice": ["Please upload trial documents first."]}),
                 "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
                 "<p style='color: #F87171;'>Synthesis halted: No input files provided.</p>",
+                None,
                 None,
                 None
             )
@@ -2648,7 +2679,19 @@ def process_phase3_ui(
         trial_data = SchemaIngestor.ingest_files(file_list)
         if not trial_data:
             err_msg = "<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'>⚠️ No valid trial data could be extracted from the uploaded document. Please upload an RCT PDF or Phase 1 Excel workbook (.xlsx).</div>"
-            return err_msg, pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None
+            return (
+                err_msg,
+                "<p style='color: #F87171;'>No valid trial data extracted.</p>",
+                pd.DataFrame(),
+                pd.DataFrame(),
+                "<p>Error</p>",
+                pd.DataFrame(),
+                "<p>Error</p>",
+                "<p>Error</p>",
+                None,
+                None,
+                None
+            )
 
         progress(0.25, desc="🏷️ Extracting 4-Type Gap Taxonomy (POP, INT_COMP, OUTCOME, METHOD_ROB)...")
         gaps = GapTaxonomyExtractor.extract_gaps(trial_data)
@@ -2733,8 +2776,23 @@ def process_phase3_ui(
             trial_data=trial_data,
         )
 
+        # Generate Standalone Interactive Phase 3 HTML Dashboard
+        p3_dash_html = None
+        try:
+            from dashboard_engine.excel_watcher_hook import auto_generate_dashboard_for_excel
+            p3_dash_html, _ = auto_generate_dashboard_for_excel(excel_path, phase_hint="Phase 3", force_refresh=True)
+        except Exception as p3_dash_err:
+            print(f"[!] Warning generating Phase 3 dashboard: {p3_dash_err}")
+
+        target_html_dash = p3_dash_html if (p3_dash_html and os.path.exists(p3_dash_html)) else html_path
+
+        p3_preview_iframe = "<div style='padding:24px; text-align:center; color:#94A3B8; background:rgba(15,23,42,0.6); border-radius:12px;'>Phase 3 Interactive Dashboard ready.</div>"
+        if target_html_dash and os.path.exists(target_html_dash):
+            norm_p3 = urllib.parse.quote(target_html_dash.replace("\\", "/"), safe="/:")
+            p3_preview_iframe = f"<iframe src='/gradio_api/file={norm_p3}' style='width: 100%; height: 850px; border: none; border-radius: 14px;'></iframe>"
+
         # 1. Action Bar & Top Verdict
-        download_banner = build_instant_download_banner(html_path, excel_path, phase_label="Phase 3 Gap & Thesis")
+        download_banner = build_instant_download_banner(target_html_dash, excel_path, phase_label="Phase 3 Gap & Thesis")
         green_count = sum(1 for v in verdicts if v.traffic_light_color.value == "GREEN")
         yellow_count = sum(1 for v in verdicts if v.traffic_light_color.value == "YELLOW")
         red_count = sum(1 for v in verdicts if v.traffic_light_color.value == "RED")
@@ -3037,6 +3095,7 @@ def process_phase3_ui(
 
         return (
             verdict_html,
+            p3_preview_iframe,
             matrix_df,
             gaps_df,
             reality_html,
@@ -3044,6 +3103,7 @@ def process_phase3_ui(
             proposal_html,
             protocol_html,
             excel_path,
+            target_html_dash,
             md_path
         )
 
@@ -3051,7 +3111,7 @@ def process_phase3_ui(
         import traceback, html as py_html
         traceback.print_exc()
         err_msg = f"<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'><strong>Phase 3 Diagnostic Notice:</strong> {py_html.escape(str(e))}</div>"
-        return err_msg, pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None
+        return err_msg, "<p>Error</p>", pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None, None
 
 
 def build_app():
@@ -4666,6 +4726,7 @@ def build_app():
             p3_init_prop,
             p3_init_proto,
             p3_init_xl,
+            p3_init_html,
             p3_init_md
         ) = get_default_phase3_preview()
 
@@ -5302,13 +5363,20 @@ def build_app():
 
                         gr.Markdown("### 📥 Step 4: Export Deliverables")
                         p3_excel_download = gr.File(label="📊 Download 7-Sheet Phase 3 Research Package (.xlsx)", value=p3_init_xl)
+                        p3_html_download = gr.File(label="🌐 Interactive Phase 3 Research Gap & Thesis Dashboard (.html)", value=p3_init_html)
                         p3_md_download = gr.File(label="📝 Download Standalone Thesis Dossier (.md)", value=p3_init_md)
+                        convert_p3_excel_btn = gr.Button("🎨 Convert Uploaded Phase 3 Excel to Interactive Dashboard", variant="secondary")
 
                     # Right Column: Interactive 5-Pillar Workspaces
                     with gr.Column(scale=2):
                         p3_verdict_html = gr.HTML(value=p3_init_verdict)
 
                         with gr.Tabs():
+                            with gr.TabItem("🎨 Live Interactive Phase 3 Thesis Dashboard Preview"):
+                                p3_dashboard_preview = gr.HTML(
+                                    value="<div style='padding:24px; text-align:center; color:#94A3B8; background:rgba(15,23,42,0.6); border-radius:12px;'>Upload literature evidence and run synthesis to view the live interactive 360° research gap and thesis dashboard preview.</div>"
+                                )
+
                             with gr.TabItem("📑 Pillar I: Evidence Matrix & Discovered Gaps"):
                                 gr.Markdown("#### 📊 Cross-Study Evidence Matrix")
                                 p3_matrix_table = gr.DataFrame(value=p3_init_matrix, interactive=False, wrap=True, max_height=320)
@@ -5348,6 +5416,7 @@ def build_app():
                     ],
                     outputs=[
                         p3_verdict_html,
+                        p3_dashboard_preview,
                         p3_matrix_table,
                         p3_gaps_table,
                         p3_reality_html,
@@ -5355,9 +5424,16 @@ def build_app():
                         p3_proposal_html,
                         p3_protocol_html,
                         p3_excel_download,
+                        p3_html_download,
                         p3_md_download
                     ],
                     show_progress="full"
+                )
+
+                convert_p3_excel_btn.click(
+                    fn=convert_phase3_excel_shortcut,
+                    inputs=[p3_upload_files],
+                    outputs=[p3_verdict_html, p3_dashboard_preview, p3_excel_download, p3_html_download]
                 )
 
             # =========================================================================
