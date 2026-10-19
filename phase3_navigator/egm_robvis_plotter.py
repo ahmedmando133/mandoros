@@ -59,6 +59,8 @@ class EGMRobvisPlotter:
         ]
 
         # Extract populations/interventions from trial_data and gaps
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else None
         drug_name = trial_data.drug_name if trial_data and trial_data.drug_name else "Investigational Agent"
         comparator = trial_data.comparator_name if trial_data and trial_data.comparator_name else "Placebo/Control"
 
@@ -247,6 +249,9 @@ class EGMRobvisPlotter:
             "D5: Selection",
             "Overall Risk",
         ]
+
+        if isinstance(trial_data, list):
+            trial_data = trial_data[0] if trial_data else None
 
         study_labels = [
             trial_data.study_title[:35] + "..." if trial_data and trial_data.study_title else "Index Trial RCT",

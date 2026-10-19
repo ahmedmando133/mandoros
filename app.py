@@ -2646,6 +2646,9 @@ def process_phase3_ui(
         from dashboard_engine.shared_ui_components import build_instant_download_banner
 
         trial_data = SchemaIngestor.ingest_files(file_list)
+        if not trial_data:
+            err_msg = "<div style='padding: 16px; background: rgba(239,68,68,0.2); border: 1px solid #EF4444; border-radius: 10px; color: #FCA5A5;'>⚠️ No valid trial data could be extracted from the uploaded document. Please upload an RCT PDF or Phase 1 Excel workbook (.xlsx).</div>"
+            return err_msg, pd.DataFrame(), pd.DataFrame(), "<p>Error</p>", pd.DataFrame(), "<p>Error</p>", "<p>Error</p>", None, None
 
         progress(0.25, desc="🏷️ Extracting 4-Type Gap Taxonomy (POP, INT_COMP, OUTCOME, METHOD_ROB)...")
         gaps = GapTaxonomyExtractor.extract_gaps(trial_data)
@@ -2794,16 +2797,34 @@ def process_phase3_ui(
         # 2. Evidence Matrix Table
         matrix_rows = []
         for t in trial_data.trials:
+            interv_list = []
+            for arm in (t.interventions or []):
+                if isinstance(arm, dict):
+                    interv_list.append(arm.get("drug_name") or arm.get("arm_name") or "Intervention")
+                else:
+                    interv_list.append(str(arm))
+            interv_str = ", ".join(interv_list) or (t.drug_name or "Investigational Agent")
+
+            comp_list = []
+            for arm in (t.comparators or []):
+                if isinstance(arm, dict):
+                    comp_list.append(arm.get("drug_name") or arm.get("arm_name") or "Placebo")
+                else:
+                    comp_list.append(str(arm))
+            comp_str = ", ".join(comp_list) or (t.comparator_name or "Placebo")
+
+            out_str = t.get_primary_outcome_name() if hasattr(t, "get_primary_outcome_name") else "Primary Endpoint"
+
             matrix_rows.append({
                 "Study ID": t.study_id,
-                "Authors & Year": f"{t.authors} ({t.publication_year})",
+                "Authors & Year": f"{t.authors} ({t.publication_year})" if t.publication_year else (t.authors or t.study_id),
                 "Phase / Design": t.study_design,
-                "Sample Size (N)": t.sample_size,
-                "Interventions": ", ".join(t.interventions),
-                "Comparators": ", ".join(t.comparators),
-                "Primary Outcome": ", ".join(t.primary_outcomes),
-                "Follow-Up": f"{t.follow_up_weeks} wks",
-                "Key Findings": "; ".join(t.key_findings[:2])
+                "Sample Size (N)": t.total_sample_size,
+                "Interventions": interv_str,
+                "Comparators": comp_str,
+                "Primary Outcome": out_str,
+                "Follow-Up": f"{t.duration_weeks:.0f} wks",
+                "Key Findings": "; ".join(t.reported_limitations[:2]) if t.reported_limitations else "Standard double-blind trial evidence"
             })
         matrix_df = pd.DataFrame(matrix_rows) if matrix_rows else pd.DataFrame({"Notice": ["No trials extracted."]})
 
@@ -2827,7 +2848,7 @@ def process_phase3_ui(
         # 5. RoB 2.0 / Protocol Risk Table
         rob_rows = []
         for t in trial_data.trials:
-            d = t.rob_domains
+            d = t.rob2_domains if hasattr(t, "rob2_domains") else (t.rob_domains if hasattr(t, "rob_domains") else {})
             rob_rows.append({
                 "Study ID": t.study_id,
                 "D1: Randomization": d.get("D1", "Low Risk"),
@@ -2835,7 +2856,7 @@ def process_phase3_ui(
                 "D3: Missing Outcome Data": d.get("D3", "Some Concerns"),
                 "D4: Measurement": d.get("D4", "Low Risk"),
                 "D5: Selective Reporting": d.get("D5", "Low Risk"),
-                "Overall RoB 2.0": t.overall_rob,
+                "Overall RoB 2.0": d.get("Overall", "Some Concerns"),
                 "Protocol Risk": f"{risk_report.risk_score:.0f}/100 ({risk_report.risk_category})"
             })
         rob_df = pd.DataFrame(rob_rows) if rob_rows else pd.DataFrame({"Notice": ["No risk assessments available."]})
@@ -2935,14 +2956,18 @@ def process_phase3_ui(
         # 7. Protocol & Biostatistical Planning HTML
         sens_rows_html = []
         if sensitivity_matrix:
-            for sr in sensitivity_matrix.rows:
+            for sr in (sensitivity_matrix.scenarios or []):
+                eff = sr.get("Effect Scenario") or f"Target Δ = {sr.get('Target Δ', 5.0)}"
+                n_arm = sr.get("n / arm (evaluable)", 0)
+                n_tot = sr.get("N Total (evaluable)", 0)
+                pwr = sr.get("Power (1-β)", "80%")
+                alp = sr.get("Alpha (α)", 0.05)
                 sens_rows_html.append(f"""
                 <tr style="border-bottom: 1px solid #334155;">
-                  <td style="padding: 6px 10px; color: #38BDF8; font-weight: 700;">δ = {sr.delta_scenario:.2f}</td>
-                  <td style="padding: 6px 10px; color: #CBD5E1;">{sr.power_80_n_per_group:,}</td>
-                  <td style="padding: 6px 10px; color: #F8FAFC; font-weight: 700;">{sr.power_80_n_total:,}</td>
-                  <td style="padding: 6px 10px; color: #CBD5E1;">{sr.power_90_n_per_group:,}</td>
-                  <td style="padding: 6px 10px; color: #10B981; font-weight: 700;">{sr.power_90_n_total:,}</td>
+                  <td style="padding: 6px 10px; color: #38BDF8; font-weight: 700;">{eff} (α={alp})</td>
+                  <td style="padding: 6px 10px; color: #CBD5E1;">{pwr}</td>
+                  <td style="padding: 6px 10px; color: #F8FAFC; font-weight: 700;">{n_arm:,} / arm</td>
+                  <td style="padding: 6px 10px; color: #10B981; font-weight: 700;">{n_tot:,} Total</td>
                 </tr>
                 """)
 

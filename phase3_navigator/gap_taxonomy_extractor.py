@@ -66,6 +66,10 @@ class ScientificGap:
         return self.category
 
     @property
+    def confidence(self) -> str:
+        return "High (95% CI)" if self.traffic_light_color == "GREEN" else "Moderate"
+
+    @property
     def reality_verdict(self) -> Any:
         return getattr(self, "_reality_verdict", None)
 

@@ -152,6 +152,13 @@ def run_phase3_pipeline(
 
     # 1. Ingest files dynamically
     trial_data = SchemaIngestor.ingest_files(uploaded_files)
+    if not trial_data:
+        return (
+            "<div style='color:#EF4444; padding:12px;'>⚠️ Please upload an RCT PDF or Phase 1 Excel workbook first.</div>",
+            go.Figure(), go.Figure(), pd.DataFrame(), "<p>No files uploaded.</p>",
+            pd.DataFrame(), "<p>No data</p>", pd.DataFrame(), "<p>No blueprint</p>",
+            None, None
+        )
 
     # 2. Extract gaps into 4-Type Taxonomy
     gaps = GapTaxonomyExtractor.extract_gaps(trial_data)
