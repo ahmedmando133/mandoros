@@ -5683,22 +5683,6 @@ def build_app():
             """
         )
 
-    demo.load(
-        fn=None,
-        inputs=None,
-        outputs=None,
-        js="""
-        () => {
-            if (!window.ncpiFhirAddonLoaded) {
-                const s = document.createElement('script');
-                s.src = '/ncpiFhirAddon.js';
-                s.async = true;
-                s.onload = () => { window.ncpiFhirAddonLoaded = true; };
-                document.head.appendChild(s);
-            }
-        }
-        """
-    )
     return demo
 
 
