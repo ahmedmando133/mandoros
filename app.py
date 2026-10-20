@@ -5721,17 +5721,7 @@ if __name__ == "__main__":
         prevent_thread_lock=True
     )
 
-    from starlette.responses import FileResponse
-
-    @app_obj.middleware("http")
-    async def serve_ncpi_fhir_middleware(request, call_next):
-        if request.url.path in ("/static/ncpiFhirAddon.js", "/ncpiFhirAddon.js"):
-            js_f = os.path.join(os.path.dirname(__file__), "static", "ncpiFhirAddon.js")
-            if os.path.exists(js_f):
-                return FileResponse(js_f, media_type="application/javascript", headers={"Cache-Control": "no-cache"})
-        return await call_next(request)
-
-    # Ultra-fast health check endpoints for Render cloud monitoring & keep-alive probes
+# Ultra-fast health check endpoints for Render cloud monitoring & keep-alive probes
     @app_obj.get("/health")
     @app_obj.get("/healthz")
     @app_obj.get("/api/health")

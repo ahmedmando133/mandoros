@@ -1,0 +1,24 @@
+name: MANDOROS Cloud Keep-Alive (24/7 Zero Cold Start)
+
+on:
+  schedule:
+    # Ping every 10 minutes to eliminate Render 15-minute inactivity spin-down
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  keep-alive:
+    name: Keep MANDOROS Hot & Awake
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Send Warm-Up Probe to MANDOROS Render Web Service
+        run: |
+          echo "Sending keep-alive probe to https://mandoros.onrender.com/health..."
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 20 "https://mandoros.onrender.com/health" || echo "000")
+          echo "Primary Probe Result: HTTP $HTTP_CODE"
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "Instance may be spinning up or responding on alternative probe..."
+            curl -s -f --max-time 60 "https://mandoros.onrender.com/api/health" || true
+          fi
+          echo "Keep-alive cycle complete. Inactivity countdown reset."
