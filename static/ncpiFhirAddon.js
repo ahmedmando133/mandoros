@@ -555,20 +555,50 @@
 </body>
 </html>`;
 
+      // 1. Direct file download (immune to popup blockers)
       const blob = new Blob([dashboardHtml], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
-      const win = window.open(url, '_blank');
-      if (!win) {
-        // Fallback: trigger download
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `MANDOROS_FHIR_${data.study_id || "Dashboard"}.html`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      }
-      setTimeout(() => URL.revokeObjectURL(url), 5000);
-      showToast('🌐 Opened HL7 FHIR Interoperability Dashboard');
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `MANDOROS_FHIR_${data.study_id || "Dashboard"}.html`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+
+      // 2. In-page Interactive Modal Viewer (Immediate visual response)
+      let modal = document.getElementById('mandoros-fhir-modal');
+      if (modal) modal.remove();
+      modal = document.createElement('div');
+      modal.id = 'mandoros-fhir-modal';
+      
+      const safeHtml = dashboardHtml.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+      modal.innerHTML = `
+        <div style="position:fixed;inset:0;background:rgba(15,23,42,0.88);backdrop-filter:blur(10px);z-index:999999;display:flex;align-items:center;justify-content:center;padding:16px;">
+          <div style="background:#0B0F19;border:1.5px solid #8B5CF6;border-radius:20px;max-width:1150px;width:100%;height:90vh;display:flex;flex-direction:column;box-shadow:0 25px 50px -12px rgba(0,0,0,0.85);overflow:hidden;">
+            <div style="padding:14px 22px;border-bottom:1px solid #1E293B;display:flex;align-items:center;justify-content:space-between;background:rgba(30,41,59,0.7);">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span style="font-size:22px;">🧬</span>
+                <div>
+                  <div style="color:#F8FAFC;font-weight:800;font-size:15px;letter-spacing:-0.01em;">MANDOROS • HL7 FHIR Interoperability Dashboard</div>
+                  <div style="color:#94A3B8;font-size:11.5px;">Conforming to NIH NCPI &amp; EBMonFHIR R4 Specifications · Zero-Server-Load</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <button type="button" onclick="const a = document.createElement('a'); a.href='${url}'; a.download='MANDOROS_FHIR_${data.study_id || "Dashboard"}.html'; a.click();" style="background:linear-gradient(135deg,#8B5CF6,#6D28D9);color:#fff;border:none;padding:7px 14px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;">
+                  📥 Re-Download HTML
+                </button>
+                <button type="button" onclick="document.getElementById('mandoros-fhir-modal').remove();" style="background:#1E293B;border:1px solid #475569;color:#F8FAFC;width:34px;height:34px;border-radius:8px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:bold;">
+                  ✕
+                </button>
+              </div>
+            </div>
+            <iframe srcdoc="${safeHtml}" style="flex:1;border:none;width:100%;height:100%;"></iframe>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(modal);
+
+      showToast('🌐 Generated & Downloaded FHIR Dashboard');
     } catch (err) {
       console.error('[NCPI/FHIR] Dashboard generation error:', err);
       showToast('⚠️ Unable to open FHIR Dashboard.');
