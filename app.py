@@ -383,8 +383,30 @@ def process_pdf(
             if p1_banner:
                 summary_md = f"{p1_banner}\n\n{summary_md}"
             if p1_html_path and os.path.exists(p1_html_path):
-                norm_p1 = urllib.parse.quote(p1_html_path.replace("\\", "/"), safe="/:")
-                preview_iframe = f"<iframe src='/gradio_api/file={norm_p1}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
+                fname_p1 = os.path.basename(p1_html_path)
+                fname_q = urllib.parse.quote(fname_p1)
+                preview_iframe = f"""
+                <div style="background: rgba(15,23,42,0.85); border: 1px solid rgba(56,189,248,0.3); border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+                  <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 20px;">🎨</span>
+                    <div>
+                      <div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">Single-Trial 360° Interactive Dashboard Live Preview</div>
+                      <div style="color: #94A3B8; font-size: 11px;">Deterministic 7-sheet extraction compiled into interactive HTML application.</div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="/api/view?file={fname_q}" target="_blank"
+                       style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0284C7, #0369A1); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(2,132,199,0.35);">
+                       🌐 Open Fullscreen in New Tab
+                    </a>
+                    <a href="/api/download?file={fname_q}&zip=1"
+                       style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(16,185,129,0.35);">
+                       📦 Download .ZIP (Bypasses Edge Restrictions)
+                    </a>
+                  </div>
+                </div>
+                <iframe src="/api/view?file={fname_q}" style="width: 100%; height: 850px; border: 1px solid rgba(51,65,85,0.7); border-radius: 14px; background: #0F172A;" allowfullscreen></iframe>
+                """
         except Exception as dash_err:
             print(f"[!] Warning generating Phase 1 dashboard: {dash_err}")
 
@@ -429,8 +451,30 @@ def convert_phase1_excel_shortcut(excel_file):
         from dashboard_engine.phase1_trial_dashboard import _read_excel_sheets, _find_sheet_df
         html_path, banner = auto_generate_dashboard_for_excel(f_path, phase_hint="Phase 1")
 
-        norm_path = urllib.parse.quote(html_path.replace("\\", "/"), safe="/:")
-        iframe = f"<iframe src='/gradio_api/file={norm_path}' style='width: 100%; height: 750px; border: none; border-radius: 14px;'></iframe>"
+        fname_p1 = os.path.basename(html_path)
+        fname_q = urllib.parse.quote(fname_p1)
+        iframe = f"""
+        <div style="background: rgba(15,23,42,0.85); border: 1px solid rgba(56,189,248,0.3); border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🎨</span>
+            <div>
+              <div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">Single-Trial 360° Interactive Dashboard Live Preview</div>
+              <div style="color: #94A3B8; font-size: 11px;">Direct compilation of 7-sheet Excel into interactive HTML application.</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/api/view?file={fname_q}" target="_blank"
+               style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0284C7, #0369A1); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(2,132,199,0.35);">
+               🌐 Open Fullscreen in New Tab
+            </a>
+            <a href="/api/download?file={fname_q}&zip=1"
+               style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(16,185,129,0.35);">
+               📦 Download .ZIP (Bypasses Edge Restrictions)
+            </a>
+          </div>
+        </div>
+        <iframe src="/api/view?file={fname_q}" style="width: 100%; height: 850px; border: 1px solid rgba(51,65,85,0.7); border-radius: 14px; background: #0F172A;" allowfullscreen></iframe>
+        """
 
         sheets = _read_excel_sheets(f_path)
         df_m = _find_sheet_df(sheets, ["Master", "Sheet 1"])
@@ -466,8 +510,30 @@ def convert_phase3_excel_shortcut(excel_files):
         from dashboard_engine.excel_watcher_hook import auto_generate_dashboard_for_excel
         html_path, banner = auto_generate_dashboard_for_excel(f_path, phase_hint="Phase 3", force_refresh=True)
 
-        norm_path = urllib.parse.quote(html_path.replace("\\", "/"), safe="/:")
-        iframe = f"<iframe src='/gradio_api/file={norm_path}' style='width: 100%; height: 850px; border: none; border-radius: 14px;'></iframe>"
+        fname_p3 = os.path.basename(html_path)
+        fname_q3 = urllib.parse.quote(fname_p3)
+        iframe = f"""
+        <div style="background: rgba(15,23,42,0.85); border: 1px solid rgba(56,189,248,0.3); border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <span style="font-size: 20px;">🧭</span>
+            <div>
+              <div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">Phase 3 Gap &amp; Thesis Dashboard Live Preview</div>
+              <div style="color: #94A3B8; font-size: 11px;">Interactive 4-Type Gap Taxonomy, Reality Checks, and Thesis Protocol Blueprint.</div>
+            </div>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+            <a href="/api/view?file={fname_q3}" target="_blank"
+               style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0284C7, #0369A1); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(2,132,199,0.35);">
+               🌐 Open Fullscreen in New Tab
+            </a>
+            <a href="/api/download?file={fname_q3}&zip=1"
+               style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(16,185,129,0.35);">
+               📦 Download .ZIP (Bypasses Edge Restrictions)
+            </a>
+          </div>
+        </div>
+        <iframe src="/api/view?file={fname_q3}" style="width: 100%; height: 850px; border: 1px solid rgba(51,65,85,0.7); border-radius: 14px; background: #0F172A;" allowfullscreen></iframe>
+        """
 
         summary_card = f"""
         {banner}
@@ -2820,8 +2886,30 @@ def process_phase3_ui(
 
         p3_preview_iframe = "<div style='padding:24px; text-align:center; color:#94A3B8; background:rgba(15,23,42,0.6); border-radius:12px;'>Phase 3 Interactive Dashboard ready.</div>"
         if target_html_dash and os.path.exists(target_html_dash):
-            norm_p3 = urllib.parse.quote(target_html_dash.replace("\\", "/"), safe="/:")
-            p3_preview_iframe = f"<iframe src='/gradio_api/file={norm_p3}' style='width: 100%; height: 850px; border: none; border-radius: 14px;'></iframe>"
+            fname_p3 = os.path.basename(target_html_dash)
+            fname_q3 = urllib.parse.quote(fname_p3)
+            p3_preview_iframe = f"""
+            <div style="background: rgba(15,23,42,0.85); border: 1px solid rgba(56,189,248,0.3); border-radius: 14px; padding: 12px 18px; margin-bottom: 12px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 20px;">🧭</span>
+                <div>
+                  <div style="color: #F8FAFC; font-weight: 700; font-size: 13px;">Phase 3 Gap &amp; Thesis Dashboard Live Preview</div>
+                  <div style="color: #94A3B8; font-size: 11px;">Interactive 4-Type Gap Taxonomy, Reality Checks, and Thesis Protocol Blueprint.</div>
+                </div>
+              </div>
+              <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="/api/view?file={fname_q3}" target="_blank"
+                   style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #0284C7, #0369A1); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(2,132,199,0.35);">
+                   🌐 Open Fullscreen in New Tab
+                </a>
+                <a href="/api/download?file={fname_q3}&zip=1"
+                   style="display: inline-flex; align-items: center; gap: 6px; background: linear-gradient(135deg, #10B981, #059669); color: #fff; padding: 7px 14px; border-radius: 8px; font-weight: 700; font-size: 12px; text-decoration: none; box-shadow: 0 2px 8px rgba(16,185,129,0.35);">
+                   📦 Download .ZIP (Bypasses Edge Restrictions)
+                </a>
+              </div>
+            </div>
+            <iframe src="/api/view?file={fname_q3}" style="width: 100%; height: 850px; border: 1px solid rgba(51,65,85,0.7); border-radius: 14px; background: #0F172A;" allowfullscreen></iframe>
+            """
 
         # 1. Action Bar & Top Verdict
         download_banner = build_instant_download_banner(target_html_dash, excel_path, phase_label="Phase 3 Gap & Thesis")
@@ -4905,6 +4993,14 @@ def build_app():
                         )
                         gr.HTML(
                             """
+                            <div style="background: rgba(15,23,42,0.65); border: 1px solid rgba(56,189,248,0.25); border-radius: 10px; padding: 10px 14px; margin: 4px 0 10px 0; font-size: 11.5px; color: #94A3B8; line-height: 1.5;">
+                              <strong style="color: #38BDF8;">💡 Microsoft Edge &amp; Chrome Tip:</strong><br/>
+                              If your browser shows <em>'Couldn't download - No permissions'</em> when saving <code>.html</code> files, switch to the <strong>'🎨 Live 360° Trial Dashboard Preview'</strong> tab on the right to view it live, or click <strong>'📦 Download Dashboard (.zip)'</strong> in the top action bar to bypass all download restrictions.
+                            </div>
+                            """
+                        )
+                        gr.HTML(
+                            """
                             <script>
                             window.mandorosRunFhir = window.mandorosRunFhir || function(fnName) {
                               function exec() {
@@ -5734,11 +5830,14 @@ if __name__ == "__main__":
             return FileResponse("static/ncpiFhirAddon.js", media_type="application/javascript")
         return {"error": "ncpiFhirAddon.js not found"}
 
-    # Direct Unbreakable File Downloader for Microsoft Edge & Chrome (Zero Network Issue)
-    @app_obj.get("/api/download")
-    def direct_file_download(file: str = ""):
+    from starlette.responses import HTMLResponse
+
+    # Direct Unbreakable Live Dashboard Viewer (Renders full interactive HTML in browser tab / iframe)
+    @app_obj.get("/api/view")
+    @app_obj.get("/view/{file:path}")
+    def direct_file_view(file: str = ""):
         if not file:
-            return {"error": "Missing file parameter"}
+            return HTMLResponse("<div style='font-family:sans-serif;padding:30px;color:#EF4444;background:#0F172A;'>Missing file parameter</div>", status_code=400)
         raw_name = urllib.parse.unquote(file).strip()
         fname = os.path.basename(raw_name)
 
@@ -5761,15 +5860,100 @@ if __name__ == "__main__":
                 break
 
         if not target_file:
+            return HTMLResponse(
+                content=f"<div style='font-family:system-ui,sans-serif;padding:36px;color:#F87171;background:#0F172A;min-height:100vh;'>"
+                        f"<h2>⚠️ Dashboard Not Ready Yet</h2>"
+                        f"<p style='color:#94A3B8;'>The requested file <code>{fname}</code> is compiling or has not been extracted yet.</p></div>",
+                status_code=404
+            )
+
+        return FileResponse(
+            path=target_file,
+            media_type="text/html; charset=utf-8",
+            headers={
+                "Content-Disposition": "inline",
+                "X-Frame-Options": "ALLOWALL",
+                "Content-Security-Policy": "frame-ancestors *",
+            }
+        )
+
+    # Direct Unbreakable File Downloader for Microsoft Edge & Chrome (Zero Network Issue & Zero Permissions Block)
+    @app_obj.get("/api/download")
+    def direct_file_download(file: str = "", zip: str = None, octet: str = None, stream: str = None):
+        if not file:
+            return {"error": "Missing file parameter"}
+        raw_name = urllib.parse.unquote(file).strip()
+        fname = os.path.basename(raw_name)
+
+        want_zip = bool(zip and str(zip).lower() in ("1", "true", "yes")) or fname.lower().endswith(".zip")
+        base_name = fname
+        zip_candidate = os.path.splitext(base_name)[0] + ".zip" if base_name.lower().endswith(".html") else (base_name if base_name.lower().endswith(".zip") else os.path.splitext(base_name)[0] + ".zip")
+
+        candidates = [
+            os.path.join("outputs", fname),
+            os.path.abspath(os.path.join("outputs", fname)),
+            raw_name,
+            os.path.join(tempfile.gettempdir(), fname),
+        ]
+        try:
+            from infra_stability import SESSION_ROOT
+            candidates.append(os.path.join(str(SESSION_ROOT), fname))
+        except Exception:
+            pass
+
+        target_file = None
+        for c in candidates:
+            if c and os.path.exists(c) and os.path.isfile(c):
+                target_file = c
+                break
+
+        # If user wants a zip package (bypasses Windows Edge SmartScreen HTML blocks)
+        if want_zip:
+            zip_candidates = [
+                os.path.join("outputs", zip_candidate),
+                os.path.abspath(os.path.join("outputs", zip_candidate)),
+                os.path.join(tempfile.gettempdir(), zip_candidate),
+            ]
+            existing_zip = next((zc for zc in zip_candidates if os.path.exists(zc) and os.path.isfile(zc)), None)
+            if existing_zip:
+                return FileResponse(
+                    path=existing_zip,
+                    media_type="application/zip",
+                    filename=zip_candidate,
+                    headers={"Content-Disposition": f'attachment; filename="{zip_candidate}"'}
+                )
+            if target_file and os.path.exists(target_file):
+                import zipfile
+                out_zip = os.path.join("outputs", zip_candidate)
+                os.makedirs("outputs", exist_ok=True)
+                with zipfile.ZipFile(out_zip, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                    zf.write(target_file, arcname=os.path.basename(target_file))
+                    # Check for companion excel
+                    base_no_ext = os.path.splitext(target_file)[0]
+                    for comp_ext in [".xlsx", ".html", ".json"]:
+                        comp_path = base_no_ext + comp_ext
+                        if os.path.exists(comp_path) and comp_path != target_file:
+                            zf.write(comp_path, arcname=os.path.basename(comp_path))
+                return FileResponse(
+                    path=out_zip,
+                    media_type="application/zip",
+                    filename=zip_candidate,
+                    headers={"Content-Disposition": f'attachment; filename="{zip_candidate}"'}
+                )
+
+        if not target_file:
             return {"error": f"File '{fname}' not found on server"}
 
-        media_type = "application/octet-stream"
-        if fname.lower().endswith(".html"):
-            media_type = "text/html; charset=utf-8"
-        elif fname.lower().endswith(".xlsx"):
+        # Always serve HTML as application/octet-stream when downloading as attachment
+        # This prevents Edge from blocking it with 'Couldn\'t download - No permissions'
+        if fname.lower().endswith(".xlsx"):
             media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
         elif fname.lower().endswith(".json"):
             media_type = "application/json"
+        elif fname.lower().endswith(".zip"):
+            media_type = "application/zip"
+        else:
+            media_type = "application/octet-stream"
 
         return FileResponse(
             path=target_file,

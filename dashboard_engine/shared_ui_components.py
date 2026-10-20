@@ -55,6 +55,11 @@ FAST_CDN_HEADER = """
 <script>
 window.mandorosDownloadBlob = window.mandorosDownloadBlob || function(b64Data, filename, mimeType, fallbackUrl) {
   try {
+    var isEdgeOrWindows = (navigator.userAgent.indexOf('Edg/') !== -1 || navigator.userAgent.indexOf('Windows') !== -1);
+    if (filename && filename.toLowerCase().endsWith('.html') && fallbackUrl && isEdgeOrWindows) {
+      window.location.href = fallbackUrl;
+      return false;
+    }
     if (!b64Data) { if (fallbackUrl) window.location.href = fallbackUrl; return false; }
     const bin = atob(b64Data);
     const len = bin.length;
@@ -81,6 +86,29 @@ window.mandorosDownloadBlob = window.mandorosDownloadBlob || function(b64Data, f
 """
 
 
+def ensure_dashboard_zip(html_path: str, xlsx_path: Optional[str] = None) -> str:
+    """
+    Creates a companion .zip file containing the HTML dashboard (and optionally the Excel workbook)
+    so users on Microsoft Edge / Windows with download permission restrictions can download cleanly.
+    """
+    if not html_path or not os.path.exists(html_path):
+        return ""
+    base_no_ext = os.path.splitext(html_path)[0]
+    zip_path = f"{base_no_ext}.zip"
+    try:
+        import zipfile
+        if os.path.exists(zip_path) and os.path.getmtime(zip_path) >= os.path.getmtime(html_path):
+            return zip_path
+        with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+            zf.write(html_path, arcname=os.path.basename(html_path))
+            if xlsx_path and os.path.exists(xlsx_path):
+                zf.write(xlsx_path, arcname=os.path.basename(xlsx_path))
+        return zip_path
+    except Exception as e:
+        print(f"[!] Warning generating companion zip archive: {e}")
+        return ""
+
+
 def build_instant_download_banner(
     html_file_path: Optional[str],
     xlsx_file_path: Optional[str] = None,
@@ -93,22 +121,34 @@ def build_instant_download_banner(
     """
     buttons_html = []
     if html_file_path and os.path.exists(html_file_path):
+        ensure_dashboard_zip(html_file_path, xlsx_file_path)
         with open(html_file_path, "rb") as f:
             b64_html = base64.b64encode(f.read()).decode("utf-8")
         fname = os.path.basename(html_file_path)
-        norm_h = urllib.parse.quote(html_file_path.replace("\\", "/"), safe="/:")
-        h_dl_url = f"/api/download?file={urllib.parse.quote(fname)}"
+        fname_q = urllib.parse.quote(fname)
+        h_dl_url = f"/api/download?file={fname_q}&octet=1"
+        h_zip_url = f"/api/download?file={fname_q}&zip=1"
+        h_view_url = f"/api/view?file={fname_q}"
+        zip_fname = os.path.splitext(fname)[0] + ".zip"
+
         buttons_html.append(f'''
-            <a href="{h_dl_url}" download="{fname}" data-base64="data:text/html;base64,{b64_html}"
-               onclick="if(window.mandorosDownloadBlob){{return window.mandorosDownloadBlob('{b64_html}','{fname}','text/html;charset=utf-8','{h_dl_url}');}}"
-               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(16,185,129,0.35);transition:all 0.2s;"
-               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-               ⚡ Instant Download {phase_label} Interactive Dashboard (.html)
-            </a>
-            <a href="/gradio_api/file={norm_h}" target="_blank"
-               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#06B6D4,#0891B2);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(6,182,212,0.35);transition:all 0.2s;"
+            <a href="{h_view_url}" target="_blank"
+               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                🌐 Open Full Dashboard (New Tab)
+            </a>
+            <a href="{h_zip_url}" download="{zip_fname}"
+               title="Download complete dashboard packaged as .ZIP archive (Bypasses Microsoft Edge permissions)"
+               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(16,185,129,0.35);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+               📦 Download Dashboard (.zip)
+            </a>
+            <a href="{h_dl_url}" download="{fname}" data-base64="data:text/html;base64,{b64_html}"
+               onclick="if(window.mandorosDownloadBlob){{return window.mandorosDownloadBlob('{b64_html}','{fname}','application/octet-stream','{h_dl_url}');}}"
+               title="Direct raw HTML download"
+               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#475569,#334155);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;box-shadow:0 4px 14px rgba(71,85,105,0.35);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+               ⚡ Instant Download {phase_label} Interactive Dashboard (.html)
             </a>
         ''')
     if xlsx_file_path and os.path.exists(xlsx_file_path):
