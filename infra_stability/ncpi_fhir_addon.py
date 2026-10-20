@@ -54,6 +54,9 @@ def render_ncpi_fhir_pillar_html() -> str:
     with the 3 Mini-Pillar Highlights and the Optional Master Toggle.
     """
     return """
+    <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>"
+         onload="if(!window.ncpiFhirAddonLoaded){window.ncpiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.async=true;document.head.appendChild(s);}"
+         style="display:none;" />
     <div class="mandoros-ncpi-pillar-container" style="
         background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(46, 16, 101, 0.4) 50%, rgba(15, 23, 42, 0.95) 100%);
         border: 1.5px solid rgba(139, 92, 246, 0.45);
@@ -313,7 +316,7 @@ def render_phase3_nih_benchmark_html() -> str:
 
         <!-- 3 Standard Export Actions -->
         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-          <button type="button" onclick="window.exportToNCPIFhir()" style="
+          <button type="button" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhir)window.exportToNCPIFhir();};document.head.appendChild(s);}" style="
               display: inline-flex;
               align-items: center;
               gap: 6px;
@@ -331,7 +334,7 @@ def render_phase3_nih_benchmark_html() -> str:
             🧬 FHIR (JSON)
           </button>
 
-          <button type="button" onclick="window.exportToNCPIFhirExcel()" style="
+          <button type="button" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirExcel)window.exportToNCPIFhirExcel();};document.head.appendChild(s);}" style="
               display: inline-flex;
               align-items: center;
               gap: 6px;
@@ -349,7 +352,7 @@ def render_phase3_nih_benchmark_html() -> str:
             📊 FHIR (Excel)
           </button>
 
-          <button type="button" onclick="window.exportToNCPIFhirDashboard()" style="
+          <button type="button" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirDashboard)window.exportToNCPIFhirDashboard();};document.head.appendChild(s);}" style="
               display: inline-flex;
               align-items: center;
               gap: 6px;

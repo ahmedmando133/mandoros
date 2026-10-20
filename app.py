@@ -4905,21 +4905,42 @@ def build_app():
                         )
                         gr.HTML(
                             """
+                            <script>
+                            window.mandorosRunFhir = window.mandorosRunFhir || function(fnName) {
+                              function exec() {
+                                if (typeof window[fnName] === 'function') {
+                                  try { window[fnName](); } catch(e) { console.error('FHIR Exec Error:', e); }
+                                }
+                              }
+                              if (typeof window[fnName] === 'function') {
+                                exec();
+                              } else {
+                                var s = document.createElement('script');
+                                s.src = '/ncpiFhirAddon.js';
+                                s.async = true;
+                                s.onload = exec;
+                                document.head.appendChild(s);
+                              }
+                            };
+                            </script>
+                            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>"
+                                 onload="if(!window.ncpiFhirAddonLoaded){window.ncpiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.async=true;document.head.appendChild(s);}"
+                                 style="display:none;" />
                             <div class="mandoros-ncpi-fhir-tool" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                              <button type="button" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{alert('FHIR Module loading...');}"
+                              <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhir');"
                                  title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
                                  style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
                                  onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                                  🧬 Export HL7 FHIR (JSON)
                               </button>
                               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <button type="button" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{alert('FHIR Excel Module loading...');}"
+                                <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhirExcel');"
                                    title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
                                    style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(5,150,105,0.35);transition:all 0.2s;"
                                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                                    📊 FHIR Excel (.xlsx)
                                 </button>
-                                <button type="button" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{alert('FHIR Dashboard Module loading...');}"
+                                <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhirDashboard');"
                                    title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
                                    style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.35);transition:all 0.2s;"
                                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
@@ -5662,6 +5683,22 @@ def build_app():
             """
         )
 
+    demo.load(
+        fn=None,
+        inputs=None,
+        outputs=None,
+        js="""
+        () => {
+            if (!window.ncpiFhirAddonLoaded) {
+                const s = document.createElement('script');
+                s.src = '/ncpiFhirAddon.js';
+                s.async = true;
+                s.onload = () => { window.ncpiFhirAddonLoaded = true; };
+                document.head.appendChild(s);
+            }
+        }
+        """
+    )
     return demo
 
 
@@ -5683,6 +5720,16 @@ if __name__ == "__main__":
         allowed_paths=["assets", "outputs", "static", tempfile.gettempdir(), str(SESSION_ROOT), os.path.abspath("outputs")],
         prevent_thread_lock=True
     )
+
+    from starlette.responses import FileResponse
+
+    @app_obj.middleware("http")
+    async def serve_ncpi_fhir_middleware(request, call_next):
+        if request.url.path in ("/static/ncpiFhirAddon.js", "/ncpiFhirAddon.js"):
+            js_f = os.path.join(os.path.dirname(__file__), "static", "ncpiFhirAddon.js")
+            if os.path.exists(js_f):
+                return FileResponse(js_f, media_type="application/javascript", headers={"Cache-Control": "no-cache"})
+        return await call_next(request)
 
     # Ultra-fast health check endpoints for Render cloud monitoring & keep-alive probes
     @app_obj.get("/health")

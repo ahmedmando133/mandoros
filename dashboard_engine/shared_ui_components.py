@@ -51,7 +51,7 @@ FAST_CDN_HEADER = """
   .mandoros-ncpi-fhir-tool { transition: all 0.2s ease; }
   .ncpi-hidden { display: none !important; }
 </style>
-<script src="/static/ncpiFhirAddon.js"></script>
+<script src="/ncpiFhirAddon.js"></script>
 <script>
 window.mandorosDownloadBlob = window.mandorosDownloadBlob || function(b64Data, filename, mimeType, fallbackUrl) {
   try {
@@ -128,19 +128,19 @@ def build_instant_download_banner(
     # Optional Phase 1 NIH NCPI / HL7 FHIR (EBMonFHIR) Multi-Format Standards Export
     if "1" in str(phase_label) or "Single-Trial" in str(phase_label):
         buttons_html.append('''
-            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{alert('FHIR Module loading...');}"
+            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhir)window.exportToNCPIFhir();};document.head.appendChild(s);}"
                title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                🧬 Export HL7 FHIR (JSON)
             </button>
-            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{alert('FHIR Excel Module loading...');}"
+            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirExcel)window.exportToNCPIFhirExcel();};document.head.appendChild(s);}"
                title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(5,150,105,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                📊 Export FHIR Excel (.xlsx)
             </button>
-            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{alert('FHIR Dashboard Module loading...');}"
+            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirDashboard)window.exportToNCPIFhirDashboard();};document.head.appendChild(s);}"
                title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
