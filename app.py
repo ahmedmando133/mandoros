@@ -74,7 +74,28 @@ def process_pdf(
     from src.exporter import ExcelTrialExporter
 
     if pdf_file is None:
-        return None, None, "⚠️ **Please upload a clinical trial PDF file to begin extraction.**", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame()
+        return None, None, None, "⚠️ **Please upload a clinical trial PDF or extracted Excel file to begin.**", pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), pd.DataFrame(), ""
+
+    f_check = pdf_file.name if hasattr(pdf_file, "name") else str(pdf_file)
+    if f_check and f_check.lower().endswith(".xlsx"):
+        progress(0.4, desc="📊 Extracted Excel detected: Compiling into 360° Dashboard & Phase 3 Bridge...")
+        res = convert_phase1_excel_shortcut(pdf_file)
+        json_cand = os.path.splitext(f_check)[0] + ".json"
+        json_val = json_cand if os.path.exists(json_cand) else None
+        p3_guidance = """
+        <div style="background: rgba(30,27,75,0.85); border: 1.5px solid #818CF8; border-radius: 12px; padding: 14px 18px; margin-top: 12px; display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <div style="color: #A5B4FC; font-weight: 800; font-size: 13.5px;">🧭 Next Step: Run Phase 3 Research Gap &amp; Thesis Navigator</div>
+            <div style="color: #CBD5E1; font-size: 12px; margin-top: 3px;">To uncover research voids and generate protocol blueprints, click the <strong>'🧭 Phase 3: Research Gap &amp; Thesis Navigator'</strong> tab at the top and upload this <code>.xlsx</code> file there.</div>
+          </div>
+          <button type="button" onclick="if(window.selectMandorosPhase){window.selectMandorosPhase(2);}"
+             style="background: linear-gradient(135deg, #6366F1, #4F46E5); color: #fff; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 12px; border: none; cursor: pointer; white-space: nowrap; box-shadow: 0 4px 12px rgba(99,102,241,0.35);">
+             🚀 Jump to Phase 3 →
+          </button>
+        </div>
+        """
+        enriched_summary = f"{res[2]}\n\n{p3_guidance}"
+        return res[0], json_val, res[1], enriched_summary, res[3], res[4], res[5], res[6], res[7]
 
     progress(0.05, desc="📄 Parsing clinical trial document & discovering layout...")
 
@@ -4940,8 +4961,8 @@ def build_app():
                             """
                         )
                         pdf_input = gr.File(
-                            label="Drop RCT Paper (PDF)",
-                            file_types=[".pdf"],
+                            label="📄 Drop RCT Paper (.pdf) or Extracted Workbook (.xlsx)",
+                            file_types=[".pdf", ".xlsx"],
                             type="filepath"
                         )
 
