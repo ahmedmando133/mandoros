@@ -1,0 +1,24 @@
+{
+  "name": "MANDOROS • Clinical Evidence & Meta-Analysis Network",
+  "short_name": "MANDOROS",
+  "description": "Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0B0F19",
+  "theme_color": "#0F172A",
+  "icons": [
+    {
+      "src": "/assets/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/assets/mr_logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["medical", "science", "productivity", "utilities"]
+}

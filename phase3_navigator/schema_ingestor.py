@@ -25,18 +25,29 @@ class IngestedTrialData:
     study_title: str = ""
     authors: str = ""
     publication_year: Optional[int] = None
+    year: Optional[int] = None
     journal: str = ""
     doi: str = ""
     condition_disease: str = "Cardiometabolic Disease"
     condition: str = ""
     drug_name: str = ""
+    active_drug: str = ""
     comparator_name: str = ""
+    comparator: str = ""
     study_design: str = "Randomized Controlled Trial"
     study_phase: str = "Phase III"
     blinding: str = "Double-Blind"
     total_sample_size: int = 100
     duration_weeks: float = 24.0
     source_file: str = ""
+    trial_name: str = ""
+    total_n: Optional[int] = None
+    follow_up_weeks: Optional[float] = None
+    blinding_status: str = ""
+    rob_overall: str = ""
+    eligibility_rows: List[Dict[str, Any]] = field(default_factory=list)
+    outcomes_rows: List[Dict[str, Any]] = field(default_factory=list)
+    trials: List[Any] = field(default_factory=list)
     interventions: List[Dict[str, Any]] = field(default_factory=list)
     comparators: List[Dict[str, Any]] = field(default_factory=list)
     arms: List[Dict[str, Any]] = field(default_factory=list)
@@ -59,6 +70,59 @@ class IngestedTrialData:
     provenance_map: Dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self):
+        if self.year and not self.publication_year:
+            self.publication_year = self.year
+        elif self.publication_year and not self.year:
+            self.year = self.publication_year
+        if self.active_drug and not self.drug_name:
+            self.drug_name = self.active_drug
+        elif self.drug_name and not self.active_drug:
+            self.active_drug = self.drug_name
+        if self.comparator and not self.comparator_name:
+            self.comparator_name = self.comparator
+        elif self.comparator_name and not self.comparator:
+            self.comparator = self.comparator_name
+        if self.trial_name and not self.title:
+            self.title = self.trial_name
+        if self.trial_name and not self.study_title:
+            self.study_title = self.trial_name
+        if self.total_n is not None:
+            self.total_sample_size = self.total_n
+        if self.follow_up_weeks is not None:
+            self.duration_weeks = float(self.follow_up_weeks)
+        else:
+            self.follow_up_weeks = self.duration_weeks
+        if self.blinding_status and not self.blinding:
+            self.blinding = self.blinding_status
+        if self.rob_overall:
+            self.rob2_domains["Overall"] = self.rob_overall
+        if self.eligibility_rows and not self.eligibility_criteria:
+            for r in self.eligibility_rows:
+                crit_dict = {
+                    "criterion_name": r.get("parameter") or r.get("raw_text") or "",
+                    "raw_text": r.get("raw_text") or "",
+                    "type": r.get("criterion_type", "exclusion"),
+                    "operator": r.get("operator", ""),
+                    "value": r.get("value", ""),
+                    "unit": r.get("unit", "")
+                }
+                self.eligibility_criteria.append(crit_dict)
+                if r.get("criterion_type") == "inclusion":
+                    self.inclusion_criteria.append(r.get("raw_text") or r.get("parameter"))
+                else:
+                    self.exclusion_criteria.append(r.get("raw_text") or r.get("parameter"))
+        if self.outcomes_rows and not self.outcomes:
+            for o in self.outcomes_rows:
+                out_dict = {
+                    "parameter_name": o.get("outcome_name", ""),
+                    "unit": o.get("unit", ""),
+                    "domain": "efficacy",
+                    "effect_size": o.get("effect_size_md", 0.0),
+                    "ci_lower": o.get("ci_lower", 0.0),
+                    "ci_upper": o.get("ci_upper", 0.0)
+                }
+                self.outcomes.append(out_dict)
+
         if self.study_title and not self.title:
             self.title = self.study_title
         elif self.title and not self.study_title:
@@ -122,10 +186,6 @@ class IngestedTrialData:
     @property
     def sample_size(self) -> int:
         return self.total_sample_size
-
-    @property
-    def follow_up_weeks(self) -> float:
-        return self.duration_weeks
 
     @property
     def key_findings(self) -> List[str]:
@@ -726,3 +786,14 @@ class SchemaIngestor:
                 except ValueError:
                     return None
             return None
+
+
+SingleTrialRecord = IngestedTrialData
+
+__all__ = [
+    "IngestedTrialData",
+    "SingleTrialRecord",
+    "TrialCohortList",
+    "UnifiedSchemaIngestor",
+]
+

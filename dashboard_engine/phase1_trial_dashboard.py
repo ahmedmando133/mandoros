@@ -27,6 +27,7 @@ from dashboard_engine.shared_ui_components import (
     render_kpi_card_html,
     render_datatable_component,
 )
+from infra_stability.ncpi_fhir_addon import render_phase3_nih_benchmark_html
 
 
 def _safe_float(val: Any, default: float = 0.0) -> float:
@@ -376,25 +377,28 @@ def build_phase1_single_trial_dashboard(
     <div class="glass-card rounded-2xl p-2 border border-slate-800">
       <div class="flex flex-wrap gap-1 border-b border-slate-800 pb-2 px-2" id="mainTabNav">
         <button class="main-tab-btn active px-3.5 py-2 text-xs font-bold rounded-xl text-white bg-sky-600 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_consort', this)">
-          <span>🏥</span> Overview &amp; CONSORT
+          <span>🏥</span> Overview &amp; CONSORT Flow
         </button>
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_baseline', this)">
-          <span>🧬</span> Baseline Demographics
+          <span>🧬</span> Baseline Demographics Explorer
         </button>
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_regimen', this)">
-          <span>💊</span> Regimen Swimlane
+          <span>💊</span> Dosing &amp; Regimen Swimlane
         </button>
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_efficacy', this)">
-          <span>📈</span> Efficacy &amp; Safety Lab
+          <span>📈</span> Efficacy &amp; Safety Lab (Outcomes)
         </button>
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_trajectory', this)">
           <span>🔀</span> Cross-Arm Trajectory
         </button>
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_eligibility', this)">
-          <span>🚧</span> Eligibility Gatekeeper
+          <span>🚧</span> Eligibility Criteria Gatekeeper
         </button>
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_sheets', this)">
-          <span>📋</span> 7-Sheet DataGrid
+          <span>📋</span> Full 7-Sheet Searchable Color DataGrid
+        </button>
+        <button class="main-tab-btn mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_nih_benchmark', this)">
+          <span>🏛️</span> البيانات المرجعية المسجلة (NIH / ClinicalTrials)
         </button>
       </div>
 
@@ -473,6 +477,11 @@ def build_phase1_single_trial_dashboard(
           {"".join(tables_tabs)}
         </div>
         {"".join(tables_contents)}
+      </div>
+
+      <!-- Tab 8: NIH ClinicalTrials.gov Protocol Verification (Lazy-loaded) -->
+      <div id="tab_nih_benchmark" class="main-tab-panel p-4 space-y-4 hidden mandoros-ncpi-fhir-tool">
+        {render_phase3_nih_benchmark_html()}
       </div>
     </div>
 

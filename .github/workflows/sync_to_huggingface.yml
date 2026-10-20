@@ -1,0 +1,30 @@
+name: Sync Repository to Hugging Face Spaces Mirror (16GB RAM)
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  sync-to-hub:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          lfs: true
+
+      - name: Push to Hugging Face Space Mirror
+        env:
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          HF_SPACE_REPO: ${{ secrets.HF_SPACE_REPO }} # e.g. username/mandoros-mirror
+        run: |
+          if [ -z "$HF_TOKEN" ] || [ -z "$HF_SPACE_REPO" ]; then
+            echo "HF_TOKEN or HF_SPACE_REPO secret is not configured yet. Skipping sync."
+            exit 0
+          fi
+          git config --global user.email "bot@mandoros.org"
+          git config --global user.name "MANDOROS Sync Bot"
+          git remote add hf "https://user:$HF_TOKEN@huggingface.co/spaces/$HF_SPACE_REPO"
+          git push --force hf main:main

@@ -314,15 +314,40 @@ class SampleSizeAndRiskEngine:
     @classmethod
     def build_sensitivity_matrix(
         cls,
-        base_result: SampleSizeResult,
-        delta: float,
-        sigma: float,
+        base_result: Any,
+        delta: Optional[float] = None,
+        sigma: Optional[float] = None,
         attrition_rate: float = 0.15,
     ) -> SampleSizeSensitivityTable:
         """
         Builds a full sensitivity grid crossing Power (80%, 90%), Alpha (0.05, 0.01),
         and Effect Sizes (Base Δ, 0.75Δ, 0.50Δ).
+        Accepts either (base_result, delta, sigma, attrition_rate) or directly (trial_data).
         """
+        if isinstance(base_result, (IngestedTrialData, list)) or delta is None or sigma is None:
+            td = base_result[0] if isinstance(base_result, list) and base_result else base_result
+            eff_delta = 0.8
+            eff_sigma = 1.2
+            if hasattr(td, "outcomes") and td.outcomes:
+                first_out = td.outcomes[0]
+                try:
+                    eff_delta = abs(float(first_out.get("effect_size", 0.8) or 0.8))
+                except Exception:
+                    eff_delta = 0.8
+                try:
+                    eff_sigma = abs(float(first_out.get("sd", 1.2) or 1.2))
+                except Exception:
+                    eff_sigma = 1.2
+            delta = float(delta) if delta is not None else (eff_delta if eff_delta > 0.01 else 0.8)
+            sigma = float(sigma) if sigma is not None else (eff_sigma if eff_sigma > 0.01 else 1.2)
+            base_result = cls.calculate_continuous_superiority(
+                delta=delta,
+                sigma=sigma,
+                alpha=0.05,
+                power=0.80,
+                attrition_rate=attrition_rate
+            )
+
         scenarios: List[Dict[str, Any]] = []
 
         effect_scenarios = [

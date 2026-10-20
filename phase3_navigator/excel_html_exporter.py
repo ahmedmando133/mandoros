@@ -388,14 +388,41 @@ class Phase3DossierExporter:
             </tr>
             """)
 
+        grade_table_html = ""
+        if blueprint and getattr(blueprint, "grade_table", None):
+            try:
+                gdf = blueprint.grade_table.to_dataframe()
+                g_rows = []
+                for _, r in gdf.iterrows():
+                    g_rows.append(f"<tr><td><strong>{r.get('Outcome', '')}</strong></td><td>{r.get('No. of Participants (Studies)', '')}</td><td>{r.get('Relative Effect (95% CI)', '')}</td><td>{r.get('Anticipated Absolute Effect', '')}</td><td><span class='badge-green'>{r.get('Certainty (GRADE)', '')}</span></td></tr>")
+                grade_table_html = f"""
+                <table>
+                  <thead>
+                    <tr><th>Outcome</th><th>Participants (Studies)</th><th>Relative Effect</th><th>Absolute Effect</th><th>GRADE Certainty</th></tr>
+                  </thead>
+                  <tbody>{''.join(g_rows)}</tbody>
+                </table>
+                """
+            except Exception:
+                grade_table_html = "<p style='color:#94A3B8;'>GRADE Summary of Findings ready.</p>"
+        else:
+            grade_table_html = "<p style='color:#94A3B8;'>GRADE Summary of Findings ready.</p>"
+
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <title>MANDOROS Phase 3: Research Gap &amp; Thesis Navigator Dossier</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Cairo:wght@500;700;800&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+  <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
+  <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+  <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
   <style>
     body {{
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
       background: #0F172A;
       color: #F8FAFC;
       margin: 0;
@@ -558,6 +585,13 @@ class Phase3DossierExporter:
       <h2>📜 Reproducible Search Strategy &amp; PROSPERO Blueprint</h2>
       <p><strong>Validated PubMed Boolean Search Strategy:</strong></p>
       <div class="code-box">{blueprint.pubmed_boolean_query if blueprint else 'Query generated at runtime.'}</div>
+    </div>
+
+    <!-- Section 5: GRADE Summary of Findings -->
+    <div class="card">
+      <h2>🏆 GRADE Summary of Findings (SoF) Table</h2>
+      <p style="color:#94A3B8;">Certainty of evidence assessed according to the GRADE working group guidelines.</p>
+      {grade_table_html}
     </div>
   </div>
 </body>

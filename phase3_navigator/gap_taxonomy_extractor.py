@@ -114,8 +114,19 @@ class GapTaxonomyExtractor:
         return cls.extract_all_gaps(trials)
 
     @classmethod
-    def extract_all_gaps(cls, trials: List[IngestedTrialData]) -> List[ScientificGap]:
+    def extract_all_gaps(cls, trials: Any) -> List[ScientificGap]:
         """Extracts candidate gaps across the 4 categories from single or multi-trial cohorts."""
+        if not trials:
+            return []
+
+        if isinstance(trials, IngestedTrialData):
+            if hasattr(trials, "trials") and trials.trials:
+                trials = trials.trials
+            else:
+                trials = [trials]
+        elif not isinstance(trials, list):
+            trials = [trials]
+
         if not trials:
             return []
 

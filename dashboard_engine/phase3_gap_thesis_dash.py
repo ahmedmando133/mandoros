@@ -25,6 +25,7 @@ from dashboard_engine.shared_ui_components import (
     render_kpi_card_html,
     render_datatable_component,
 )
+from infra_stability.ncpi_fhir_addon import render_phase3_nih_benchmark_html
 from phase3_navigator.egm_robvis_plotter import EGMRobvisPlotter
 from phase3_navigator.sample_size_and_risk import SampleSizeAndRiskEngine
 
@@ -168,6 +169,9 @@ def build_phase3_gap_thesis_dashboard(
         <button class="p3-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchP3Tab('tab_p3_sheets', this)">
           <span>📋</span> 6-Sheet DataGrid
         </button>
+        <button class="p3-tab-btn mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchP3Tab('tab_p3_nih_benchmark', this)">
+          <span>🏛️</span> البيانات المرجعية المسجلة (NIH / ClinicalTrials)
+        </button>
       </div>
 
       <!-- Tab 1: EGM Bubble Map -->
@@ -221,6 +225,11 @@ def build_phase3_gap_thesis_dashboard(
           {"".join(tables_tabs)}
         </div>
         {"".join(tables_contents)}
+      </div>
+
+      <!-- Tab 6: NIH ClinicalTrials.gov Protocol Verification (Lazy-loaded) -->
+      <div id="tab_p3_nih_benchmark" class="p3-tab-panel p-4 space-y-4 hidden mandoros-ncpi-fhir-tool">
+        {render_phase3_nih_benchmark_html()}
       </div>
     </div>
 

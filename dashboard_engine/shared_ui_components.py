@@ -48,7 +48,36 @@ FAST_CDN_HEADER = """
   table.dataTable tbody td { border-bottom: 1px solid #1E293B !important; color: #E2E8F0 !important; }
   .dataTables_paginate .paginate_button { color: #94A3B8 !important; border-radius: 6px !important; }
   .dataTables_paginate .paginate_button.current { background: #0284C7 !important; color: #fff !important; border: none !important; }
+  .mandoros-ncpi-fhir-tool { transition: all 0.2s ease; }
+  .ncpi-hidden { display: none !important; }
 </style>
+<script src="/static/ncpiFhirAddon.js"></script>
+<script>
+window.mandorosDownloadBlob = window.mandorosDownloadBlob || function(b64Data, filename, mimeType, fallbackUrl) {
+  try {
+    if (!b64Data) { if (fallbackUrl) window.location.href = fallbackUrl; return false; }
+    const bin = atob(b64Data);
+    const len = bin.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    const blob = new Blob([bytes], { type: mimeType || 'application/octet-stream' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    return false;
+  } catch(err) {
+    console.warn('[MANDOROS] Blob download fallback to link:', err);
+    if (fallbackUrl) window.location.href = fallbackUrl;
+    return false;
+  }
+};
+</script>
 """
 
 
@@ -68,8 +97,10 @@ def build_instant_download_banner(
             b64_html = base64.b64encode(f.read()).decode("utf-8")
         fname = os.path.basename(html_file_path)
         norm_h = urllib.parse.quote(html_file_path.replace("\\", "/"), safe="/:")
+        h_dl_url = f"/api/download?file={urllib.parse.quote(fname)}"
         buttons_html.append(f'''
-            <a href="data:text/html;base64,{b64_html}" download="{fname}"
+            <a href="{h_dl_url}" download="{fname}" data-base64="data:text/html;base64,{b64_html}"
+               onclick="if(window.mandorosDownloadBlob){{return window.mandorosDownloadBlob('{b64_html}','{fname}','text/html;charset=utf-8','{h_dl_url}');}}"
                style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#10B981,#059669);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(16,185,129,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                ⚡ Instant Download {phase_label} Interactive Dashboard (.html)
@@ -84,12 +115,25 @@ def build_instant_download_banner(
         with open(xlsx_file_path, "rb") as f:
             b64_xlsx = base64.b64encode(f.read()).decode("utf-8")
         xname = os.path.basename(xlsx_file_path)
+        x_dl_url = f"/api/download?file={urllib.parse.quote(xname)}"
         buttons_html.append(f'''
-            <a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_xlsx}" download="{xname}"
+            <a href="{x_dl_url}" download="{xname}" data-base64="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_xlsx}"
+               onclick="if(window.mandorosDownloadBlob){{return window.mandorosDownloadBlob('{b64_xlsx}','{xname}','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','{x_dl_url}');}}"
                style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(59,130,246,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                📊 Instant Download {phase_label} Excel Workbook (.xlsx)
             </a>
+        ''')
+
+    # Optional Phase 1 NIH NCPI / HL7 FHIR (EBMonFHIR) Zero-Server-Load Export Button
+    if "1" in str(phase_label) or "Single-Trial" in str(phase_label):
+        buttons_html.append('''
+            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{alert('FHIR Module loading...');}"
+               title="يحول الـ 88 حقلاً إلى كائنات ResearchStudy و Evidence و EvidenceVariable وفق معيار NCPI / EBMonFHIR"
+               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+               🧬 Export HL7 FHIR (JSON) | تصدير بمعيار FHIR
+            </button>
         ''')
 
     if not buttons_html:

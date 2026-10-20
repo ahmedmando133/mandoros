@@ -148,6 +148,16 @@ def process_pdf(
         with open(json_path, "w", encoding="utf-8") as jf:
             json.dump(master_p1, jf, indent=2, default=str)
 
+        # Isolated multi-user session copy
+        try:
+            from infra_stability import create_isolated_session, get_session_file_path
+            import shutil
+            session_dir = create_isolated_session("p1_run")
+            shutil.copyfile(excel_path, str(get_session_file_path(session_dir, os.path.basename(excel_path))))
+            shutil.copyfile(json_path, str(get_session_file_path(session_dir, os.path.basename(json_path))))
+        except Exception as sess_err:
+            pass
+
         # 5. Build KPI Summary & AI Diagnostics
         engine_badge = extractor.engine_used
         inc_count = sum(1 for e in data.eligibility if e.criterion_type == "inclusion")
@@ -2788,6 +2798,16 @@ def process_phase3_ui(
             trial_data=trial_data,
         )
 
+        # Isolated multi-user session copy
+        try:
+            from infra_stability import create_isolated_session, get_session_file_path
+            import shutil
+            p3_session_dir = create_isolated_session("p3_run")
+            shutil.copyfile(excel_path, str(get_session_file_path(p3_session_dir, os.path.basename(excel_path))))
+            shutil.copyfile(html_path, str(get_session_file_path(p3_session_dir, os.path.basename(html_path))))
+        except Exception:
+            pass
+
         # Generate Standalone Interactive Phase 3 HTML Dashboard
         p3_dash_html = None
         try:
@@ -4270,6 +4290,16 @@ def build_app():
     </script>
     """
 
+    from infra_stability import (
+        get_pwa_head_html,
+        render_mirror_and_app_bar,
+        get_ncpi_fhir_head_tags,
+        render_ncpi_fhir_pillar_html,
+        render_phase2_rxnorm_component_html,
+        render_phase3_nih_benchmark_html,
+    )
+    custom_head_tags = custom_head_tags + "\n" + get_pwa_head_html() + "\n" + get_ncpi_fhir_head_tags()
+
     with gr.Blocks(
         title="MANDOROS • Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis",
         css=custom_css,
@@ -4783,6 +4813,9 @@ def build_app():
             """
         )
 
+        gr.HTML(render_mirror_and_app_bar())
+        gr.HTML(render_ncpi_fhir_pillar_html())
+
         with gr.Tabs(elem_id="main-phases-tabs") as main_nav_tabs:
             # ==========================================
             # TAB 1: PHASE 1 SINGLE-STUDY DEEP EXTRACTOR
@@ -4869,6 +4902,18 @@ def build_app():
                         p1_html_output = gr.File(
                             label="🌐 Single-Trial 360° Interactive Dashboard (.html)",
                             value=None
+                        )
+                        gr.HTML(
+                            """
+                            <div class="mandoros-ncpi-fhir-tool" style="margin-top: 8px;">
+                              <button type="button" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{alert('FHIR Module loading...');}"
+                                 title="يحول الـ 88 حقلاً إلى كائنات ResearchStudy و Evidence و EvidenceVariable وفق معيار NCPI / EBMonFHIR"
+                                 style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:11px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
+                                 onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                                 🧬 Export HL7 FHIR (JSON) | تصدير بمعيار FHIR
+                              </button>
+                            </div>
+                            """
                         )
 
                     # Right Column: Visual Dashboard & Interactive Tables
@@ -5083,6 +5128,7 @@ def build_app():
                                 )
 
                             with gr.TabItem("📑 Cross-Trial Comparison & Coverage"):
+                                rxnorm_explorer_html = gr.HTML(value=render_phase2_rxnorm_component_html())
                                 cohort_comp_table = gr.DataFrame(
                                     value=cohort_comp_val,
                                     label="Head-to-Head Comparative Matrix (Arms, Dosages, Durations, Sample Sizes)",
@@ -5414,6 +5460,9 @@ def build_app():
                                 gr.Markdown("#### 🔬 Biostatistical Sample Size & Reproducible Search Strategy")
                                 p3_protocol_html = gr.HTML(value=p3_init_proto)
 
+                            with gr.TabItem("🏛️ البيانات المرجعية المسجلة (NIH / ClinicalTrials)", id="tab_phase3_nih_benchmark"):
+                                gr.HTML(value=render_phase3_nih_benchmark_html())
+
                 p3_run_btn.click(
                     fn=process_phase3_ui,
                     inputs=[
@@ -5605,15 +5654,19 @@ def build_app():
 if __name__ == "__main__":
     from src.extraction_engine import purge_stale_cache
     purge_stale_cache()
+
+    from infra_stability import start_background_janitor, SESSION_ROOT
+    start_background_janitor(interval_seconds=300)
+
     demo = build_app()
-    demo.queue(default_concurrency_limit=5, max_size=25)
+    demo.queue(default_concurrency_limit=4, max_size=60)
     port = int(os.environ.get("PORT", 7860))
     fav = "assets/favicon.ico" if os.path.exists("assets/favicon.ico") else None
     app_obj, _, _ = demo.launch(
         server_name="0.0.0.0",
         server_port=port,
         favicon_path=fav,
-        allowed_paths=["assets", "outputs", tempfile.gettempdir(), os.path.abspath("outputs")],
+        allowed_paths=["assets", "outputs", "static", tempfile.gettempdir(), str(SESSION_ROOT), os.path.abspath("outputs")],
         prevent_thread_lock=True
     )
 
@@ -5624,4 +5677,71 @@ if __name__ == "__main__":
     def health_check():
         return {"status": "healthy", "service": "MANDOROS", "port": port}
 
+    # PWA Endpoints for 1-Click Desktop/Mobile Installation
+    from starlette.responses import FileResponse
+
+    @app_obj.get("/manifest.json")
+    def pwa_manifest():
+        if os.path.exists("static/manifest.json"):
+            return FileResponse("static/manifest.json", media_type="application/manifest+json")
+        return {"error": "manifest not found"}
+
+    @app_obj.get("/sw.js")
+    def pwa_service_worker():
+        if os.path.exists("static/sw.js"):
+            return FileResponse("static/sw.js", media_type="application/javascript")
+        return {"error": "service worker not found"}
+
+    @app_obj.get("/static/ncpiFhirAddon.js")
+    @app_obj.get("/ncpiFhirAddon.js")
+    def ncpi_fhir_addon_js():
+        if os.path.exists("static/ncpiFhirAddon.js"):
+            return FileResponse("static/ncpiFhirAddon.js", media_type="application/javascript")
+        return {"error": "ncpiFhirAddon.js not found"}
+
+    # Direct Unbreakable File Downloader for Microsoft Edge & Chrome (Zero Network Issue)
+    @app_obj.get("/api/download")
+    def direct_file_download(file: str = ""):
+        if not file:
+            return {"error": "Missing file parameter"}
+        raw_name = urllib.parse.unquote(file).strip()
+        fname = os.path.basename(raw_name)
+
+        candidates = [
+            os.path.join("outputs", fname),
+            os.path.abspath(os.path.join("outputs", fname)),
+            raw_name,
+            os.path.join(tempfile.gettempdir(), fname),
+        ]
+        try:
+            from infra_stability import SESSION_ROOT
+            candidates.append(os.path.join(str(SESSION_ROOT), fname))
+        except Exception:
+            pass
+
+        target_file = None
+        for c in candidates:
+            if c and os.path.exists(c) and os.path.isfile(c):
+                target_file = c
+                break
+
+        if not target_file:
+            return {"error": f"File '{fname}' not found on server"}
+
+        media_type = "application/octet-stream"
+        if fname.lower().endswith(".html"):
+            media_type = "text/html; charset=utf-8"
+        elif fname.lower().endswith(".xlsx"):
+            media_type = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        elif fname.lower().endswith(".json"):
+            media_type = "application/json"
+
+        return FileResponse(
+            path=target_file,
+            media_type=media_type,
+            filename=fname,
+            headers={"Content-Disposition": f'attachment; filename="{fname}"'}
+        )
+
     demo.block_thread()
+
