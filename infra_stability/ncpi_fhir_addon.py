@@ -1,9 +1,10 @@
 """
 MANDOROS - NIH NCPI / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on
-Frontend Explanatory Pillar, Phase 1 Export, Phase 2 RxNorm Tagging,
-and Phase 3 ClinicalTrials.gov Side-by-Side Reporting Bias Verification.
+Frontend Explanatory Pillar, Phase 1 Multi-Format Export (JSON, Excel, Dashboard),
+Phase 2 RxNorm Tagging, and Phase 3 ClinicalTrials.gov Side-by-Side Verification.
 
 100% Client-Side Vanilla JavaScript (Zero Server RAM / Zero Backend Mutation).
+All UI copy rendered in high-impact, academic English.
 """
 
 from __future__ import annotations
@@ -49,7 +50,7 @@ def get_ncpi_fhir_head_tags() -> str:
 
 def render_ncpi_fhir_pillar_html() -> str:
     """
-    Renders the Frontend Explanatory Pillar (ركيزة تعريفية بسيطة في الواجهة الأمامية)
+    Renders the Frontend Explanatory Pillar in academic English
     with the 3 Mini-Pillar Highlights and the Optional Master Toggle.
     """
     return """
@@ -61,7 +62,7 @@ def render_ncpi_fhir_pillar_html() -> str:
         margin: 0 0 18px 0;
         box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(139, 92, 246, 0.15);
         backdrop-filter: blur(14px);
-        font-family: 'Inter', 'Cairo', -apple-system, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     ">
       <!-- Top Row: Title, Subtitle & Master Toggle -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid rgba(139, 92, 246, 0.25); padding-bottom: 12px; margin-bottom: 14px;">
@@ -73,14 +74,14 @@ def render_ncpi_fhir_pillar_html() -> str:
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span style="color: #F8FAFC; font-weight: 800; font-size: 15px; letter-spacing: -0.01em;">
-                  ركيزة التشغيل البيني السحابي القياسي (NIH NCPI &amp; HL7 FHIR Add-on — Optional)
+                  Cloud Interoperability &amp; Evidence Standards (NIH NCPI &amp; HL7 FHIR Add-on — Optional)
                 </span>
                 <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; color: #34D399; padding: 2px 8px; border-radius: 9999px; font-size: 10.5px; font-weight: 700;">
                   Zero-Server-Load (100% Client-Side)
                 </span>
               </div>
               <div style="color: #CBD5E1; font-size: 12px; margin-top: 3px; line-height: 1.4;">
-                طبقة معيارية اختيارية تعمل عند الطلب لتحويل مخرجات الـ 88 حقلاً إلى معايير المعاهد الوطنية للصحة (NIH)، وتوحيد الأكواد الدوائية عالمياً، وكشف انحياز النشر السريري دون أي تأثير على سرعة الاستخراج.
+                An on-demand standard layer mapping the 88 atomic fields into NIH NCPI &amp; HL7 FHIR (EBMonFHIR) specifications, harmonizing global drug codes via NIH RxNorm, and detecting outcome reporting bias with zero server overhead.
               </div>
             </div>
           </div>
@@ -96,7 +97,7 @@ def render_ncpi_fhir_pillar_html() -> str:
                 cursor: pointer;
             ">
             <span style="color: #E2E8F0; font-size: 12px; font-weight: 700;">
-              تفعيل أدوات المعيار العالمي NCPI/FHIR الاختيارية
+              Enable Global NIH NCPI / HL7 FHIR Interoperability Tools
             </span>
           </label>
         </div>
@@ -114,15 +115,15 @@ def render_ncpi_fhir_pillar_html() -> str:
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="color: #38BDF8; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              المرحلة الأولى · التصدير القياسي
+              Phase 1 · Multi-Format FHIR Export
             </span>
             <span style="font-size: 12px;">📤</span>
           </div>
           <div style="color: #F8FAFC; font-size: 12.5px; font-weight: 700; margin-bottom: 3px;">
-            HL7 FHIR &amp; EBMonFHIR Export
+            HL7 FHIR JSON, Relational Excel (.xlsx) &amp; Dashboard
           </div>
           <div style="color: #94A3B8; font-size: 11px; line-height: 1.4;">
-            تحويل فوري للـ 88 حقلاً إلى حزمة HL7 FHIR (JSON) متوافقة مع R و RevMan تشمل كائنات ResearchStudy و EvidenceVariable و Evidence.
+            Instant 1-click transformation of all 88 atomic fields into HL7 FHIR (JSON, Excel workbook &amp; interactive dashboard) conforming to ResearchStudy, EvidenceVariable, and Evidence resources.
           </div>
         </div>
 
@@ -136,7 +137,7 @@ def render_ncpi_fhir_pillar_html() -> str:
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="color: #34D399; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              المرحلة الثانية · التوحيد الدوائي
+              Phase 2 · Pharmacological Harmonization
             </span>
             <span style="font-size: 12px;">🏷️</span>
           </div>
@@ -144,7 +145,7 @@ def render_ncpi_fhir_pillar_html() -> str:
             NIH RxNorm Auto-Tagging (RxCUI)
           </div>
           <div style="color: #94A3B8; font-size: 11px; line-height: 1.4;">
-            ربط مباشر بقاعدة بيانات NIH RxNorm لعرض الكود الدوائي الموحد (RxCUI) ومنع تضارب الأسماء التجارية والعلمية مع تخزين محلي لحظي.
+            Direct on-demand resolution against NIH NLM RxNorm database to display standardized RxCUI codes and eliminate brand/generic naming conflicts with instant browser caching.
           </div>
         </div>
 
@@ -158,7 +159,7 @@ def render_ncpi_fhir_pillar_html() -> str:
         ">
           <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
             <span style="color: #C084FC; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              المرحلة الثالثة · المطابقة المرجعية
+              Phase 3 · Cloud Benchmark &amp; Verification
             </span>
             <span style="font-size: 12px;">⚖️</span>
           </div>
@@ -166,7 +167,7 @@ def render_ncpi_fhir_pillar_html() -> str:
             ClinicalTrials.gov Protocol Verification
           </div>
           <div style="color: #94A3B8; font-size: 11px; line-height: 1.4;">
-            مقارنة لحظية مع بروتوكولات ClinicalTrials.gov لكشف انحياز الإبلاغ عن النتائج (Reporting Bias) وتدقيق العينة والمخرجات الأولية.
+            Real-time side-by-side protocol comparison against ClinicalTrials.gov API v2 to detect outcome reporting bias and audit published sample sizes and primary endpoints.
           </div>
         </div>
       </div>
@@ -176,7 +177,7 @@ def render_ncpi_fhir_pillar_html() -> str:
 
 def render_phase2_rxnorm_component_html() -> str:
     """
-    Renders the interactive Phase 2 RxNorm Drug Standardizer bar for the Head-to-Head Lab.
+    Renders the interactive Phase 2 RxNorm Drug Standardizer bar in academic English.
     """
     return """
     <div class="mandoros-ncpi-fhir-tool" style="
@@ -196,15 +197,15 @@ def render_phase2_rxnorm_component_html() -> str:
         <span style="font-size: 18px;">🏷️</span>
         <div>
           <div style="color: #F8FAFC; font-size: 13px; font-weight: 700;">
-            التوثيق الدوائي الموحد (NIH RxNorm Auto-Tagging)
+            NIH RxNorm Pharmacological Harmonization &amp; Standardization
           </div>
           <div style="color: #94A3B8; font-size: 11px;">
-            انقر على أي دواء أدناه لجلب كود RxCUI الموحد مباشرة من المعاهد الوطنية للصحة (NIH NLM) بدون استهلاك خادم
+            Click any target drug below to resolve its standardized RxCUI code directly from the NIH NLM repository with zero server overhead:
           </div>
         </div>
       </div>
 
-      <!-- Quick Drug Chips with 🔍 كود RxNorm القياسي -->
+      <!-- Quick Drug Chips with 🔍 Resolve RxCUI -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px;">
         <button type="button" class="rxnorm-fetch-btn" data-drug="Empagliflozin" style="
             display: inline-flex;
@@ -220,7 +221,7 @@ def render_phase2_rxnorm_component_html() -> str:
             cursor: pointer;
             transition: all 0.2s;
         " onmouseover="this.style.background='rgba(56, 189, 248, 0.2)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.9)'">
-          💊 Empagliflozin (🔍 كود RxNorm القياسي)
+          💊 Empagliflozin (🔍 Resolve RxCUI)
         </button>
 
         <button type="button" class="rxnorm-fetch-btn" data-drug="Dapagliflozin" style="
@@ -237,7 +238,7 @@ def render_phase2_rxnorm_component_html() -> str:
             cursor: pointer;
             transition: all 0.2s;
         " onmouseover="this.style.background='rgba(16, 185, 129, 0.2)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.9)'">
-          💊 Dapagliflozin (🔍 كود RxNorm القياسي)
+          💊 Dapagliflozin (🔍 Resolve RxCUI)
         </button>
 
         <button type="button" class="rxnorm-fetch-btn" data-drug="Metformin" style="
@@ -254,7 +255,7 @@ def render_phase2_rxnorm_component_html() -> str:
             cursor: pointer;
             transition: all 0.2s;
         " onmouseover="this.style.background='rgba(167, 139, 250, 0.2)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.9)'">
-          💊 Metformin (🔍 كود RxNorm القياسي)
+          💊 Metformin (🔍 Resolve RxCUI)
         </button>
 
         <button type="button" class="rxnorm-fetch-btn" data-drug="Semaglutide" style="
@@ -271,7 +272,7 @@ def render_phase2_rxnorm_component_html() -> str:
             cursor: pointer;
             transition: all 0.2s;
         " onmouseover="this.style.background='rgba(244, 114, 182, 0.2)'" onmouseout="this.style.background='rgba(30, 41, 59, 0.9)'">
-          💊 Semaglutide (🔍 كود RxNorm القياسي)
+          💊 Semaglutide (🔍 Resolve RxCUI)
         </button>
       </div>
     </div>
@@ -281,7 +282,7 @@ def render_phase2_rxnorm_component_html() -> str:
 def render_phase3_nih_benchmark_html() -> str:
     """
     Renders the Phase 3 Side-by-Side ClinicalTrials.gov Protocol Verification
-    & Outcome Reporting Bias Appraisal workspace.
+    & Outcome Reporting Bias Appraisal workspace in academic English.
     """
     return """
     <div class="mandoros-ncpi-fhir-tool" style="
@@ -289,7 +290,7 @@ def render_phase3_nih_benchmark_html() -> str:
         border: 1.5px solid rgba(192, 132, 252, 0.35);
         border-radius: 16px;
         padding: 22px;
-        font-family: 'Inter', 'Cairo', -apple-system, sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     ">
       <!-- Header -->
       <div style="border-bottom: 1px solid rgba(255, 255, 255, 0.1); padding-bottom: 14px; margin-bottom: 16px; display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px;">
@@ -303,36 +304,75 @@ def render_phase3_nih_benchmark_html() -> str:
             </span>
           </div>
           <h3 style="color: #F8FAFC; margin: 4px 0 2px 0; font-size: 18px; font-weight: 800;">
-            إثراء الدراسة من السحابة · كشف انحياز الإبلاغ عن النتائج (Side-by-Side Reporting Bias Check)
+            Clinical Evidence Cross-Verification · Side-by-Side Reporting Bias Appraisal
           </h3>
           <p style="color: #94A3B8; margin: 0; font-size: 12.5px; line-height: 1.5;">
-            مقارنة مباشرة بين ما تم استخراجه في MANDOROS من الورقة المنشورة والبروتوكول الرسمي المسجل في قاعدة بيانات المعاهد الوطنية للصحة (ClinicalTrials.gov) لكشف انحياز النشر أو تبديل النتائج الأولية.
+            Direct comparison between findings extracted by MANDOROS from the published manuscript and the registered protocol on ClinicalTrials.gov API v2 to identify publication bias and outcome switching.
           </p>
         </div>
 
-        <button type="button" onclick="window.exportToNCPIFhir()" style="
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: linear-gradient(135deg, #8B5CF6, #6D28D9);
-            border: none;
-            border-radius: 8px;
-            color: #fff;
-            padding: 8px 16px;
-            font-size: 12px;
-            font-weight: 700;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
-            transition: all 0.2s;
-        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-          🧬 تصدير بحزمة FHIR (JSON)
-        </button>
+        <!-- 3 Standard Export Actions -->
+        <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <button type="button" onclick="window.exportToNCPIFhir()" style="
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              background: linear-gradient(135deg, #8B5CF6, #6D28D9);
+              border: none;
+              border-radius: 8px;
+              color: #fff;
+              padding: 8px 14px;
+              font-size: 12px;
+              font-weight: 700;
+              cursor: pointer;
+              box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+              transition: all 0.2s;
+          " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+            🧬 FHIR (JSON)
+          </button>
+
+          <button type="button" onclick="window.exportToNCPIFhirExcel()" style="
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              background: linear-gradient(135deg, #10B981, #059669);
+              border: none;
+              border-radius: 8px;
+              color: #fff;
+              padding: 8px 14px;
+              font-size: 12px;
+              font-weight: 700;
+              cursor: pointer;
+              box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+              transition: all 0.2s;
+          " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+            📊 FHIR (Excel)
+          </button>
+
+          <button type="button" onclick="window.exportToNCPIFhirDashboard()" style="
+              display: inline-flex;
+              align-items: center;
+              gap: 6px;
+              background: linear-gradient(135deg, #0EA5E9, #0284C7);
+              border: none;
+              border-radius: 8px;
+              color: #fff;
+              padding: 8px 14px;
+              font-size: 12px;
+              font-weight: 700;
+              cursor: pointer;
+              box-shadow: 0 4px 12px rgba(14, 165, 233, 0.35);
+              transition: all 0.2s;
+          " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+            🌐 Dashboard
+          </button>
+        </div>
       </div>
 
       <!-- NCT / Query Input & Quick Buttons -->
       <div style="background: rgba(30, 41, 59, 0.6); border: 1px solid #334155; border-radius: 12px; padding: 14px; margin-bottom: 18px;">
         <div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center;">
-          <input type="text" id="phase3-nct-input" value="NCT01131676" placeholder="أدخل رقم NCT (مثال: NCT01131676) أو اسم الدراسة/الدواء" style="
+          <input type="text" id="phase3-nct-input" value="NCT01131676" placeholder="Enter NCT ID (e.g., NCT01131676) or study / drug query..." style="
               flex: 1;
               min-width: 250px;
               background: #0F172A;
@@ -354,13 +394,13 @@ def render_phase3_nih_benchmark_html() -> str:
               cursor: pointer;
               transition: all 0.2s;
           " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-            🔍 جلب ومقارنة البروتوكول المسجل
+            🔍 Fetch &amp; Compare Registered Protocol
           </button>
         </div>
 
         <!-- Quick Demo Chips -->
         <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 10px;">
-          <span style="color: #94A3B8; font-size: 11px; font-weight: 600;">تجارب مرجعية سريعة:</span>
+          <span style="color: #94A3B8; font-size: 11px; font-weight: 600;">Pre-indexed benchmark trials:</span>
           <button type="button" onclick="document.getElementById('phase3-nct-input').value='NCT01131676'; window.runPhase3ClinicalTrialsCheck('NCT01131676', 'phase3-nih-benchmark-results');" style="background:rgba(56,189,248,0.12);border:1px solid rgba(56,189,248,0.4);color:#38BDF8;padding:3px 10px;border-radius:9999px;font-size:11px;font-weight:700;cursor:pointer;">
             EMPA-REG OUTCOME (NCT01131676)
           </button>
@@ -376,7 +416,7 @@ def render_phase3_nih_benchmark_html() -> str:
       <!-- Results Container (Lazy-loaded upon click) -->
       <div id="phase3-nih-benchmark-results">
         <div style="padding: 24px; text-align: center; color: #94A3B8; background: rgba(15, 23, 42, 0.5); border: 1px dashed #334155; border-radius: 12px; font-size: 13px;">
-          💡 انقر على <strong>"🔍 جلب ومقارنة البروتوكول المسجل"</strong> أو اختر تجربة من الأزرار أعلاه لمطابقة بروتوكول الدراسة السريرية مباشرة من ClinicalTrials.gov API v2.
+          💡 Click <strong>"🔍 Fetch &amp; Compare Registered Protocol"</strong> or select a benchmark trial above to cross-verify trial endpoints directly against ClinicalTrials.gov API v2.
         </div>
       </div>
     </div>

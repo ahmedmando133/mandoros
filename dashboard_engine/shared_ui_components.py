@@ -125,14 +125,26 @@ def build_instant_download_banner(
             </a>
         ''')
 
-    # Optional Phase 1 NIH NCPI / HL7 FHIR (EBMonFHIR) Zero-Server-Load Export Button
+    # Optional Phase 1 NIH NCPI / HL7 FHIR (EBMonFHIR) Multi-Format Standards Export
     if "1" in str(phase_label) or "Single-Trial" in str(phase_label):
         buttons_html.append('''
             <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{alert('FHIR Module loading...');}"
-               title="يحول الـ 88 حقلاً إلى كائنات ResearchStudy و Evidence و EvidenceVariable وفق معيار NCPI / EBMonFHIR"
-               style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
+               title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
+               style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-               🧬 Export HL7 FHIR (JSON) | تصدير بمعيار FHIR
+               🧬 Export HL7 FHIR (JSON)
+            </button>
+            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{alert('FHIR Excel Module loading...');}"
+               title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
+               style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(5,150,105,0.35);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+               📊 Export FHIR Excel (.xlsx)
+            </button>
+            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{alert('FHIR Dashboard Module loading...');}"
+               title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
+               style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all 0.2s;"
+               onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+               🌐 FHIR Dashboard
             </button>
         ''')
 

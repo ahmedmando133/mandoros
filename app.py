@@ -4905,13 +4905,27 @@ def build_app():
                         )
                         gr.HTML(
                             """
-                            <div class="mandoros-ncpi-fhir-tool" style="margin-top: 8px;">
+                            <div class="mandoros-ncpi-fhir-tool" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                               <button type="button" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{alert('FHIR Module loading...');}"
-                                 title="يحول الـ 88 حقلاً إلى كائنات ResearchStudy و Evidence و EvidenceVariable وفق معيار NCPI / EBMonFHIR"
-                                 style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:11px 16px;border-radius:10px;font-weight:700;font-size:13px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
+                                 title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
+                                 style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
                                  onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-                                 🧬 Export HL7 FHIR (JSON) | تصدير بمعيار FHIR
+                                 🧬 Export HL7 FHIR (JSON)
                               </button>
+                              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                                <button type="button" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{alert('FHIR Excel Module loading...');}"
+                                   title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
+                                   style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(5,150,105,0.35);transition:all 0.2s;"
+                                   onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                                   📊 FHIR Excel (.xlsx)
+                                </button>
+                                <button type="button" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{alert('FHIR Dashboard Module loading...');}"
+                                   title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
+                                   style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.35);transition:all 0.2s;"
+                                   onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
+                                   🌐 FHIR Dashboard
+                                </button>
+                              </div>
                             </div>
                             """
                         )
@@ -5460,7 +5474,7 @@ def build_app():
                                 gr.Markdown("#### 🔬 Biostatistical Sample Size & Reproducible Search Strategy")
                                 p3_protocol_html = gr.HTML(value=p3_init_proto)
 
-                            with gr.TabItem("🏛️ البيانات المرجعية المسجلة (NIH / ClinicalTrials)", id="tab_phase3_nih_benchmark"):
+                            with gr.TabItem("🏛️ Registered Protocol Benchmark (NIH ClinicalTrials.gov)", id="tab_phase3_nih_benchmark"):
                                 gr.HTML(value=render_phase3_nih_benchmark_html())
 
                 p3_run_btn.click(

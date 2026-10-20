@@ -170,7 +170,7 @@ def build_phase3_gap_thesis_dashboard(
           <span>📋</span> 6-Sheet DataGrid
         </button>
         <button class="p3-tab-btn mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchP3Tab('tab_p3_nih_benchmark', this)">
-          <span>🏛️</span> البيانات المرجعية المسجلة (NIH / ClinicalTrials)
+          <span>🏛️</span> Registered Protocol Benchmark (NIH / ClinicalTrials)
         </button>
       </div>
 
