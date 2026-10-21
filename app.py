@@ -3401,6 +3401,182 @@ def build_app():
         max-width: 780px;
     }
 
+    /* =========================================================================
+       ACADEMIC CREATOR & UNIVERSITY SIGNATURE (Rawda Mofed Gamal · AJMAN UNIVERSITY)
+       Glassmorphic Showcase with Glowing Luminescent Background & Specular Sheen
+       ========================================================================= */
+    .mandoros-academic-creator-bar {
+        position: relative !important;
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(18, 18, 24, 0.88) 45%, rgba(0, 245, 212, 0.08) 100%) !important;
+        backdrop-filter: blur(24px) saturate(190%) !important;
+        -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        border-top: 1.5px solid rgba(255, 255, 255, 0.40) !important;
+        border-radius: 14px !important;
+        padding: 11px 16px !important;
+        margin: 4px 0 16px 0 !important;
+        width: 100% !important;
+        max-width: 620px !important;
+        box-sizing: border-box !important;
+        animation: mandoros-aurora-glow 4.5s ease-in-out infinite alternate !important;
+        transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        cursor: default !important;
+        overflow: hidden !important;
+        z-index: 2 !important;
+    }
+
+    .mandoros-academic-creator-bar:hover {
+        transform: translateY(-2px) !important;
+        border-color: rgba(0, 245, 212, 0.55) !important;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.75), 0 0 35px rgba(0, 245, 212, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.45) !important;
+    }
+
+    .mandoros-academic-creator-bar::before {
+        content: "" !important;
+        position: absolute !important;
+        top: 0 !important;
+        left: -120% !important;
+        width: 60% !important;
+        height: 100% !important;
+        background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent) !important;
+        transform: skewX(-25deg) !important;
+        animation: glassy-specular-sweep 7s ease-in-out infinite !important;
+        pointer-events: none !important;
+    }
+
+    @keyframes mandoros-aurora-glow {
+        0% {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 245, 212, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            border-color: rgba(0, 245, 212, 0.35);
+        }
+        50% {
+            box-shadow: 0 10px 35px rgba(0, 0, 0, 0.7), 0 0 32px rgba(99, 102, 241, 0.32), 0 0 16px rgba(56, 189, 248, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.38);
+            border-color: rgba(99, 102, 241, 0.52);
+        }
+        100% {
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 245, 212, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            border-color: rgba(0, 245, 212, 0.35);
+        }
+    }
+
+    @keyframes glassy-specular-sweep {
+        0%, 75% { left: -120%; opacity: 0; }
+        80% { opacity: 1; }
+        100% { left: 220%; opacity: 0; }
+    }
+
+    .academic-bar-inner {
+        display: flex !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 12px !important;
+        width: 100% !important;
+        flex-wrap: wrap !important;
+    }
+
+    .academic-crest-icon-box {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+        background: radial-gradient(circle, rgba(0, 245, 212, 0.22) 0%, rgba(99, 102, 241, 0.15) 100%) !important;
+        border: 1px solid rgba(0, 245, 212, 0.40) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        box-shadow: 0 0 14px rgba(0, 245, 212, 0.25) !important;
+    }
+
+    .academic-crest-symbol {
+        font-size: 19px !important;
+        line-height: 1 !important;
+    }
+
+    .academic-meta-col {
+        display: flex !important;
+        flex-direction: column !important;
+        gap: 3px !important;
+        flex: 1 1 240px !important;
+        min-width: 0 !important;
+    }
+
+    .academic-kicker {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 6px !important;
+        font-size: 9.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.08em !important;
+        color: #94A3B8 !important;
+        text-transform: uppercase !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
+    .pulsing-cyan-dot {
+        width: 6px !important;
+        height: 6px !important;
+        border-radius: 50% !important;
+        background: #00F5D4 !important;
+        box-shadow: 0 0 8px #00F5D4 !important;
+        display: inline-block !important;
+    }
+
+    .academic-name-row {
+        display: flex !important;
+        align-items: center !important;
+        gap: 8px !important;
+        flex-wrap: wrap !important;
+    }
+
+    .academic-author-name {
+        font-size: 15.5px !important;
+        font-weight: 800 !important;
+        color: #FFFFFF !important;
+        letter-spacing: -0.01em !important;
+        text-shadow: 0 0 12px rgba(255, 255, 255, 0.40) !important;
+    }
+
+    .academic-sep {
+        color: #475569 !important;
+        font-weight: 600 !important;
+        font-size: 13px !important;
+    }
+
+    .academic-institution-pill {
+        display: inline-flex !important;
+        align-items: center !important;
+        gap: 5px !important;
+        padding: 3px 9px !important;
+        background: rgba(56, 189, 248, 0.12) !important;
+        border: 1px solid rgba(56, 189, 248, 0.35) !important;
+        border-radius: 6px !important;
+        color: #38BDF8 !important;
+        font-size: 11.5px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.04em !important;
+        text-transform: uppercase !important;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.18) !important;
+    }
+
+    .academic-honors-col {
+        display: flex !important;
+        align-items: center !important;
+        flex-shrink: 0 !important;
+    }
+
+    .academic-honors-badge {
+        font-size: 9px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.06em !important;
+        text-transform: uppercase !important;
+        padding: 3px 8px !important;
+        border-radius: 4px !important;
+        background: rgba(16, 185, 129, 0.12) !important;
+        border: 1px solid rgba(16, 185, 129, 0.35) !important;
+        color: #34D399 !important;
+        font-family: 'JetBrains Mono', monospace !important;
+    }
+
     .mandoros-meta-chips {
         display: flex;
         flex-wrap: wrap;
@@ -4768,6 +4944,31 @@ def build_app():
                       <!-- Acronym Subtitle with TextPlugin Target -->
                       <div class="mandoros-subtitle" data-full-text="Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis">
                         Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis
+                      </div>
+
+                      <!-- Lead Creator & Academic Affiliation Glassy Showcase Banner -->
+                      <div class="mandoros-academic-creator-bar mandoros-magnetic-btn" title="Project Inventor & Lead Research Architect • Ajman University">
+                        <div class="academic-bar-inner">
+                          <div class="academic-crest-icon-box">
+                            <span class="academic-crest-symbol">🎓</span>
+                          </div>
+                          <div class="academic-meta-col">
+                            <div class="academic-kicker">
+                              <span class="pulsing-cyan-dot"></span>
+                              PROJECT INVENTOR &amp; LEAD RESEARCH ARCHITECT
+                            </div>
+                            <div class="academic-name-row">
+                              <span class="academic-author-name">Rawda Mofed Gamal</span>
+                              <span class="academic-sep">•</span>
+                              <span class="academic-institution-pill">
+                                <span class="institution-icon">🏛️</span> AJMAN UNIVERSITY
+                              </span>
+                            </div>
+                          </div>
+                          <div class="academic-honors-col">
+                            <span class="academic-honors-badge">HONORS RESEARCH</span>
+                          </div>
+                        </div>
                       </div>
 
                       <!-- Clinical Rigor Specification Chips -->

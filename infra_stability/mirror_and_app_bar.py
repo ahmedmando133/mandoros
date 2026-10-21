@@ -70,6 +70,28 @@ def render_mirror_and_app_bar() -> str:
         </a>
       </div>
 
+      <!-- Center: Academic Attribution (Rawda Mofed Gamal · AJMAN UNIVERSITY) -->
+      <div class="mandoros-creator-top-pill mandoros-magnetic-btn" style="
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          padding: 4px 14px;
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(0, 245, 212, 0.08) 100%);
+          backdrop-filter: blur(12px);
+          -webkit-backdrop-filter: blur(12px);
+          border: 1px solid rgba(0, 245, 212, 0.35);
+          border-radius: 20px;
+          box-shadow: 0 0 16px rgba(0, 245, 212, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          font-size: 11px;
+          letter-spacing: 0.02em;
+          transition: all 0.25s ease;
+      " title="Project Inventor & Lead Researcher • Ajman University">
+        <span style="font-size: 13px; line-height: 1;">🎓</span>
+        <span style="color: #FFFFFF; font-weight: 800; letter-spacing: -0.01em;">Rawda Mofed Gamal</span>
+        <span style="color: #475569; font-weight: 600;">•</span>
+        <span style="color: #38BDF8; font-weight: 800; letter-spacing: 0.04em;">AJMAN UNIVERSITY</span>
+      </div>
+
       <!-- Right: App Options & Janitor Health -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
         <button class="mandoros-pwa-install-btn mandoros-magnetic-btn" style="

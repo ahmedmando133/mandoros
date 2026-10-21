@@ -132,6 +132,19 @@
         }
       }
 
+      // Step 4b: Glassy Creator & Academic Affiliation Banner Entrance
+      const creatorBar = document.querySelector('.mandoros-academic-creator-bar');
+      if (creatorBar) {
+        heroTl.from(creatorBar, {
+          y: 20,
+          opacity: 0,
+          scale: 0.96,
+          duration: 0.8,
+          ease: 'power3.out',
+          clearProps: 'transform,opacity'
+        }, '-=0.5');
+      }
+
       // Step 5: High-density clinical metadata strip reveal
       if (badgeStrip) {
         heroTl.from(badgeStrip.children, {
