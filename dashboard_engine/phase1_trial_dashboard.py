@@ -407,7 +407,7 @@ def build_phase1_single_trial_dashboard(
         <button class="main-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_sheets', this)">
           <span>📋</span> Full 7-Sheet Searchable Color DataGrid
         </button>
-        <button class="main-tab-btn mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_nih_benchmark', this)">
+        <button class="main-tab-btn mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchMainTab('tab_nih_benchmark', this)">
           <span>🏛️</span> Registered Protocol Benchmark (NIH / ClinicalTrials)
         </button>
       </div>
@@ -490,7 +490,7 @@ def build_phase1_single_trial_dashboard(
       </div>
 
       <!-- Tab 8: NIH ClinicalTrials.gov Protocol Verification (Lazy-loaded) -->
-      <div id="tab_nih_benchmark" class="main-tab-panel p-4 space-y-4 hidden mandoros-ncpi-fhir-tool">
+      <div id="tab_nih_benchmark" class="main-tab-panel p-4 space-y-4 hidden mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool">
         {render_phase3_nih_benchmark_html()}
       </div>
     </div>

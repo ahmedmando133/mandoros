@@ -59,9 +59,10 @@ FAST_CDN_HEADER = """
   table.dataTable tbody td { border-bottom: 1px solid #1E293B !important; color: #E2E8F0 !important; }
   .dataTables_paginate .paginate_button { color: #94A3B8 !important; border-radius: 6px !important; }
   .dataTables_paginate .paginate_button.current { background: #0284C7 !important; color: #fff !important; border: none !important; }
-  .mandoros-ncpi-fhir-tool { transition: all 0.2s ease; }
-  .ncpi-hidden { display: none !important; }
+  .mandoros-ncbi-fhir-tool, .mandoros-ncpi-fhir-tool { transition: all 0.2s ease; }
+  .ncbi-hidden, .ncpi-hidden { display: none !important; }
 </style>
+<script src="/ncbiFhirAddon.js"></script>
 <script src="/ncpiFhirAddon.js"></script>
 <script>
 // Standalone GSAP Initializer for Exported HTML Dashboards
@@ -229,23 +230,23 @@ def build_instant_download_banner(
             </a>
         ''')
 
-    # Optional Phase 1 NIH NCPI / HL7 FHIR (EBMonFHIR) Multi-Format Standards Export
+    # Optional Phase 1 National Center for Biotechnology Information (NCBI) / HL7 FHIR (EBMonFHIR) Multi-Format Standards Export
     if "1" in str(phase_label) or "Single-Trial" in str(phase_label):
         buttons_html.append('''
-            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhir)window.exportToNCPIFhir();};document.head.appendChild(s);}"
+            <button type="button" class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCBIFhir){window.exportToNCBIFhir();}else if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.onload=function(){if(window.exportToNCBIFhir)window.exportToNCBIFhir();else if(window.exportToNCPIFhir)window.exportToNCPIFhir();};document.head.appendChild(s);}"
                title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                🧬 Export HL7 FHIR (JSON)
             </button>
-            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirExcel)window.exportToNCPIFhirExcel();};document.head.appendChild(s);}"
+            <button type="button" class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCBIFhirExcel){window.exportToNCBIFhirExcel();}else if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.onload=function(){if(window.exportToNCBIFhirExcel)window.exportToNCBIFhirExcel();else if(window.exportToNCPIFhirExcel)window.exportToNCPIFhirExcel();};document.head.appendChild(s);}"
                title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(5,150,105,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                📊 Export FHIR Excel (.xlsx)
             </button>
-            <button type="button" class="mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirDashboard)window.exportToNCPIFhirDashboard();};document.head.appendChild(s);}"
-               title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
+            <button type="button" class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" onclick="if(window.exportToNCBIFhirDashboard){window.exportToNCBIFhirDashboard();}else if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.onload=function(){if(window.exportToNCBIFhirDashboard)window.exportToNCBIFhirDashboard();else if(window.exportToNCPIFhirDashboard)window.exportToNCPIFhirDashboard();};document.head.appendChild(s);}"
+               title="Open standalone Interactive HL7 FHIR & National Center for Biotechnology Information (NCBI) Interoperability Dashboard"
                style="display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(2,132,199,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                🌐 FHIR Dashboard

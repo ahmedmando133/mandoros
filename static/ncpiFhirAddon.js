@@ -1,5 +1,5 @@
 /**
- * MANDOROS - NIH NCPI / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on
+ * MANDOROS - National Center for Biotechnology Information (NCBI) / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on
  * Pure Client-Side Vanilla JavaScript (100% in-browser, 0 MB Server RAM Overhead).
  *
  * Implements:
@@ -16,50 +16,58 @@
 (function (window) {
   'use strict';
 
-  const STORAGE_KEY = 'mandoros_ncpi_fhir_enabled';
+  const STORAGE_KEY = 'mandoros_ncbi_fhir_enabled';
+  const LEGACY_STORAGE_KEY = 'mandoros_ncpi_fhir_enabled';
 
   // -------------------------------------------------------------------------
   // Master Toggle & Visibility Management
   // -------------------------------------------------------------------------
-  function isNcpiAddonEnabled() {
+  function isNcbiAddonEnabled() {
     try {
-      const stored = localStorage.getItem(STORAGE_KEY);
+      let stored = localStorage.getItem(STORAGE_KEY);
+      if (stored === null) stored = localStorage.getItem(LEGACY_STORAGE_KEY);
       return stored === null ? true : stored === 'true';
     } catch (e) {
       return true;
     }
   }
+  const isNcpiAddonEnabled = isNcbiAddonEnabled;
 
-  function toggleNcpiAddon(enabled) {
+  function toggleNcbiAddon(enabled) {
     try {
       localStorage.setItem(STORAGE_KEY, enabled ? 'true' : 'false');
+      localStorage.setItem(LEGACY_STORAGE_KEY, enabled ? 'true' : 'false');
     } catch (e) {
-      console.warn('[NCPI/FHIR] LocalStorage not accessible:', e);
+      console.warn('[NCBI/FHIR] LocalStorage not accessible:', e);
     }
-    applyNcpiAddonVisibility(enabled);
-    showToast(enabled ? '✅ NIH NCPI / HL7 FHIR tools enabled' : 'ℹ️ NIH NCPI / HL7 FHIR tools hidden');
+    applyNcbiAddonVisibility(enabled);
+    showToast(enabled ? '✅ National Center for Biotechnology Information (NCBI) / HL7 FHIR tools enabled' : 'ℹ️ National Center for Biotechnology Information (NCBI) / HL7 FHIR tools hidden');
   }
+  const toggleNcpiAddon = toggleNcbiAddon;
 
-  function applyNcpiAddonVisibility(enabled) {
-    const elements = document.querySelectorAll('.mandoros-ncpi-fhir-tool');
+  function applyNcbiAddonVisibility(enabled) {
+    const elements = document.querySelectorAll('.mandoros-ncbi-fhir-tool, .mandoros-ncpi-fhir-tool');
     elements.forEach(el => {
       if (enabled) {
+        el.classList.remove('ncbi-hidden');
         el.classList.remove('ncpi-hidden');
         el.style.display = el.dataset.prevDisplay || '';
       } else {
         if (el.style.display && el.style.display !== 'none') {
           el.dataset.prevDisplay = el.style.display;
         }
+        el.classList.add('ncbi-hidden');
         el.classList.add('ncpi-hidden');
         el.style.display = 'none';
       }
     });
 
-    const toggles = document.querySelectorAll('#ncpi-master-toggle');
+    const toggles = document.querySelectorAll('#ncbi-master-toggle, #ncpi-master-toggle');
     toggles.forEach(t => {
       t.checked = enabled;
     });
   }
+  const applyNcpiAddonVisibility = applyNcbiAddonVisibility;
 
   // -------------------------------------------------------------------------
   // Lightweight Toast Notification (English)
@@ -157,7 +165,7 @@
   // -------------------------------------------------------------------------
   // Phase 1: Client-Side FHIR Exporter (JSON Bundle)
   // -------------------------------------------------------------------------
-  function exportToNCPIFhir(extractedData88Fields) {
+  function exportToNCBIFhir(extractedData88Fields) {
     try {
       const data = getResolvedStudyData(extractedData88Fields);
 
@@ -168,7 +176,7 @@
         meta: {
           profile: [
             "http://hl7.org/fhir/uv/ebm/StructureDefinition/ebm-bundle",
-            "https://ncpi-standards.org/fhir/StructureDefinition/ncpi-study-bundle"
+            "https://ncbi.nlm.nih.gov/fhir/StructureDefinition/ncbi-study-bundle"
           ],
           tag: [
             { system: "https://mandoros.org", code: "EBM-MANDOROS-VERIFIED", display: "MANDOROS Atomic Evidence" }
@@ -244,7 +252,7 @@
 
       showToast(`🧬 Exported HL7 FHIR (JSON) for ${data.study_id || 'MANDOROS'}`);
     } catch (err) {
-      console.error('[NCPI/FHIR] Export error:', err);
+      console.error('[NCBI/FHIR] Export error:', err);
       showToast('⚠️ Unable to export FHIR JSON. Please verify data availability.');
     }
   }
@@ -252,7 +260,7 @@
   // -------------------------------------------------------------------------
   // Phase 1: Client-Side FHIR Excel Exporter (.xlsx) - ZERO SERVER LOAD
   // -------------------------------------------------------------------------
-  function exportToNCPIFhirExcel(extractedData88Fields) {
+  function exportToNCBIFhirExcel(extractedData88Fields) {
     try {
       const data = getResolvedStudyData(extractedData88Fields);
 
@@ -263,7 +271,7 @@
         // Sheet 1: FHIR Bundle Summary
         const summaryRows = [
           { Property: "FHIR Standard Profile", Specification: "HL7 FHIR R4 / EBMonFHIR (Evidence-Based Medicine)" },
-          { Property: "Interoperability Standard", Specification: "NIH NCPI (National Institutes of Health Cloud Interoperability)" },
+          { Property: "Interoperability Standard", Specification: "National Center for Biotechnology Information (NCBI) / HL7 FHIR Interoperability" },
           { Property: "Bundle ResourceType", Specification: "Bundle (type: collection)" },
           { Property: "Generated Timestamp", Specification: new Date().toISOString() },
           { Property: "Study ID", Specification: data.study_id || "MANDOROS_STUDY" },
@@ -318,7 +326,7 @@
           Field_Identifier: k,
           Extracted_Value: typeof data[k] === 'object' ? JSON.stringify(data[k]) : String(data[k]),
           FHIR_Extension_URI: `https://mandoros.org/fhir/StructureDefinition/88-fields#${k}`,
-          Interoperability_Mapping: "NCPI / EBMonFHIR Atomic Extension"
+          Interoperability_Mapping: "National Center for Biotechnology Information (NCBI) / EBMonFHIR Atomic Extension"
         }));
         const wsExt = window.XLSX.utils.json_to_sheet(extRows);
         window.XLSX.utils.book_append_sheet(wb, wsExt, "88_Fields_Extension_Map");
@@ -348,9 +356,9 @@
       document.head.appendChild(script);
 
     } catch (err) {
-      console.error('[NCPI/FHIR] Excel export error:', err);
+      console.error('[NCBI/FHIR] Excel export error:', err);
       showToast('⚠️ Unable to export FHIR Excel. Falling back to JSON.');
-      exportToNCPIFhir(extractedData88Fields);
+      (window.exportToNCBIFhir || exportToNCBIFhir)(extractedData88Fields);
     }
   }
 
@@ -364,7 +372,7 @@
  xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet">
  <Worksheet ss:Name="FHIR_Bundle_Summary">
   <Table>
-   <Row><Cell><Data ss:Type="String">Standard Profile</Data></Cell><Cell><Data ss:Type="String">HL7 FHIR R4 / EBMonFHIR (NIH NCPI Standard)</Data></Cell></Row>
+   <Row><Cell><Data ss:Type="String">Standard Profile</Data></Cell><Cell><Data ss:Type="String">HL7 FHIR R4 / EBMonFHIR (National Center for Biotechnology Information (NCBI) Standard)</Data></Cell></Row>
    <Row><Cell><Data ss:Type="String">Study ID</Data></Cell><Cell><Data ss:Type="String">${data.study_id || "MANDOROS"}</Data></Cell></Row>
    <Row><Cell><Data ss:Type="String">Title</Data></Cell><Cell><Data ss:Type="String">${data.title || ""}</Data></Cell></Row>
    <Row><Cell><Data ss:Type="String">Sample Size</Data></Cell><Cell><Data ss:Type="String">${data.sample_size || "N/A"}</Data></Cell></Row>
@@ -389,7 +397,7 @@
   // -------------------------------------------------------------------------
   // Phase 1: Standalone Interactive FHIR Dashboard Generator & Viewer
   // -------------------------------------------------------------------------
-  function exportToNCPIFhirDashboard(extractedData88Fields) {
+  function exportToNCBIFhirDashboard(extractedData88Fields) {
     try {
       const data = getResolvedStudyData(extractedData88Fields);
 
@@ -439,7 +447,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MANDOROS • HL7 FHIR & NIH NCPI Interoperability Dashboard</title>
+  <title>MANDOROS • HL7 FHIR & National Center for Biotechnology Information (NCBI) Interoperability Dashboard</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
   <style>
@@ -456,7 +464,7 @@
       <div>
         <div class="flex items-center gap-2 mb-1 flex-wrap">
           <span class="bg-purple-500/20 text-purple-300 border border-purple-500/40 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-            🧬 NIH NCPI / HL7 FHIR (EBMonFHIR)
+            🧬 National Center for Biotechnology Information (NCBI) / HL7 FHIR (EBMonFHIR)
           </span>
           <span class="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 px-3 py-1 rounded-full text-xs font-bold">
             Zero-Server-Load Architecture
@@ -528,7 +536,7 @@
     <div class="glass-card rounded-2xl p-5 space-y-3">
       <div class="flex items-center justify-between">
         <h3 class="text-sm font-extrabold text-white flex items-center gap-2">
-          <span>📜</span> Conformance JSON Schema (EBMonFHIR R4 / NCPI Bundle)
+          <span>📜</span> Conformance JSON Schema (EBMonFHIR R4 / NCBI Bundle)
         </h3>
         <span class="text-xs text-slate-400 font-mono">Size: ${Math.round(fhirJson.length / 1024 * 10) / 10} KB</span>
       </div>
@@ -580,7 +588,7 @@
                 <span style="font-size:22px;">🧬</span>
                 <div>
                   <div style="color:#F8FAFC;font-weight:800;font-size:15px;letter-spacing:-0.01em;">MANDOROS • HL7 FHIR Interoperability Dashboard</div>
-                  <div style="color:#94A3B8;font-size:11.5px;">Conforming to NIH NCPI &amp; EBMonFHIR R4 Specifications · Zero-Server-Load</div>
+                  <div style="color:#94A3B8;font-size:11.5px;">Conforming to National Center for Biotechnology Information (NCBI) &amp; EBMonFHIR R4 Specifications · Zero-Server-Load</div>
                 </div>
               </div>
               <div style="display:flex;align-items:center;gap:10px;">
@@ -600,7 +608,7 @@
 
       showToast('🌐 Generated & Downloaded FHIR Dashboard');
     } catch (err) {
-      console.error('[NCPI/FHIR] Dashboard generation error:', err);
+      console.error('[NCBI/FHIR] Dashboard generation error:', err);
       showToast('⚠️ Unable to open FHIR Dashboard.');
     }
   }
@@ -644,7 +652,7 @@
       }
       return rxcui;
     } catch (error) {
-      console.warn('[NCPI/FHIR] RxNorm fetch error:', error);
+      console.warn('[NCBI/FHIR] RxNorm fetch error:', error);
       const fallback = 'Temporarily Unavailable';
       if (targetElement) {
         targetElement.innerHTML = `<span style="color:#FCA5A5;font-size:11px;">⚠️ ${fallback}</span>`;
@@ -704,7 +712,7 @@
         primaryOutcomes: (protocol.outcomesModule?.primaryOutcomes || []).map(o => o.measure).join(" ; ") || "Not Registered"
       };
     } catch (error) {
-      console.warn('[NCPI/FHIR] ClinicalTrials fetch error:', error);
+      console.warn('[NCBI/FHIR] ClinicalTrials fetch error:', error);
       return null;
     }
   }
@@ -820,13 +828,13 @@
       <div style="margin-top:14px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:10px;font-size:11.5px;color:#94A3B8;">
         <span>🔍 Source: ClinicalTrials.gov API v2 (NIH NLM) — Direct client-side verification (0 MB Server RAM overhead).</span>
         <div style="display:flex;gap:8px;">
-          <button onclick="window.exportToNCPIFhir()" class="mandoros-ncpi-fhir-tool" style="background:#8B5CF6;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">
+          <button onclick="(window.exportToNCBIFhir||window.exportToNCPIFhir)()" class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" style="background:#8B5CF6;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">
             🧬 FHIR (JSON)
           </button>
-          <button onclick="window.exportToNCPIFhirExcel()" class="mandoros-ncpi-fhir-tool" style="background:#10B981;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">
+          <button onclick="(window.exportToNCBIFhirExcel||window.exportToNCPIFhirExcel)()" class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" style="background:#10B981;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">
             📊 FHIR (Excel)
           </button>
-          <button onclick="window.exportToNCPIFhirDashboard()" class="mandoros-ncpi-fhir-tool" style="background:#0EA5E9;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">
+          <button onclick="(window.exportToNCBIFhirDashboard||window.exportToNCPIFhirDashboard)()" class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" style="background:#0EA5E9;color:#fff;border:none;padding:5px 12px;border-radius:6px;cursor:pointer;font-weight:700;">
             🌐 Dashboard
           </button>
         </div>
@@ -873,13 +881,13 @@
   // Auto-init on page load
   // -------------------------------------------------------------------------
   function init() {
-    const enabled = isNcpiAddonEnabled();
-    applyNcpiAddonVisibility(enabled);
+    const enabled = isNcbiAddonEnabled();
+    applyNcbiAddonVisibility(enabled);
 
-    document.querySelectorAll('#ncpi-master-toggle').forEach(t => {
+    document.querySelectorAll('#ncbi-master-toggle, #ncpi-master-toggle').forEach(t => {
       t.checked = enabled;
       t.addEventListener('change', function () {
-        toggleNcpiAddon(this.checked);
+        toggleNcbiAddon(this.checked);
       });
     });
 
@@ -895,29 +903,52 @@
     });
   }
 
+  // Aliases for functions
+  const exportToNCPIFhir = exportToNCBIFhir;
+  const exportToNCPIFhirExcel = exportToNCBIFhirExcel;
+  const exportToNCPIFhirDashboard = exportToNCBIFhirDashboard;
+
   // Expose API to window object
-  window.ncpiFhirAddon = {
-    isNcpiAddonEnabled,
-    toggleNcpiAddon,
-    exportToNCPIFhir,
-    exportToNCPIFhirExcel,
-    exportToNCPIFhirDashboard,
+  window.ncbiFhirAddon = {
+    isNcbiAddonEnabled,
+    toggleNcbiAddon,
+    applyNcbiAddonVisibility,
+    exportToNCBIFhir,
+    exportToNCBIFhirExcel,
+    exportToNCBIFhirDashboard,
     fetchDrugRxNormCode,
     fetchClinicalTrialsBenchmark,
     runPhase3ClinicalTrialsCheck,
     mandorosDownloadBlob,
-    init
+    init,
+    // Backward compatibility aliases
+    isNcpiAddonEnabled,
+    toggleNcpiAddon,
+    applyNcpiAddonVisibility,
+    exportToNCPIFhir,
+    exportToNCPIFhirExcel,
+    exportToNCPIFhirDashboard
   };
+  window.ncpiFhirAddon = window.ncbiFhirAddon;
 
-  // Backwards and global aliases for seamless button bindings
-  window.exportToNCPIFhir = exportToNCPIFhir;
-  window.triggerExportToNCPIFhir = exportToNCPIFhir;
-  window.exportToNCPIFhirExcel = exportToNCPIFhirExcel;
-  window.exportToNCPIFhirDashboard = exportToNCPIFhirDashboard;
+  // Global bindings with 100% backward compatibility
+  window.exportToNCBIFhir = exportToNCBIFhir;
+  window.exportToNCPIFhir = exportToNCBIFhir;
+  window.triggerExportToNCBIFhir = exportToNCBIFhir;
+  window.triggerExportToNCPIFhir = exportToNCBIFhir;
+  window.exportToNCBIFhirExcel = exportToNCBIFhirExcel;
+  window.exportToNCPIFhirExcel = exportToNCBIFhirExcel;
+  window.exportToNCBIFhirDashboard = exportToNCBIFhirDashboard;
+  window.exportToNCPIFhirDashboard = exportToNCBIFhirDashboard;
+  window.toggleNcbiAddon = toggleNcbiAddon;
+  window.toggleNcpiAddon = toggleNcbiAddon;
+  window.isNcbiAddonEnabled = isNcbiAddonEnabled;
+  window.isNcpiAddonEnabled = isNcbiAddonEnabled;
+  window.applyNcbiAddonVisibility = applyNcbiAddonVisibility;
+  window.applyNcpiAddonVisibility = applyNcbiAddonVisibility;
   window.fetchDrugRxNormCode = fetchDrugRxNormCode;
   window.fetchClinicalTrialsBenchmark = fetchClinicalTrialsBenchmark;
   window.runPhase3ClinicalTrialsCheck = runPhase3ClinicalTrialsCheck;
-  window.toggleNcpiAddon = toggleNcpiAddon;
   window.mandorosDownloadBlob = mandorosDownloadBlob;
 
   if (document.readyState === 'loading') {

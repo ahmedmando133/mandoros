@@ -92,6 +92,7 @@ def get_gsap_head_tags() -> str:
 
       /* GPU Acceleration & Performance Optimizations for GSAP */
       .mandoros-top-mirror-bar,
+      .mandoros-ncbi-pillar-container,
       .mandoros-ncpi-pillar-container,
       .emblem-wrapper,
       .mandoros-hero-title,

@@ -25,6 +25,8 @@ from infra_stability.mirror_and_app_bar import (
     render_mirror_and_app_bar,
 )
 from infra_stability.ncpi_fhir_addon import (
+    get_ncbi_fhir_head_tags,
+    render_ncbi_fhir_pillar_html,
     get_ncpi_fhir_head_tags,
     render_ncpi_fhir_pillar_html,
     render_phase2_rxnorm_component_html,
@@ -47,6 +49,8 @@ __all__ = [
     "get_pwa_head_html",
     "inject_pwa_head_tags",
     "render_mirror_and_app_bar",
+    "get_ncbi_fhir_head_tags",
+    "render_ncbi_fhir_pillar_html",
     "get_ncpi_fhir_head_tags",
     "render_ncpi_fhir_pillar_html",
     "render_phase2_rxnorm_component_html",

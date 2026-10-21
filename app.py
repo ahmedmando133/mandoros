@@ -3663,31 +3663,52 @@ def build_app():
     /* =========================================================================
        CLEAN SUB-TABS (Phase 1, Phase 2, Phase 3 Secondary Navigation)
        ========================================================================= */
+    /* Outer Sub-Tab Wrapper */
     .tabs:not(#main-phases-tabs) > .tab-wrapper,
     .tabs:not(#main-phases-tabs) > div.tab-nav,
-    .tabs:not(#main-phases-tabs) > div[role="tablist"],
+    .tabs:not(#main-phases-tabs) > div[role="tablist"] {
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        background: rgba(15, 23, 42, 0.75) !important;
+        padding: 5px !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 16px !important;
+        height: auto !important;
+        min-height: 46px !important;
+        overflow: visible !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        position: relative !important;
+        z-index: 5 !important;
+    }
+
+    /* Inner Sub-Tab Track: Transparent (Zero Nested Borders or Padding) */
     .tabs:not(#main-phases-tabs) .tab-container {
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
         gap: 6px !important;
-        background: rgba(15, 23, 42, 0.65) !important;
-        padding: 5px !important;
-        border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        margin-bottom: 18px !important;
-        height: auto !important;
-        min-height: auto !important;
-        overflow: visible !important;
+        background: transparent !important;
         background-image: none !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
+        width: 100% !important;
+        height: auto !important;
+        min-height: 36px !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
     }
 
     .tabs:not(#main-phases-tabs) button[role="tab"],
     .tabs:not(#main-phases-tabs) .tab-nav > button {
         border-radius: 8px !important;
-        padding: 6px 16px !important;
+        padding: 6px 14px !important;
         font-weight: 600 !important;
-        font-size: 12.5px !important;
+        font-size: 12px !important;
         transition: all 0.2s ease !important;
         border: 1px solid transparent !important;
         color: #94A3B8 !important;
@@ -3700,6 +3721,9 @@ def build_app():
         align-items: center !important;
         justify-content: center !important;
         box-shadow: none !important;
+        max-width: 100% !important;
+        text-overflow: ellipsis !important;
+        overflow: hidden !important;
     }
 
     .tabs:not(#main-phases-tabs) button[role="tab"]:hover,
@@ -3716,6 +3740,17 @@ def build_app():
         color: #F8FAFC !important;
         font-weight: 700 !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
+    }
+
+    /* Sub-Tab Panel Isolation: Prevents Multi-Line Sub-Tabs from Colliding with Panel Content */
+    .tabs:not(#main-phases-tabs) > div[role="tabpanel"],
+    .tabs:not(#main-phases-tabs) > .tabitem {
+        clear: both !important;
+        margin-top: 14px !important;
+        position: relative !important;
+        z-index: 1 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
     }
 
     /* Hide any Gradio three-dots overflow menu so all sub-tabs show up side by side */
@@ -4681,6 +4716,8 @@ def build_app():
     from infra_stability import (
         get_pwa_head_html,
         render_mirror_and_app_bar,
+        get_ncbi_fhir_head_tags,
+        render_ncbi_fhir_pillar_html,
         get_ncpi_fhir_head_tags,
         render_ncpi_fhir_pillar_html,
         render_phase2_rxnorm_component_html,
@@ -4688,7 +4725,7 @@ def build_app():
         get_gsap_head_tags,
         GSAP_BOOTSTRAP_JS,
     )
-    custom_head_tags = custom_head_tags + "\n" + get_pwa_head_html() + "\n" + get_ncpi_fhir_head_tags() + "\n" + get_gsap_head_tags()
+    custom_head_tags = custom_head_tags + "\n" + get_pwa_head_html() + "\n" + get_ncbi_fhir_head_tags() + "\n" + get_gsap_head_tags()
 
     with gr.Blocks(
         title="MANDOROS • Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis",
@@ -5203,8 +5240,8 @@ def build_app():
             p3_init_md
         ) = get_default_phase3_preview()
 
-        # Optional Global NCPI & HL7 FHIR Interoperability Toolbar
-        gr.HTML(render_ncpi_fhir_pillar_html())
+        # Optional Global National Center for Biotechnology Information (NCBI) & HL7 FHIR Interoperability Toolbar
+        gr.HTML(render_ncbi_fhir_pillar_html())
 
         with gr.Tabs(elem_id="main-phases-tabs") as main_nav_tabs:
             # ==========================================
@@ -5303,8 +5340,8 @@ def build_app():
                         )
                         gr.HTML(
                             """
-                            <div class="mandoros-ncpi-fhir-tool" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
-                              <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhir');"
+                            <div class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+                              <button type="button" onclick="window.mandorosRunFhir('exportToNCBIFhir') || window.mandorosRunFhir('exportToNCPIFhir');"
                                  title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
                                  class="mandoros-magnetic-btn"
                                  style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
@@ -5312,15 +5349,15 @@ def build_app():
                                  Export HL7 FHIR (JSON)
                               </button>
                               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
-                                <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhirExcel');"
+                                <button type="button" onclick="window.mandorosRunFhir('exportToNCBIFhirExcel') || window.mandorosRunFhir('exportToNCPIFhirExcel');"
                                    title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
                                    class="mandoros-magnetic-btn"
                                    style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(5,150,105,0.35);transition:all 0.2s;"
                                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                                    FHIR Excel (.xlsx)
                                 </button>
-                                <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhirDashboard');"
-                                   title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
+                                <button type="button" onclick="window.mandorosRunFhir('exportToNCBIFhirDashboard') || window.mandorosRunFhir('exportToNCPIFhirDashboard');"
+                                   title="Open standalone Interactive HL7 FHIR & National Center for Biotechnology Information (NCBI) Interoperability Dashboard"
                                    class="mandoros-magnetic-btn"
                                    style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.35);transition:all 0.2s;"
                                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
@@ -6185,12 +6222,16 @@ if __name__ == "__main__":
             return FileResponse("static/sw.js", media_type="application/javascript")
         return {"error": "service worker not found"}
 
+    @app_obj.get("/static/ncbiFhirAddon.js")
+    @app_obj.get("/ncbiFhirAddon.js")
     @app_obj.get("/static/ncpiFhirAddon.js")
     @app_obj.get("/ncpiFhirAddon.js")
-    def ncpi_fhir_addon_js():
+    def ncbi_fhir_addon_js():
+        if os.path.exists("static/ncbiFhirAddon.js"):
+            return FileResponse("static/ncbiFhirAddon.js", media_type="application/javascript")
         if os.path.exists("static/ncpiFhirAddon.js"):
             return FileResponse("static/ncpiFhirAddon.js", media_type="application/javascript")
-        return {"error": "ncpiFhirAddon.js not found"}
+        return {"error": "ncbiFhirAddon.js not found"}
 
     @app_obj.get("/static/mandoros_gsap.js")
     @app_obj.get("/mandoros_gsap.js")

@@ -175,7 +175,7 @@ def build_phase3_gap_thesis_dashboard(
         <button class="p3-tab-btn px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchP3Tab('tab_p3_sheets', this)">
           <span>📋</span> 6-Sheet DataGrid
         </button>
-        <button class="p3-tab-btn mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchP3Tab('tab_p3_nih_benchmark', this)">
+        <button class="p3-tab-btn mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool px-3.5 py-2 text-xs font-semibold rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all flex items-center gap-1.5" onclick="switchP3Tab('tab_p3_nih_benchmark', this)">
           <span>🏛️</span> Registered Protocol Benchmark (NIH / ClinicalTrials)
         </button>
       </div>
@@ -234,7 +234,7 @@ def build_phase3_gap_thesis_dashboard(
       </div>
 
       <!-- Tab 6: NIH ClinicalTrials.gov Protocol Verification (Lazy-loaded) -->
-      <div id="tab_p3_nih_benchmark" class="p3-tab-panel p-4 space-y-4 hidden mandoros-ncpi-fhir-tool">
+      <div id="tab_p3_nih_benchmark" class="p3-tab-panel p-4 space-y-4 hidden mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool">
         {render_phase3_nih_benchmark_html()}
       </div>
     </div>

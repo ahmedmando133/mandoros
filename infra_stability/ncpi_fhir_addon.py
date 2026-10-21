@@ -1,5 +1,5 @@
 """
-MANDOROS - NIH NCPI / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on
+MANDOROS - National Center for Biotechnology Information (NCBI) / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on
 Frontend Explanatory Pillar, Phase 1 Multi-Format Export (JSON, Excel, Dashboard),
 Phase 2 RxNorm Tagging, and Phase 3 ClinicalTrials.gov Side-by-Side Verification.
 
@@ -13,12 +13,14 @@ import os
 from infra_stability.lucide_icons import get_icon
 
 
-def get_ncpi_fhir_head_tags() -> str:
+def get_ncbi_fhir_head_tags() -> str:
     """
-    Returns head tags and client-side JavaScript module injection for the NCPI/FHIR Add-on.
-    Inlines static/ncpiFhirAddon.js content or provides script tag for offline/CDN resilience.
+    Returns head tags and client-side JavaScript module injection for the NCBI/FHIR Add-on.
+    Inlines static/ncbiFhirAddon.js or static/ncpiFhirAddon.js content or provides script tag for offline/CDN resilience.
     """
-    js_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "ncpiFhirAddon.js")
+    js_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "ncbiFhirAddon.js")
+    if not os.path.exists(js_path):
+        js_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "static", "ncpiFhirAddon.js")
     js_content = ""
     if os.path.exists(js_path):
         try:
@@ -28,18 +30,18 @@ def get_ncpi_fhir_head_tags() -> str:
             js_content = ""
 
     return f"""
-    <!-- MANDOROS NIH NCPI / HL7 FHIR Add-on Stack -->
+    <!-- MANDOROS National Center for Biotechnology Information (NCBI) / HL7 FHIR Add-on Stack -->
     <style>
-      .mandoros-ncpi-fhir-tool {{
+      .mandoros-ncbi-fhir-tool, .mandoros-ncpi-fhir-tool {{
         transition: all 0.25s ease;
       }}
-      .ncpi-hidden {{
+      .ncbi-hidden, .ncpi-hidden {{
         display: none !important;
       }}
-      .ncpi-switch input:checked + .ncpi-slider {{
+      .ncbi-switch input:checked + .ncbi-slider, .ncpi-switch input:checked + .ncpi-slider {{
         background: linear-gradient(135deg, #8B5CF6, #6D28D9);
       }}
-      .ncpi-switch input:checked + .ncpi-slider:before {{
+      .ncbi-switch input:checked + .ncbi-slider:before, .ncpi-switch input:checked + .ncpi-slider:before {{
         transform: translateX(20px);
       }}
     </style>
@@ -54,7 +56,10 @@ def get_ncpi_fhir_head_tags() -> str:
     """
 
 
-def render_ncpi_fhir_pillar_html() -> str:
+get_ncpi_fhir_head_tags = get_ncbi_fhir_head_tags
+
+
+def render_ncbi_fhir_pillar_html() -> str:
     """
     Renders the Frontend Explanatory Pillar in academic English
     with the 3 Mini-Pillar Highlights and the Optional Master Toggle.
@@ -66,9 +71,9 @@ def render_ncpi_fhir_pillar_html() -> str:
 
     return f"""
     <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>"
-         onload="if(!window.ncpiFhirAddonLoaded){{window.ncpiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.async=true;document.head.appendChild(s);}}"
+         onload="if(!window.ncbiFhirAddonLoaded){{window.ncbiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.async=true;document.head.appendChild(s);}}"
          style="display:none;" />
-    <div class="mandoros-ncpi-pillar-container" style="
+    <div class="mandoros-ncbi-pillar-container mandoros-ncpi-pillar-container" style="
         background: #09090B;
         border: 1px solid rgba(255, 255, 255, 0.09);
         border-radius: 12px;
@@ -87,14 +92,14 @@ def render_ncpi_fhir_pillar_html() -> str:
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
                 <span style="color: #FAFAFA; font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em;">
-                  NIH NCPI &amp; HL7 FHIR EVIDENCE STANDARDS (OPTIONAL ADD-ON)
+                  NIH NCBI &amp; HL7 FHIR EVIDENCE STANDARDS (OPTIONAL ADD-ON) • Cloud Interoperability &amp; Evidence Standards
                 </span>
                 <span style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #10B981; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">
                   CLIENT-SIDE GPU // 0 MB RAM
                 </span>
               </div>
               <div style="color: #A1A1AA; font-size: 11.5px; margin-top: 3px; line-height: 1.4;">
-                Maps 88 atomic fields into NIH NCPI &amp; HL7 FHIR (EBMonFHIR) specifications and harmonizes global drug identifiers via NIH RxNorm.
+                Maps 88 atomic fields into National Center for Biotechnology Information (NCBI) &amp; HL7 FHIR (EBMonFHIR) specifications and harmonizes global drug identifiers via NIH RxNorm.
               </div>
             </div>
           </div>
@@ -102,22 +107,22 @@ def render_ncpi_fhir_pillar_html() -> str:
 
         <!-- Master Toggle Switch -->
         <div style="display: flex; align-items: center; gap: 10px; background: #121215; border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 6px;">
-          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
-            <input type="checkbox" id="ncpi-master-toggle" onchange="window.toggleNcpiAddon(this.checked)" checked style="
+          <label title="Enable Global National Center for Biotechnology Information (NCBI) / HL7 FHIR Interoperability Tools" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
+            <input type="checkbox" id="ncbi-master-toggle" class="ncbi-toggle-input" onchange="(window.toggleNcbiAddon||window.toggleNcpiAddon)(this.checked)" checked style="
                 width: 15px;
                 height: 15px;
                 accent-color: #FAFAFA;
                 cursor: pointer;
             ">
             <span style="color: #E4E4E7; font-size: 11.5px; font-weight: 600;">
-              Enable NCPI / FHIR Layer
+              Enable NCBI / FHIR Layer
             </span>
           </label>
         </div>
       </div>
 
       <!-- 3 Mini-Pillar Highlights (Collapsible Standards Drawer) -->
-      <details id="ncpi-modules-drawer" style="margin-top: 8px;">
+      <details id="ncbi-modules-drawer" class="ncbi-modules-drawer" style="margin-top: 8px;">
         <summary style="color: #A1A1AA; font-size: 11px; font-weight: 600; outline: none; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; padding: 4px 0;">
           <span style="color: #38BDF8; font-weight: 700;">▸ View 3 Standard Modules</span>
           <span style="color: #71717A; font-size: 10.5px;">(FHIR Export • RxNorm Drug Harmonization • ClinicalTrials.gov Protocol Verification)</span>
@@ -191,12 +196,15 @@ def render_ncpi_fhir_pillar_html() -> str:
     """
 
 
+render_ncpi_fhir_pillar_html = render_ncbi_fhir_pillar_html
+
+
 def render_phase2_rxnorm_component_html() -> str:
     """
     Renders the interactive Phase 2 RxNorm Drug Standardizer bar in academic English.
     """
     return """
-    <div class="mandoros-ncpi-fhir-tool" style="
+    <div class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" style="
         background: rgba(15, 23, 42, 0.85);
         border: 1px solid rgba(16, 185, 129, 0.35);
         border-radius: 12px;
@@ -301,7 +309,7 @@ def render_phase3_nih_benchmark_html() -> str:
     & Outcome Reporting Bias Appraisal workspace in academic English.
     """
     return """
-    <div class="mandoros-ncpi-fhir-tool" style="
+    <div class="mandoros-ncbi-fhir-tool mandoros-ncpi-fhir-tool" style="
         background: rgba(15, 23, 42, 0.9);
         border: 1.5px solid rgba(192, 132, 252, 0.35);
         border-radius: 16px;
@@ -329,7 +337,7 @@ def render_phase3_nih_benchmark_html() -> str:
 
         <!-- 3 Standard Export Actions -->
         <div style="display: flex; flex-wrap: wrap; gap: 8px;">
-          <button type="button" onclick="if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhir)window.exportToNCPIFhir();};document.head.appendChild(s);}" style="
+          <button type="button" onclick="if(window.exportToNCBIFhir){window.exportToNCBIFhir();}else if(window.exportToNCPIFhir){window.exportToNCPIFhir();}else{var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.onload=function(){if(window.exportToNCBIFhir)window.exportToNCBIFhir();else if(window.exportToNCPIFhir)window.exportToNCPIFhir();};document.head.appendChild(s);}" style="
               display: inline-flex;
               align-items: center;
               gap: 6px;
@@ -347,7 +355,7 @@ def render_phase3_nih_benchmark_html() -> str:
             🧬 FHIR (JSON)
           </button>
 
-          <button type="button" onclick="if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirExcel)window.exportToNCPIFhirExcel();};document.head.appendChild(s);}" style="
+          <button type="button" onclick="if(window.exportToNCBIFhirExcel){window.exportToNCBIFhirExcel();}else if(window.exportToNCPIFhirExcel){window.exportToNCPIFhirExcel();}else{var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.onload=function(){if(window.exportToNCBIFhirExcel)window.exportToNCBIFhirExcel();else if(window.exportToNCPIFhirExcel)window.exportToNCPIFhirExcel();};document.head.appendChild(s);}" style="
               display: inline-flex;
               align-items: center;
               gap: 6px;
@@ -365,7 +373,7 @@ def render_phase3_nih_benchmark_html() -> str:
             📊 FHIR (Excel)
           </button>
 
-          <button type="button" onclick="if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.onload=function(){if(window.exportToNCPIFhirDashboard)window.exportToNCPIFhirDashboard();};document.head.appendChild(s);}" style="
+          <button type="button" onclick="if(window.exportToNCBIFhirDashboard){window.exportToNCBIFhirDashboard();}else if(window.exportToNCPIFhirDashboard){window.exportToNCPIFhirDashboard();}else{var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.onload=function(){if(window.exportToNCBIFhirDashboard)window.exportToNCBIFhirDashboard();else if(window.exportToNCPIFhirDashboard)window.exportToNCPIFhirDashboard();};document.head.appendChild(s);}" style="
               display: inline-flex;
               align-items: center;
               gap: 6px;

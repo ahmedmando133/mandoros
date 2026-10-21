@@ -463,15 +463,15 @@
   }
 
   // =========================================================================
-  // 8. TOP STATUS BAR & NCPI STATUS ENTRANCE
+  // 8. TOP STATUS BAR & NCBI STATUS ENTRANCE
   // =========================================================================
   function initTopBarAndPillars() {
     if (isTopBarAnimated || isReducedMotion()) return;
     if (typeof window.gsap === 'undefined') return;
 
     const topBar = document.querySelector('.mandoros-top-mirror-bar');
-    const ncpiPillar = document.querySelector('.mandoros-ncpi-pillar-container');
-    const targets = [topBar, ncpiPillar].filter(Boolean);
+    const ncbiPillar = document.querySelector('.mandoros-ncbi-pillar-container, .mandoros-ncpi-pillar-container');
+    const targets = [topBar, ncbiPillar].filter(Boolean);
 
     if (targets.length > 0) {
       isTopBarAnimated = true;
@@ -511,8 +511,8 @@
       });
     }
 
-    // HL7 FHIR Action Bar entrance and button pulsing (.mandoros-ncpi-fhir-tool)
-    const fhirTool = document.querySelector('.mandoros-ncpi-fhir-tool');
+    // HL7 FHIR Action Bar entrance and button pulsing (.mandoros-ncbi-fhir-tool)
+    const fhirTool = document.querySelector('.mandoros-ncbi-fhir-tool, .mandoros-ncpi-fhir-tool');
     if (fhirTool && !fhirTool._gsapAnimated) {
       fhirTool._gsapAnimated = true;
       window.gsap.from(fhirTool.querySelectorAll('button'), {
