@@ -2296,7 +2296,7 @@
           <h2 class="card-h2" style="margin-top:14px;">8. PRISMA 2020 4-Stage Flow Engine</h2>
           <p class="card-p">Identification, ternary zero-FN screening, eligibility auditing, and dynamic SVG flowcharts.</p>
           <h2 class="card-h2" style="margin-top:14px;">9. Clinical Databases &amp; 24/7 Cloud Rigor</h2>
-          <p class="card-p">Live PubMed E-utilities, ClinicalTrials.gov APIv2, NCPI FHIR R4, and 24/7 zero-cold-start keep-alive.</p>
+          <p class="card-p">Live PubMed E-utilities, ClinicalTrials.gov APIv2, NCBI FHIR R4, and 24/7 zero-cold-start keep-alive.</p>
         </div>
       </div>
     </div>
@@ -5028,17 +5028,17 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- SLIDE 18: EXTERNAL CLINICAL DATABASES, PUBMED & NCPI FHIR ECOSYSTEM       -->
+  <!-- SLIDE 18: EXTERNAL CLINICAL DATABASES, PUBMED & NCBI FHIR ECOSYSTEM       -->
   <!-- ========================================================================= -->
   <div class="slide" id="slide-clinical-databases">
     <div class="slide-header">
       <div>
         <div style="font-size:13px; font-weight:800; color:#38BDF8; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:6px;">CLINICAL KNOWLEDGE BASES &amp; INTEROPERABILITY</div>
-        <h2 style="font-size:32px; font-weight:900; color:#F8FAFC; margin:0;">External Clinical Databases, PubMed &amp; NCPI FHIR Ecosystem</h2>
+        <h2 style="font-size:32px; font-weight:900; color:#F8FAFC; margin:0;">External Clinical Databases, PubMed &amp; NCBI FHIR Ecosystem</h2>
         <p style="font-size:14px; color:#94A3B8; margin-top:4px;">Live Bidirectional Interoperability: PubMed E-utilities, ClinicalTrials.gov APIv2, NLM RxNorm, and HL7 FHIR R4 ResearchStudy.</p>
       </div>
       <div style="background:rgba(56,189,248,0.15); border:1px solid #38BDF8; color:#38BDF8; font-weight:800; font-size:12px; padding:6px 16px; border-radius:9999px;">
-        NCPI FHIR &amp; NIH APIS
+        NCBI FHIR &amp; NIH APIS
       </div>
     </div>
 
@@ -5079,7 +5079,7 @@
             <li><strong>NLM RxNorm Drug Normalization:</strong> Client-side integration with rxnav.nlm.nih.gov resolves brand names and dosage forms into canonical RxCUI codes.</li>
             <li><strong>Client-Side Session Caching:</strong> Caches public RxCUI mappings in sessionStorage to minimize API latency and ensure offline browser speed.</li>
             <li><strong>HL7 FHIR R4 ResearchStudy Mapping:</strong> Formats extracted trial evidence into standardized FHIR ResearchStudy JSON-LD clinical trial models.</li>
-            <li><strong>NCPI FHIR Interactive Action Badges:</strong> Embedded UI badges enable one-click verification of trial identifiers, regulatory codes, and standardized vocabularies.</li>
+            <li><strong>NCBI FHIR Interactive Action Badges:</strong> Embedded UI badges enable one-click verification of trial identifiers, regulatory codes, and standardized vocabularies.</li>
           </ul>
         </div>
         <div style="font-size:11px; color:#10B981; font-weight:700; border-top:1px solid rgba(16,185,129,0.3); padding-top:8px;">HL7 FHIR R4 &amp; RXNORM CODING</div>
@@ -5087,7 +5087,7 @@
     </div>
 
     <div class="slide-footer">
-      <span>MANDOROS — External Clinical Databases, PubMed &amp; NCPI FHIR Ecosystem</span>
+      <span>MANDOROS — External Clinical Databases, PubMed &amp; NCBI FHIR Ecosystem</span>
       <span class="slide-num">SLIDE 18 / 20</span>
     </div>
   </div>
@@ -5180,7 +5180,7 @@
           <ul style="color:#CBD5E1; font-size:13px; line-height:1.6; margin-left:18px;">
             <li><strong>Canonical Root Path Verification:</strong> Eliminates arbitrary path traversal on /api/view and /api/download; strictly confines file access to resolved whitelist roots (outputs/, SESSION_ROOT, system temp).</li>
             <li><strong>Secret Isolation in Transport Headers:</strong> Relocated sensitive Gemini API keys from URL query strings to secure x-goog-api-key HTTP headers, eliminating token exposure in proxy logs, browser histories, and referrer leaks.</li>
-            <li><strong>Contextual XSS Neutralization:</strong> Sanitizes runtime dynamic tables, author credits, and study titles via deterministic html.escape(), while preserving interactive Plotly charts and NCPI FHIR action badges.</li>
+            <li><strong>Contextual XSS Neutralization:</strong> Sanitizes runtime dynamic tables, author credits, and study titles via deterministic html.escape(), while preserving interactive Plotly charts and NCBI FHIR action badges.</li>
             <li><strong>Opt-In Production Access Control:</strong> Built-in basic HTTP authentication guard (MANDOROS_AUTH_USER/PASSWORD) that activates strictly when environment credentials exist without breaking open clinical testing.</li>
           </ul>
         </div>
@@ -5209,7 +5209,7 @@
             <li><strong>Automated Keep-Alive Ping Engine:</strong> Dedicated /health heartbeat endpoint probed every 5 minutes (UptimeRobot / GitHub Actions cron), completely neutralizing Render's 15-minute idle container spin-down.</li>
             <li><strong>Sub-Second First-Interaction Time:</strong> Slashes initial cold-start latency from ~75 seconds down to &lt;1 second, ensuring instant, freeze-free access for clinicians and peer reviewers at all hours.</li>
             <li><strong>Multi-Cloud Failover Monitoring:</strong> Redundant external ping orchestrators with automated retry loops and email alerts for zero-downtime academic hosting.</li>
-            <li><strong>Progressive Web App (PWA) Offline Cache:</strong> Caches RxNorm, NCPI FHIR, and public drug mappings locally in sessionStorage/localStorage for immediate client-side responsiveness.</li>
+            <li><strong>Progressive Web App (PWA) Offline Cache:</strong> Caches RxNorm, NCBI FHIR, and public drug mappings locally in sessionStorage/localStorage for immediate client-side responsiveness.</li>
           </ul>
         </div>
         <div style="font-size:11px; color:#F59E0B; font-weight:700; border-top:1px solid rgba(245,158,11,0.3); padding-top:8px;">&lt;1s RESPONSE &amp; 24/7 UPTIME</div>

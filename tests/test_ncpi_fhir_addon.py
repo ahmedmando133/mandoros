@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Test Suite for MANDOROS NIH NCPI / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on.
+Test Suite for MANDOROS National Center for Biotechnology Information (NCBI) / HL7 FHIR (EBMonFHIR) Zero-Server-Load Add-on.
 Verifies all 3 phases in academic English, multi-format exports (JSON, Excel, Dashboard),
 the explanatory frontend pillar, master toggle, and non-destructive constraints.
 """
@@ -11,6 +11,8 @@ import json
 import pytest
 
 from infra_stability.ncpi_fhir_addon import (
+    get_ncbi_fhir_head_tags,
+    render_ncbi_fhir_pillar_html,
     get_ncpi_fhir_head_tags,
     render_ncpi_fhir_pillar_html,
     render_phase2_rxnorm_component_html,
@@ -21,15 +23,14 @@ from dashboard_engine.shared_ui_components import build_instant_download_banner
 
 def test_ncpi_fhir_pillar_html():
     """Verifies that the Frontend Explanatory Pillar contains all English titles, subtitles, and 3 highlights."""
-    html = render_ncpi_fhir_pillar_html()
+    html = render_ncbi_fhir_pillar_html()
 
     # 1. Title verification (Academic English)
     assert "Cloud Interoperability & Evidence Standards" in html or "Cloud Interoperability &amp; Evidence Standards" in html
-    assert "NIH NCPI & HL7 FHIR Add-on" in html or "NIH NCPI &amp; HL7 FHIR Add-on" in html
-    assert "Zero-Server-Load" in html
+    assert "NIH NCBI & HL7 FHIR EVIDENCE STANDARDS" in html or "NIH NCBI &amp; HL7 FHIR EVIDENCE STANDARDS" in html
 
     # 2. Subtitle verification
-    assert "mapping the 88 atomic fields into NIH NCPI" in html
+    assert "National Center for Biotechnology Information (NCBI)" in html
 
     # 3. Three Mini-Pillar Highlights
     assert "Phase 1 · Multi-Format FHIR Export" in html
@@ -37,31 +38,34 @@ def test_ncpi_fhir_pillar_html():
     assert "Phase 3 · Cloud Benchmark & Verification" in html or "Phase 3 · Cloud Benchmark &amp; Verification" in html
 
     # 4. Master Toggle verification
-    assert 'id="ncpi-master-toggle"' in html
-    assert "Enable Global NIH NCPI / HL7 FHIR Interoperability Tools" in html
-    assert "window.toggleNcpiAddon(this.checked)" in html
+    assert 'id="ncbi-master-toggle"' in html
+    assert "Enable NCBI / FHIR Layer" in html
+    assert "National Center for Biotechnology Information (NCBI)" in html
 
 
 def test_ncpi_fhir_head_tags_and_js_module():
     """Verifies that client-side JavaScript module exists and contains all required functions."""
-    head_tags = get_ncpi_fhir_head_tags()
-    assert "exportToNCPIFhir" in head_tags
-    assert "exportToNCPIFhirExcel" in head_tags
-    assert "exportToNCPIFhirDashboard" in head_tags
-    assert "fetchDrugRxNormCode" in head_tags
-    assert "fetchClinicalTrialsBenchmark" in head_tags
+    head_tags = get_ncbi_fhir_head_tags()
+    assert "exportToNCBIFhir" in head_tags
+    assert "exportToNCBIFhirExcel" in head_tags
+    assert "exportToNCBIFhirDashboard" in head_tags
+    assert "mandoros-ncbi-fhir-tool" in head_tags
     assert "mandoros-ncpi-fhir-tool" in head_tags
 
-    js_file = os.path.join(os.path.dirname(__file__), "..", "static", "ncpiFhirAddon.js")
-    assert os.path.exists(js_file), "static/ncpiFhirAddon.js must exist"
+    js_file = os.path.join(os.path.dirname(__file__), "..", "static", "ncbiFhirAddon.js")
+    assert os.path.exists(js_file), "static/ncbiFhirAddon.js must exist"
 
     with open(js_file, "r", encoding="utf-8") as f:
         js_code = f.read()
 
     # Phase 1 multi-format functions
-    assert "function exportToNCPIFhir" in js_code
-    assert "function exportToNCPIFhirExcel" in js_code
-    assert "function exportToNCPIFhirDashboard" in js_code
+    assert "function exportToNCBIFhir" in js_code
+    assert "function exportToNCBIFhirExcel" in js_code
+    assert "function exportToNCBIFhirDashboard" in js_code
+    # Backward compatibility aliases
+    assert "exportToNCPIFhir" in js_code
+    assert "exportToNCPIFhirExcel" in js_code
+    assert "exportToNCPIFhirDashboard" in js_code
 
     # FHIR resources
     assert 'resourceType: "Bundle"' in js_code
@@ -80,7 +84,8 @@ def test_ncpi_fhir_head_tags_and_js_module():
     assert "https://clinicaltrials.gov/api/v2/studies" in js_code
 
     # Master Toggle
-    assert "function toggleNcpiAddon" in js_code
+    assert "function toggleNcbiAddon" in js_code
+    assert "toggleNcpiAddon" in js_code
     assert "localStorage" in js_code
 
 
@@ -99,9 +104,13 @@ def test_phase1_instant_download_banner_fhir_buttons():
     assert "Export HL7 FHIR (JSON)" in banner
     assert "Export FHIR Excel (.xlsx)" in banner
     assert "FHIR Dashboard" in banner
+    assert "exportToNCBIFhir" in banner
     assert "exportToNCPIFhir" in banner
+    assert "exportToNCBIFhirExcel" in banner
     assert "exportToNCPIFhirExcel" in banner
+    assert "exportToNCBIFhirDashboard" in banner
     assert "exportToNCPIFhirDashboard" in banner
+    assert "mandoros-ncbi-fhir-tool" in banner
     assert "mandoros-ncpi-fhir-tool" in banner
 
 

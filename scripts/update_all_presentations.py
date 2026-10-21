@@ -9,7 +9,7 @@ across the repository with the complete 20-slide Master Academic Suite:
 - Slide 15: Phase 3 — Research Gap & Thesis Navigator Engine (Overview & FINER Architecture)
 - Slide 16: The 5 Pillars of Academic Rigor & Biostatistical Power Calibration
 - Slide 17: PRISMA 2020 Clinical Trial Intelligence & Interactive Flow Architecture
-- Slide 18: External Clinical Databases, PubMed & NCPI FHIR Ecosystem
+- Slide 18: External Clinical Databases, PubMed & NCBI FHIR Ecosystem
 - Slide 19: Phase 2 Scientific Restructuring & 20 Supreme Rules
 - Slide 20: Enterprise Cloud Security, Render RAM Optimization & 24/7 Zero-Cold-Start Reliability
 """
@@ -476,7 +476,7 @@ def add_slide_17_prisma_engine(prs: Presentation):
 
 
 def add_slide_18_clinical_databases(prs: Presentation):
-    """Adds Slide 18: External Clinical Databases, PubMed & NCPI FHIR Ecosystem."""
+    """Adds Slide 18: External Clinical Databases, PubMed & NCBI FHIR Ecosystem."""
     blank_layout = prs.slide_layouts[6]
     slide = prs.slides.add_slide(blank_layout)
 
@@ -498,7 +498,7 @@ def add_slide_18_clinical_databases(prs: Presentation):
     keynote_box = slide.shapes.add_textbox(Inches(9.2), Inches(0.4), Inches(3.3), Inches(0.35))
     tf_k = keynote_box.text_frame
     p_k = tf_k.paragraphs[0]
-    p_k.text = "NCPI FHIR & NIH APIS"
+    p_k.text = "NCBI FHIR & NIH APIS"
     p_k.alignment = PP_ALIGN.RIGHT
     p_k.font.name = "Arial"
     p_k.font.size = Pt(10)
@@ -509,7 +509,7 @@ def add_slide_18_clinical_databases(prs: Presentation):
     tf_title = title_box.text_frame
     tf_title.word_wrap = True
     p_title = tf_title.paragraphs[0]
-    p_title.text = "External Clinical Databases, PubMed & NCPI FHIR Ecosystem"
+    p_title.text = "External Clinical Databases, PubMed & NCBI FHIR Ecosystem"
     p_title.font.name = "Arial"
     p_title.font.size = Pt(21)
     p_title.font.bold = True
@@ -552,7 +552,7 @@ def add_slide_18_clinical_databases(prs: Presentation):
                 "NLM RxNorm Drug Normalization: Client-side integration with rxnav.nlm.nih.gov resolves brand names and dosage forms into canonical RxCUI codes.",
                 "Client-Side Session Caching: Caches public RxCUI mappings in sessionStorage to minimize API latency and ensure offline browser speed.",
                 "HL7 FHIR R4 ResearchStudy Mapping: Formats extracted trial evidence into standardized FHIR ResearchStudy JSON-LD clinical trial models.",
-                "NCPI FHIR Interactive Action Badges: Embedded UI badges enable one-click verification of trial identifiers, regulatory codes, and standardized vocabularies."
+                "NCBI FHIR Interactive Action Badges: Embedded UI badges enable one-click verification of trial identifiers, regulatory codes, and standardized vocabularies."
             ]
         }
     ]
@@ -817,7 +817,7 @@ def add_slide_20_cloud_security(prs: Presentation):
             "bullets": [
                 "Canonical Root Path Verification: Eliminates path traversal on /api/view & /api/download; strictly confines file access to resolved whitelist roots (outputs/, SESSION_ROOT, temp).",
                 "Secret Isolation in Transport Headers: Relocated sensitive Gemini API keys to secure x-goog-api-key HTTP headers, eliminating token exposure in proxy logs and referrer headers.",
-                "Contextual XSS Neutralization: Sanitizes dynamic table headers, author credits, and study titles via deterministic html.escape(), preserving interactive Plotly charts and NCPI FHIR actions.",
+                "Contextual XSS Neutralization: Sanitizes dynamic table headers, author credits, and study titles via deterministic html.escape(), preserving interactive Plotly charts and NCBI FHIR actions.",
                 "Opt-In Access Control: Built-in basic HTTP authentication guard (MANDOROS_AUTH_*) activating strictly when environment credentials exist without breaking open clinical testing."
             ]
         },
@@ -840,7 +840,7 @@ def add_slide_20_cloud_security(prs: Presentation):
                 "Automated Keep-Alive Ping Engine: Dedicated /health heartbeat endpoint probed every 5 minutes (UptimeRobot / GitHub Actions), completely neutralizing Render's 15-min idle container spin-down.",
                 "Sub-Second First-Interaction Time: Slashes initial cold-start latency from ~75 seconds down to <1 second, ensuring instant, freeze-free access for clinicians and peer reviewers at all hours.",
                 "Multi-Cloud Failover Monitoring: Redundant external ping orchestrators with automated retry loops and email alerts for zero-downtime academic hosting.",
-                "Progressive Web App (PWA) Offline Cache: Caches RxNorm, NCPI FHIR, and public drug mappings locally in sessionStorage/localStorage for immediate client-side responsiveness."
+                "Progressive Web App (PWA) Offline Cache: Caches RxNorm, NCBI FHIR, and public drug mappings locally in sessionStorage/localStorage for immediate client-side responsiveness."
             ]
         }
     ]
@@ -1104,17 +1104,17 @@ HTML_SLIDES_16_TO_20 = """
   </div>
 
   <!-- ========================================================================= -->
-  <!-- SLIDE 18: EXTERNAL CLINICAL DATABASES, PUBMED & NCPI FHIR ECOSYSTEM       -->
+  <!-- SLIDE 18: EXTERNAL CLINICAL DATABASES, PUBMED & NCBI FHIR ECOSYSTEM       -->
   <!-- ========================================================================= -->
   <div class="slide" id="slide-clinical-databases">
     <div class="slide-header">
       <div>
         <div style="font-size:13px; font-weight:800; color:#38BDF8; letter-spacing:0.1em; text-transform:uppercase; margin-bottom:6px;">CLINICAL KNOWLEDGE BASES &amp; INTEROPERABILITY</div>
-        <h2 style="font-size:32px; font-weight:900; color:#F8FAFC; margin:0;">External Clinical Databases, PubMed &amp; NCPI FHIR Ecosystem</h2>
+        <h2 style="font-size:32px; font-weight:900; color:#F8FAFC; margin:0;">External Clinical Databases, PubMed &amp; NCBI FHIR Ecosystem</h2>
         <p style="font-size:14px; color:#94A3B8; margin-top:4px;">Live Bidirectional Interoperability: PubMed E-utilities, ClinicalTrials.gov APIv2, NLM RxNorm, and HL7 FHIR R4 ResearchStudy.</p>
       </div>
       <div style="background:rgba(56,189,248,0.15); border:1px solid #38BDF8; color:#38BDF8; font-weight:800; font-size:12px; padding:6px 16px; border-radius:9999px;">
-        NCPI FHIR &amp; NIH APIS
+        NCBI FHIR &amp; NIH APIS
       </div>
     </div>
 
@@ -1155,7 +1155,7 @@ HTML_SLIDES_16_TO_20 = """
             <li><strong>NLM RxNorm Drug Normalization:</strong> Client-side integration with rxnav.nlm.nih.gov resolves brand names and dosage forms into canonical RxCUI codes.</li>
             <li><strong>Client-Side Session Caching:</strong> Caches public RxCUI mappings in sessionStorage to minimize API latency and ensure offline browser speed.</li>
             <li><strong>HL7 FHIR R4 ResearchStudy Mapping:</strong> Formats extracted trial evidence into standardized FHIR ResearchStudy JSON-LD clinical trial models.</li>
-            <li><strong>NCPI FHIR Interactive Action Badges:</strong> Embedded UI badges enable one-click verification of trial identifiers, regulatory codes, and standardized vocabularies.</li>
+            <li><strong>NCBI FHIR Interactive Action Badges:</strong> Embedded UI badges enable one-click verification of trial identifiers, regulatory codes, and standardized vocabularies.</li>
           </ul>
         </div>
         <div style="font-size:11px; color:#10B981; font-weight:700; border-top:1px solid rgba(16,185,129,0.3); padding-top:8px;">HL7 FHIR R4 &amp; RXNORM CODING</div>
@@ -1163,7 +1163,7 @@ HTML_SLIDES_16_TO_20 = """
     </div>
 
     <div class="slide-footer">
-      <span>MANDOROS — External Clinical Databases, PubMed &amp; NCPI FHIR Ecosystem</span>
+      <span>MANDOROS — External Clinical Databases, PubMed &amp; NCBI FHIR Ecosystem</span>
       <span class="slide-num">SLIDE 18 / 20</span>
     </div>
   </div>
@@ -1256,7 +1256,7 @@ HTML_SLIDES_16_TO_20 = """
           <ul style="color:#CBD5E1; font-size:13px; line-height:1.6; margin-left:18px;">
             <li><strong>Canonical Root Path Verification:</strong> Eliminates arbitrary path traversal on /api/view and /api/download; strictly confines file access to resolved whitelist roots (outputs/, SESSION_ROOT, system temp).</li>
             <li><strong>Secret Isolation in Transport Headers:</strong> Relocated sensitive Gemini API keys from URL query strings to secure x-goog-api-key HTTP headers, eliminating token exposure in proxy logs, browser histories, and referrer leaks.</li>
-            <li><strong>Contextual XSS Neutralization:</strong> Sanitizes runtime dynamic tables, author credits, and study titles via deterministic html.escape(), while preserving interactive Plotly charts and NCPI FHIR action badges.</li>
+            <li><strong>Contextual XSS Neutralization:</strong> Sanitizes runtime dynamic tables, author credits, and study titles via deterministic html.escape(), while preserving interactive Plotly charts and NCBI FHIR action badges.</li>
             <li><strong>Opt-In Production Access Control:</strong> Built-in basic HTTP authentication guard (MANDOROS_AUTH_USER/PASSWORD) that activates strictly when environment credentials exist without breaking open clinical testing.</li>
           </ul>
         </div>
@@ -1285,7 +1285,7 @@ HTML_SLIDES_16_TO_20 = """
             <li><strong>Automated Keep-Alive Ping Engine:</strong> Dedicated /health heartbeat endpoint probed every 5 minutes (UptimeRobot / GitHub Actions cron), completely neutralizing Render's 15-minute idle container spin-down.</li>
             <li><strong>Sub-Second First-Interaction Time:</strong> Slashes initial cold-start latency from ~75 seconds down to &lt;1 second, ensuring instant, freeze-free access for clinicians and peer reviewers at all hours.</li>
             <li><strong>Multi-Cloud Failover Monitoring:</strong> Redundant external ping orchestrators with automated retry loops and email alerts for zero-downtime academic hosting.</li>
-            <li><strong>Progressive Web App (PWA) Offline Cache:</strong> Caches RxNorm, NCPI FHIR, and public drug mappings locally in sessionStorage/localStorage for immediate client-side responsiveness.</li>
+            <li><strong>Progressive Web App (PWA) Offline Cache:</strong> Caches RxNorm, NCBI FHIR, and public drug mappings locally in sessionStorage/localStorage for immediate client-side responsiveness.</li>
           </ul>
         </div>
         <div style="font-size:11px; color:#F59E0B; font-weight:700; border-top:1px solid rgba(245,158,11,0.3); padding-top:8px;">&lt;1s RESPONSE &amp; 24/7 UPTIME</div>
@@ -1327,7 +1327,7 @@ HTML_SLIDE_2_GRID = """      <div class="grid-3">
           <h2 class="card-h2" style="margin-top:14px;">8. PRISMA 2020 4-Stage Flow Engine</h2>
           <p class="card-p">Identification, ternary zero-FN screening, eligibility auditing, and dynamic SVG flowcharts.</p>
           <h2 class="card-h2" style="margin-top:14px;">9. Clinical Databases &amp; 24/7 Cloud Rigor</h2>
-          <p class="card-p">Live PubMed E-utilities, ClinicalTrials.gov APIv2, NCPI FHIR R4, and 24/7 zero-cold-start keep-alive.</p>
+          <p class="card-p">Live PubMed E-utilities, ClinicalTrials.gov APIv2, NCBI FHIR R4, and 24/7 zero-cold-start keep-alive.</p>
         </div>
       </div>"""
 
@@ -1362,7 +1362,7 @@ def update_pptx_files():
             print(f"  [+] Added Slide 17: PRISMA 2020 Flow Diagram & Intelligence")
 
             add_slide_18_clinical_databases(prs)
-            print(f"  [+] Added Slide 18: External Clinical Databases, PubMed & NCPI FHIR")
+            print(f"  [+] Added Slide 18: External Clinical Databases, PubMed & NCBI FHIR")
 
             add_slide_19_phase2_rules(prs)
             print(f"  [+] Added Slide 19: Phase 2 Scientific Restructuring & 20 Supreme Rules")
