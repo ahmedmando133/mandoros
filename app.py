@@ -4406,45 +4406,65 @@ def build_app():
         margin-bottom: 24px !important;
         position: relative !important;
         z-index: 10 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
     }
 
+    /* Outer Tab Wrapper: Holds the Segmented Bar */
     #main-phases-tabs > .tab-wrapper,
     #main-phases-tabs > div.tab-nav,
-    #main-phases-tabs > div[role="tablist"],
+    #main-phases-tabs > div[role="tablist"] {
+        display: flex !important;
+        flex-direction: row !important;
+        align-items: stretch !important;
+        background: rgba(9, 9, 11, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        padding: 5px !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        margin-bottom: 20px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        height: auto !important;
+        min-height: 52px !important;
+        overflow: visible !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+
+    /* Inner Tab Container: Transparent Flex Track (Zero Double-Border/Double-Padding) */
     #main-phases-tabs .tab-container {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: nowrap !important;
         align-items: stretch !important;
+        justify-content: space-between !important;
         gap: 8px !important;
-        background: rgba(9, 9, 11, 0.95) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        padding: 6px !important;
-        border-radius: 14px !important;
-        border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
-        margin-bottom: 22px !important;
+        background: transparent !important;
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        box-shadow: none !important;
         width: 100% !important;
-        box-sizing: border-box !important;
         height: auto !important;
-        min-height: auto !important;
+        min-height: 42px !important;
         overflow: visible !important;
+        box-sizing: border-box !important;
     }
 
     /* Individual Main Tab Buttons */
-    #main-phases-tabs > .tab-wrapper button,
-    #main-phases-tabs > div.tab-nav button,
-    #main-phases-tabs > div[role="tablist"] button,
+    #main-phases-tabs button[role="tab"],
     #main-phases-tabs .tab-container > button,
-    #main-phases-tabs > .tab-wrapper button[role="tab"],
-    #main-phases-tabs > div.tab-nav button[role="tab"],
-    #main-phases-tabs > div[role="tablist"] button[role="tab"],
-    #main-phases-tabs .tab-container > button[role="tab"] {
+    #main-phases-tabs .tab-nav > button {
         flex: 1 1 0 !important;
         min-width: 0 !important;
-        height: 48px !important;
-        min-height: 48px !important;
+        max-width: 100% !important;
+        height: 42px !important;
+        min-height: 42px !important;
+        box-sizing: border-box !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
@@ -4452,8 +4472,8 @@ def build_app():
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         font-size: 13.5px !important;
         font-weight: 700 !important;
-        letter-spacing: 0.02em !important;
-        padding: 0 16px !important;
+        letter-spacing: 0.015em !important;
+        padding: 0 12px !important;
         margin: 0 !important;
         border-radius: 10px !important;
         border: 1px solid rgba(255, 255, 255, 0.06) !important;
@@ -4461,6 +4481,7 @@ def build_app():
         color: #94A3B8 !important;
         white-space: nowrap !important;
         text-overflow: ellipsis !important;
+        overflow: hidden !important;
         cursor: pointer !important;
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         box-shadow: none !important;
@@ -4516,29 +4537,94 @@ def build_app():
         box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25), inset 0 0 12px rgba(245, 158, 11, 0.10) !important;
     }
 
+    /* Tabpanel Isolation: Clears Floats & Always Starts Below the Segmented Bar */
+    #main-phases-tabs > div[role="tabpanel"],
+    #main-phases-tabs > .tabitem {
+        clear: both !important;
+        margin-top: 18px !important;
+        position: relative !important;
+        z-index: 1 !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
     /* Responsive Main Tabs Breakpoint - Safe Auto-Wrap without Overlap Collision */
     @media (max-width: 950px) {
         #main-phases-tabs > .tab-wrapper,
         #main-phases-tabs > div.tab-nav,
-        #main-phases-tabs > div[role="tablist"],
+        #main-phases-tabs > div[role="tablist"] {
+            height: auto !important;
+            min-height: auto !important;
+        }
         #main-phases-tabs .tab-container {
             flex-wrap: wrap !important;
             height: auto !important;
             min-height: auto !important;
+            gap: 8px !important;
         }
+        #main-phases-tabs button[role="tab"],
         #main-phases-tabs .tab-container > button,
-        #main-phases-tabs > div.tab-nav button {
+        #main-phases-tabs .tab-nav > button {
             flex: 1 1 calc(50% - 6px) !important;
             min-width: calc(50% - 6px) !important;
+            max-width: calc(50% - 6px) !important;
         }
     }
 
     @media (max-width: 600px) {
+        #main-phases-tabs button[role="tab"],
         #main-phases-tabs .tab-container > button,
-        #main-phases-tabs > div.tab-nav button {
+        #main-phases-tabs .tab-nav > button {
             flex: 1 1 100% !important;
             min-width: 100% !important;
+            max-width: 100% !important;
         }
+    }
+
+    /* Layout Stability & Card Anti-Overlap Standards */
+    .clinical-uploader-header-card {
+        background: rgba(15, 23, 42, 0.85) !important;
+        border: 1px solid rgba(56, 189, 248, 0.25) !important;
+        border-radius: 14px !important;
+        padding: 12px 16px !important;
+        margin-bottom: 10px !important;
+        display: flex !important;
+        flex-wrap: wrap !important;
+        align-items: center !important;
+        justify-content: space-between !important;
+        gap: 8px 12px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .clinical-quality-gate-card {
+        background: rgba(16, 185, 129, 0.08) !important;
+        border: 1px solid rgba(16, 185, 129, 0.35) !important;
+        border-radius: 12px !important;
+        padding: 12px 14px !important;
+        margin-bottom: 12px !important;
+        display: flex !important;
+        align-items: flex-start !important;
+        gap: 10px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .gradio-container .row,
+    div[data-testid="row"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        gap: 16px !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+    }
+
+    .gradio-container .column,
+    div[data-testid="column"] {
+        min-width: 0 !important;
+        box-sizing: border-box !important;
+        overflow: visible !important;
     }
     """
 
@@ -5131,25 +5217,25 @@ def build_app():
                         gr.Markdown("### 📄 Step 1: Upload Trial Protocol / Paper")
                         gr.HTML(
                             """
-                            <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-                              <div style="display: flex; align-items: center; gap: 10px;">
-                                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38BDF8; font-size: 16px;">
+                            <div class="clinical-uploader-header-card">
+                              <div style="display: flex; align-items: center; gap: 10px; flex: 1 1 200px; min-width: 0;">
+                                <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(56,189,248,0.15); display: flex; align-items: center; justify-content: center; color: #38BDF8; font-size: 16px; flex-shrink: 0;">
                                   ☁️
                                 </div>
-                                <div>
-                                  <div style="font-weight: 700; color: #F8FAFC; font-size: 13px;">Clinical Protocol & RCT Uploader</div>
-                                  <div style="color: #94A3B8; font-size: 11px;">Drop single-study published RCT papers or trial protocols</div>
+                                <div style="min-width: 0; flex: 1 1 auto;">
+                                  <div style="font-weight: 700; color: #F8FAFC; font-size: 13px; line-height: 1.35; margin: 0 0 2px 0; word-break: break-word;">Clinical Protocol &amp; RCT Uploader</div>
+                                  <div style="color: #94A3B8; font-size: 11px; line-height: 1.35; margin: 0; word-break: break-word;">Drop single-study published RCT papers or trial protocols</div>
                                 </div>
                               </div>
-                              <div style="display: flex; gap: 6px;">
-                                <span style="background: rgba(56,189,248,0.15); border: 1px solid #38BDF8; color: #38BDF8; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">PDF</span>
-                                <span style="background: rgba(16,185,129,0.15); border: 1px solid #10B981; color: #34D399; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">Zero-Loss Parse</span>
+                              <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                                <span style="background: rgba(56,189,248,0.15); border: 1px solid #38BDF8; color: #38BDF8; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; line-height: 1.3;">PDF</span>
+                                <span style="background: rgba(16,185,129,0.15); border: 1px solid #10B981; color: #34D399; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px; white-space: nowrap; line-height: 1.3;">Zero-Loss Parse</span>
                               </div>
                             </div>
-                            <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.35); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                              <span style="font-size: 20px;">🛡️</span>
-                              <div style="font-size: 11.5px; color: #E2E8F0; line-height: 1.45;">
-                                <strong style="color: #34D399; font-size: 12px;">10/10 Quality Gate Active (TrialMind &amp; RCTMethodologyIE):</strong><br/>
+                            <div class="clinical-quality-gate-card">
+                              <span style="font-size: 18px; line-height: 1.2; flex-shrink: 0; margin-top: 1px;">🛡️</span>
+                              <div style="font-size: 11.5px; color: #E2E8F0; line-height: 1.5; flex: 1 1 auto; min-width: 0; word-break: break-word;">
+                                <strong style="color: #34D399; font-size: 12px; display: inline-block; margin-bottom: 2px;">10/10 Quality Gate Active (TrialMind &amp; RCTMethodologyIE):</strong><br/>
                                 Every uploaded PDF undergoes <strong>Verbatim Verification</strong> against raw text chunks (0% hallucination), <strong>Deterministic Code Interpretation</strong> (Zero Mental Math), <strong>4-Entity Blinding Dissection</strong>, and <strong>Cochrane RoB 2.0 (5 Domains)</strong> appraisal.
                               </div>
                             </div>
@@ -5314,11 +5400,12 @@ def build_app():
                     with gr.Column(scale=1):
                         gr.HTML(
                             """
-                            <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                                <div style="font-size: 11.5px; color: #E2E8F0; line-height: 1.45;">
-                                  <strong style="color: #38BDF8; font-size: 12px;">Unified Multi-Trial Evidence Synthesis Engine Active:</strong><br/>
-                                  Automated <strong>PRISMA 2020 Flow tracking</strong>, cumulative relevance ranking (&Icirc;<sub>i</sub> = &sum; I<sub>i</sub><sup>m</sup>), cross-trial <strong>Cochrane RoB 2.0 synthesis</strong>, and <strong>GRADE certainty profiling</strong>.
-                                </div>
+                            <div class="clinical-quality-gate-card" style="border-color: rgba(56, 189, 248, 0.35); background: rgba(56, 189, 248, 0.08);">
+                              <span style="font-size: 18px; line-height: 1.2; flex-shrink: 0; margin-top: 1px;">📊</span>
+                              <div style="font-size: 11.5px; color: #E2E8F0; line-height: 1.5; flex: 1 1 auto; min-width: 0; word-break: break-word;">
+                                <strong style="color: #38BDF8; font-size: 12px; display: inline-block; margin-bottom: 2px;">Unified Multi-Trial Evidence Synthesis Engine Active:</strong><br/>
+                                Automated <strong>PRISMA 2020 Flow tracking</strong>, cumulative relevance ranking (&Icirc;<sub>i</sub> = &sum; I<sub>i</sub><sup>m</sup>), cross-trial <strong>Cochrane RoB 2.0 synthesis</strong>, and <strong>GRADE certainty profiling</strong>.
+                              </div>
                             </div>
                             """
                         )
@@ -5689,11 +5776,11 @@ def build_app():
                         gr.Markdown("### Step 1: Upload Literature Evidence Base")
                         gr.HTML(
                             """
-                            <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px;">
+                            <div style="background: rgba(15,23,42,0.85); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px; width: 100%; box-sizing: border-box;">
                               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                <span style="color: #38BDF8; font-weight: 700; font-size: 13px;">Universal Document Support</span>
+                                <span style="color: #38BDF8; font-weight: 700; font-size: 13px; line-height: 1.35;">Universal Document Support</span>
                               </div>
-                              <p style="color: #94A3B8; font-size: 12px; margin: 0;">Upload 1, 2, 3+ clinical trial PDFs or compatible Phase 1 Excel workbooks. The engine automatically maps the evidence matrix across all studies.</p>
+                              <p style="color: #94A3B8; font-size: 11.5px; line-height: 1.45; margin: 0; word-break: break-word;">Upload 1, 2, 3+ clinical trial PDFs or compatible Phase 1 Excel workbooks. The engine automatically maps the evidence matrix across all studies.</p>
                             </div>
                             """
                         )
