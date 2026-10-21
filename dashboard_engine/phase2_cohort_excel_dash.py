@@ -30,19 +30,25 @@ from dashboard_engine.phase1_trial_dashboard import build_phase1_single_trial_da
 
 def _read_all_sheets(xlsx_path: str) -> Dict[str, pd.DataFrame]:
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
-    sheets_data: Dict[str, pd.DataFrame] = {}
-    for name in wb.sheetnames:
+    try:
+        sheets_data: Dict[str, pd.DataFrame] = {}
+        for name in wb.sheetnames:
+            try:
+                ws = wb[name]
+                rows = list(ws.iter_rows(values_only=True))
+                if not rows:
+                    continue
+                headers = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(rows[0])]
+                data_rows = rows[1:] if len(rows) > 1 else []
+                sheets_data[name] = pd.DataFrame(data_rows, columns=headers)
+            except Exception:
+                pass
+        return sheets_data
+    finally:
         try:
-            ws = wb[name]
-            rows = list(ws.iter_rows(values_only=True))
-            if not rows:
-                continue
-            headers = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(rows[0])]
-            data_rows = rows[1:] if len(rows) > 1 else []
-            sheets_data[name] = pd.DataFrame(data_rows, columns=headers)
+            wb.close()
         except Exception:
             pass
-    return sheets_data
 
 
 def build_phase2_multi_trial_dashboard(

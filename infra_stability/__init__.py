@@ -30,6 +30,12 @@ from infra_stability.ncpi_fhir_addon import (
     render_phase2_rxnorm_component_html,
     render_phase3_nih_benchmark_html,
 )
+from infra_stability.gsap_injector import (
+    GSAP_CDN_SCRIPTS,
+    GSAP_BOOTSTRAP_JS,
+    get_gsap_head_tags,
+)
+from infra_stability.lucide_icons import get_icon
 
 __all__ = [
     "SESSION_ROOT",
@@ -45,4 +51,8 @@ __all__ = [
     "render_ncpi_fhir_pillar_html",
     "render_phase2_rxnorm_component_html",
     "render_phase3_nih_benchmark_html",
+    "GSAP_CDN_SCRIPTS",
+    "GSAP_BOOTSTRAP_JS",
+    "get_gsap_head_tags",
+    "get_icon",
 ]

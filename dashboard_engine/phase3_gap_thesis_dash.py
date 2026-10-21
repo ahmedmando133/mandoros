@@ -32,25 +32,31 @@ from phase3_navigator.sample_size_and_risk import SampleSizeAndRiskEngine
 
 def _read_phase3_sheets(xlsx_path: str) -> Dict[str, pd.DataFrame]:
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
-    sheets_data: Dict[str, pd.DataFrame] = {}
-    for name in wb.sheetnames:
+    try:
+        sheets_data: Dict[str, pd.DataFrame] = {}
+        for name in wb.sheetnames:
+            try:
+                ws = wb[name]
+                rows = list(ws.iter_rows(values_only=True))
+                if not rows or len(rows) < 2:
+                    continue
+                # Header is typically at row 3 or 4
+                header_idx = 0
+                for i, r in enumerate(rows[:5]):
+                    if any("gap" in str(c).lower() or "domain" in str(c).lower() or "outcome" in str(c).lower() or "score" in str(c).lower() for c in r if c):
+                        header_idx = i
+                        break
+                headers = [str(c) if c is not None else f"Col_{j}" for j, c in enumerate(rows[header_idx])]
+                data_rows = rows[header_idx + 1:]
+                sheets_data[name] = pd.DataFrame(data_rows, columns=headers)
+            except Exception:
+                pass
+        return sheets_data
+    finally:
         try:
-            ws = wb[name]
-            rows = list(ws.iter_rows(values_only=True))
-            if not rows or len(rows) < 2:
-                continue
-            # Header is typically at row 3 or 4
-            header_idx = 0
-            for i, r in enumerate(rows[:5]):
-                if any("gap" in str(c).lower() or "domain" in str(c).lower() or "outcome" in str(c).lower() or "score" in str(c).lower() for c in r if c):
-                    header_idx = i
-                    break
-            headers = [str(c) if c is not None else f"Col_{j}" for j, c in enumerate(rows[header_idx])]
-            data_rows = rows[header_idx + 1:]
-            sheets_data[name] = pd.DataFrame(data_rows, columns=headers)
+            wb.close()
         except Exception:
             pass
-    return sheets_data
 
 
 def build_phase3_gap_thesis_dashboard(

@@ -17,10 +17,11 @@ def read_pdf_pages(path: str | Path) -> list[str]:
     """Return one string per page using pypdf (pure-python, always available)."""
     from pypdf import PdfReader
 
-    reader = PdfReader(str(path))
     pages: list[str] = []
-    for page in reader.pages:
-        pages.append(page.extract_text() or "")
+    with open(str(path), "rb") as fh:
+        reader = PdfReader(fh)
+        for page in reader.pages:
+            pages.append(page.extract_text() or "")
     return pages
 
 

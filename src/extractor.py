@@ -4217,7 +4217,8 @@ class RCTExtractor:
                     max_tokens=16384,
                     temperature=0.1,
                     system=full_sys,
-                    messages=[{"role": "user", "content": prompt}]
+                    messages=[{"role": "user", "content": prompt}],
+                    timeout=60.0
                 )
                 if resp and resp.content:
                     raw_text = resp.content[0].text
@@ -4243,7 +4244,8 @@ class RCTExtractor:
                     model=target_model,
                     messages=messages,
                     response_format={"type": "json_object"},
-                    temperature=0.1
+                    temperature=0.1,
+                    timeout=60.0
                 )
                 if resp and resp.choices:
                     raw_text = resp.choices[0].message.content
@@ -4262,8 +4264,8 @@ class RCTExtractor:
             # 1. Dynamically discover live models supported by this specific Google AI Studio key
             discovered_models = []
             try:
-                disc_url = f"https://generativelanguage.googleapis.com/v1beta/models?key={key_str}"
-                d_resp = requests.get(disc_url, timeout=10)
+                disc_url = "https://generativelanguage.googleapis.com/v1beta/models"
+                d_resp = requests.get(disc_url, headers={"x-goog-api-key": key_str, "Content-Type": "application/json"}, timeout=10)
                 if d_resp.status_code == 200:
                     for m in d_resp.json().get("models", []):
                         if "generateContent" in m.get("supportedGenerationMethods", []):
@@ -4280,8 +4282,8 @@ class RCTExtractor:
 
             if not discovered_models:
                 try:
-                    disc_v1 = f"https://generativelanguage.googleapis.com/v1/models?key={key_str}"
-                    d_resp = requests.get(disc_v1, timeout=8)
+                    disc_v1 = "https://generativelanguage.googleapis.com/v1/models"
+                    d_resp = requests.get(disc_v1, headers={"x-goog-api-key": key_str, "Content-Type": "application/json"}, timeout=8)
                     if d_resp.status_code == 200:
                         for m in d_resp.json().get("models", []):
                             if "generateContent" in m.get("supportedGenerationMethods", []):
@@ -4334,7 +4336,7 @@ class RCTExtractor:
             for g_mod in gemini_candidates:
                 # Try v1beta first, then v1
                 for api_ver in ["v1beta", "v1"]:
-                    post_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{g_mod}:generateContent?key={key_str}"
+                    post_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{g_mod}:generateContent"
                     body = {
                         "contents": [
                             {
@@ -4352,7 +4354,7 @@ class RCTExtractor:
                         resp = requests.post(
                             post_url,
                             json=body,
-                            headers={"Content-Type": "application/json"},
+                            headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
                             timeout=60
                         )
 
@@ -4362,7 +4364,7 @@ class RCTExtractor:
                             resp = requests.post(
                                 post_url,
                                 json=body,
-                                headers={"Content-Type": "application/json"},
+                                headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
                                 timeout=60
                             )
 
@@ -4404,7 +4406,7 @@ class RCTExtractor:
                     for fallback_mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
                         try:
                             g_model = genai.GenerativeModel(fallback_mod)
-                            g_resp = g_model.generate_content(full_p)
+                            g_resp = g_model.generate_content(full_p, request_options={"timeout": 60.0})
                             if g_resp and g_resp.text:
                                 raw_text = g_resp.text
                                 self.actual_model_used = fallback_mod

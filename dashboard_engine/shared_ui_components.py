@@ -10,10 +10,10 @@ Provides:
 from __future__ import annotations
 
 import base64
-import json
+import html
 import os
 import urllib.parse
-from typing import Any, Dict, List, Optional
+from typing import Optional
 import pandas as pd
 
 
@@ -26,6 +26,12 @@ FAST_CDN_HEADER = """
 <link rel="stylesheet" href="https://cdn.datatables.net/1.13.8/css/jquery.dataTables.min.css">
 <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
 <script src="https://cdn.datatables.net/1.13.8/js/jquery.dataTables.min.js"></script>
+
+<!-- GSAP Core & Plugins via Lightweight CDN (Zero Server Footprint) -->
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/TextPlugin.min.js"></script>
+<script src="/mandoros_gsap.js"></script>
 <style>
   body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
   .glass-card {
@@ -33,6 +39,11 @@ FAST_CDN_HEADER = """
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(51, 65, 85, 0.7);
+    will-change: transform, opacity;
+  }
+  .mandoros-kpi-card {
+    will-change: transform, opacity;
+    transition: border-color 0.2s ease;
   }
   .dataTables_wrapper { color: #CBD5E1 !important; padding: 12px 0; }
   .dataTables_wrapper select, .dataTables_wrapper input {
@@ -52,6 +63,59 @@ FAST_CDN_HEADER = """
   .ncpi-hidden { display: none !important; }
 </style>
 <script src="/ncpiFhirAddon.js"></script>
+<script>
+// Standalone GSAP Initializer for Exported HTML Dashboards
+(function() {
+  function initDashboardGsap() {
+    if (typeof gsap === 'undefined') {
+      setTimeout(initDashboardGsap, 60);
+      return;
+    }
+    // Fade and slide in KPI cards
+    gsap.from(".mandoros-kpi-card", {
+      y: 25,
+      opacity: 0,
+      stagger: 0.08,
+      duration: 0.7,
+      ease: "power3.out",
+      clearProps: "all"
+    });
+    // Animate KPI numbers
+    document.querySelectorAll(".mandoros-kpi-val").forEach(function(el) {
+      var text = (el.dataset.kpiVal || el.innerText || "").trim();
+      var match = text.match(/([^\\d.-]*)([\\d,]+(?:\\.\\d+)?)(.*)/);
+      if (match) {
+        var prefix = match[1] || "";
+        var rawNum = match[2].replace(/,/g, "");
+        var targetVal = parseFloat(rawNum);
+        var suffix = match[3] || "";
+        if (!isNaN(targetVal) && targetVal > 0) {
+          var hasDecimals = rawNum.includes(".");
+          var decimals = hasDecimals ? (rawNum.split(".")[1] || "").length : 0;
+          var obj = { val: 0 };
+          gsap.to(obj, {
+            val: targetVal,
+            duration: 1.4,
+            ease: "power2.out",
+            onUpdate: function() {
+              var formatted = decimals > 0 ? obj.val.toFixed(decimals) : Math.round(obj.val).toLocaleString();
+              el.innerText = prefix + formatted + suffix;
+            },
+            onComplete: function() {
+              el.innerText = text;
+            }
+          });
+        }
+      }
+    });
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initDashboardGsap);
+  } else {
+    initDashboardGsap();
+  }
+})();
+</script>
 <script>
 window.mandorosDownloadBlob = window.mandorosDownloadBlob || function(b64Data, filename, mimeType, fallbackUrl) {
   try {
@@ -219,8 +283,9 @@ def render_kpi_card_html(
 ) -> str:
     """Renders a modern glassmorphism KPI card with tailwind styling."""
     badge_html = f"<span style='background: {badge_color}22; color: {badge_color}; border: 1px solid {badge_color};' class='text-[10px] font-bold px-2 py-0.5 rounded-full'>{badge}</span>" if badge else ""
+    val_esc = html.escape(str(value))
     return f"""
-    <div class="glass-card rounded-xl p-4 flex flex-col justify-between hover:border-slate-500 transition-all shadow-lg">
+    <div class="glass-card mandoros-kpi-card rounded-xl p-4 flex flex-col justify-between hover:border-slate-500 transition-all shadow-lg">
       <div class="flex items-center justify-between mb-2">
         <span class="text-xs uppercase tracking-wider font-semibold text-slate-400">{title}</span>
         <div class="flex items-center gap-1.5">
@@ -228,7 +293,7 @@ def render_kpi_card_html(
           <span class="text-xl">{icon}</span>
         </div>
       </div>
-      <div class="text-xl font-extrabold text-white tracking-tight my-1 truncate">{value}</div>
+      <div class="text-xl font-extrabold text-white tracking-tight my-1 truncate mandoros-kpi-val" data-kpi-val="{val_esc}">{value}</div>
       <div class="text-[11px] text-slate-400 truncate">{subtitle}</div>
     </div>
     """
@@ -237,31 +302,36 @@ def render_kpi_card_html(
 def render_datatable_component(df: pd.DataFrame, table_id: str, title: str = "") -> str:
     """Renders an interactive searchable, paginated HTML DataTable with jQuery DataTables."""
     if df is None or df.empty:
-        return f"<div class='p-4 text-slate-400 text-sm'>No tabular records to display for {title}.</div>"
+        title_esc = html.escape(str(title))
+        return f"<div class='p-4 text-slate-400 text-sm'>No tabular records to display for {title_esc}.</div>"
 
     cols = list(df.columns)
-    headers_html = "".join([f"<th class='text-left py-2 px-3 text-xs uppercase tracking-wider text-slate-400 bg-slate-900'>{c}</th>" for c in cols])
+    headers_html = "".join([f"<th class='text-left py-2 px-3 text-xs uppercase tracking-wider text-slate-400 bg-slate-900'>{html.escape(str(c))}</th>" for c in cols])
 
     rows_html = []
     for _, row in df.head(300).iterrows():
         tds = []
         for c in cols:
             val = str(row[c]) if pd.notna(row[c]) else ""
+            val_clean = val.strip()
+            val_escaped = html.escape(val_clean)
+            val_lower = val_clean.lower()
             # Apply color pill if cell contains specific patterns
-            if val.lower() in ["low", "low risk", "passed", "reported"]:
-                cell_html = f"<span class='bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-semibold'>{val}</span>"
-            elif val.lower() in ["some concerns", "moderate", "unclear"]:
-                cell_html = f"<span class='bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-xs font-semibold'>{val}</span>"
-            elif val.lower() in ["high", "high risk", "failed", "not_reported"]:
-                cell_html = f"<span class='bg-rose-500/15 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded text-xs font-semibold'>{val}</span>"
+            if val_lower in ["low", "low risk", "passed", "reported"]:
+                cell_html = f"<span class='bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded text-xs font-semibold'>{val_escaped}</span>"
+            elif val_lower in ["some concerns", "moderate", "unclear"]:
+                cell_html = f"<span class='bg-amber-500/15 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded text-xs font-semibold'>{val_escaped}</span>"
+            elif val_lower in ["high", "high risk", "failed", "not_reported"]:
+                cell_html = f"<span class='bg-rose-500/15 text-rose-400 border border-rose-500/30 px-2 py-0.5 rounded text-xs font-semibold'>{val_escaped}</span>"
             else:
-                cell_html = f"<span class='text-xs text-slate-200'>{val}</span>"
+                cell_html = f"<span class='text-xs text-slate-200'>{val_escaped}</span>"
             tds.append(f"<td class='py-2 px-3 align-middle'>{cell_html}</td>")
         rows_html.append(f"<tr class='hover:bg-slate-800/50 border-b border-slate-800/80'>{''.join(tds)}</tr>")
 
+    title_escaped = html.escape(str(title))
     table_html = f"""
     <div class="my-3">
-      {f'<h4 class="text-sm font-bold text-slate-300 mb-2 flex items-center gap-2"><span>📋</span> {title}</h4>' if title else ''}
+      {f'<h4 class="text-sm font-bold text-slate-300 mb-2 flex items-center gap-2"><span>📋</span> {title_escaped}</h4>' if title else ''}
       <div class="overflow-x-auto rounded-lg border border-slate-700 bg-slate-900/60 p-2">
         <table id="{table_id}" class="display responsive nowrap w-full text-xs">
           <thead>

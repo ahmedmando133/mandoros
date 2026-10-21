@@ -22,56 +22,65 @@ def evaluate_trial(name: str, manual_path: str, extracted_path: str) -> dict:
     
     # Load extracted workbook
     wb_ext = openpyxl.load_workbook(extracted_path, data_only=True)
-    outcomes_ws = wb_ext["Outcomes"]
-    arms_ws = wb_ext["Arms"]
-    elig_ws = wb_ext["Eligibility"]
-    prov_ws = wb_ext["Provenance"]
-
-    extracted_outcomes = list(outcomes_ws.iter_rows(values_only=True))[1:]
-    extracted_arms = list(arms_ws.iter_rows(values_only=True))[1:]
-    extracted_elig = list(elig_ws.iter_rows(values_only=True))[1:]
-    extracted_prov = list(prov_ws.iter_rows(values_only=True))[1:]
-
-    # Load manual workbook
     wb_man = openpyxl.load_workbook(manual_path, data_only=True)
-    man_ws = wb_man.active
-    man_rows = list(man_ws.iter_rows(values_only=True))
+    try:
+        outcomes_ws = wb_ext["Outcomes"]
+        arms_ws = wb_ext["Arms"]
+        elig_ws = wb_ext["Eligibility"]
+        prov_ws = wb_ext["Provenance"]
 
-    total_extracted_facts = len(extracted_outcomes) + len(extracted_elig) + len(extracted_arms)
-    total_prov_citations = len(extracted_prov)
-    
-    # Provenance citation rate
-    provenance_rate = (total_prov_citations / total_extracted_facts) * 100 if total_extracted_facts else 0.0
+        extracted_outcomes = list(outcomes_ws.iter_rows(values_only=True))[1:]
+        extracted_arms = list(arms_ws.iter_rows(values_only=True))[1:]
+        extracted_elig = list(elig_ws.iter_rows(values_only=True))[1:]
+        extracted_prov = list(prov_ws.iter_rows(values_only=True))[1:]
 
-    outcomes_rows = list(outcomes_ws.iter_rows(values_only=True))
-    outcomes_headers = [str(c).lower() for c in outcomes_rows[0]]
-    outcomes_unit_idx = outcomes_headers.index("unit") if "unit" in outcomes_headers else -1
+        man_ws = wb_man.active
+        man_rows = list(man_ws.iter_rows(values_only=True))
 
-    elig_rows = list(elig_ws.iter_rows(values_only=True))
-    elig_headers = [str(c).lower() for c in elig_rows[0]]
-    elig_unit_idx = elig_headers.index("unit") if "unit" in elig_headers else -1
+        total_extracted_facts = len(extracted_outcomes) + len(extracted_elig) + len(extracted_arms)
+        total_prov_citations = len(extracted_prov)
+        
+        # Provenance citation rate
+        provenance_rate = (total_prov_citations / total_extracted_facts) * 100 if total_extracted_facts else 0.0
 
-    # Unit matching rate (how many extracted items have explicit atomic units)
-    outcomes_with_unit = sum(1 for o in extracted_outcomes if outcomes_unit_idx != -1 and o[outcomes_unit_idx] is not None)
-    elig_with_unit = sum(1 for e in extracted_elig if elig_unit_idx != -1 and e[elig_unit_idx] is not None)
-    unit_match_rate = ((outcomes_with_unit + elig_with_unit) / (len(extracted_outcomes) + len(extracted_elig))) * 100
+        outcomes_rows = list(outcomes_ws.iter_rows(values_only=True))
+        outcomes_headers = [str(c).lower() for c in outcomes_rows[0]]
+        outcomes_unit_idx = outcomes_headers.index("unit") if "unit" in outcomes_headers else -1
 
-    # Metric summary
-    res = {
-        "trial_name": name,
-        "extracted_arms": len(extracted_arms),
-        "extracted_eligibility": len(extracted_elig),
-        "extracted_outcomes": len(extracted_outcomes),
-        "total_extracted_facts": total_extracted_facts,
-        "provenance_citations": total_prov_citations,
-        "provenance_rate": round(provenance_rate, 1),
-        "unit_match_rate": round(unit_match_rate, 1),
-        "manual_raw_cells": sum(sum(1 for c in r if c is not None) for r in man_rows),
-        "estimated_manual_time_mins": 240,  # ~4 hours reported in concept note
-        "automated_time_secs": 4.5,
-        "time_saved_percent": 98.1
-    }
-    return res
+        elig_rows = list(elig_ws.iter_rows(values_only=True))
+        elig_headers = [str(c).lower() for c in elig_rows[0]]
+        elig_unit_idx = elig_headers.index("unit") if "unit" in elig_headers else -1
+
+        # Unit matching rate (how many extracted items have explicit atomic units)
+        outcomes_with_unit = sum(1 for o in extracted_outcomes if outcomes_unit_idx != -1 and o[outcomes_unit_idx] is not None)
+        elig_with_unit = sum(1 for e in extracted_elig if elig_unit_idx != -1 and e[elig_unit_idx] is not None)
+        unit_match_rate = ((outcomes_with_unit + elig_with_unit) / (len(extracted_outcomes) + len(extracted_elig))) * 100
+
+        # Metric summary
+        res = {
+            "trial_name": name,
+            "extracted_arms": len(extracted_arms),
+            "extracted_eligibility": len(extracted_elig),
+            "extracted_outcomes": len(extracted_outcomes),
+            "total_extracted_facts": total_extracted_facts,
+            "provenance_citations": total_prov_citations,
+            "provenance_rate": round(provenance_rate, 1),
+            "unit_match_rate": round(unit_match_rate, 1),
+            "manual_raw_cells": sum(sum(1 for c in r if c is not None) for r in man_rows),
+            "estimated_manual_time_mins": 240,  # ~4 hours reported in concept note
+            "automated_time_secs": 4.5,
+            "time_saved_percent": 98.1
+        }
+        return res
+    finally:
+        try:
+            wb_ext.close()
+        except Exception:
+            pass
+        try:
+            wb_man.close()
+        except Exception:
+            pass
 
 
 def run_benchmark():

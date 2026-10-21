@@ -1,21 +1,23 @@
 """
 Top Multi-Channel Mirror & App Status Bar for MANDOROS.
-Renders an elegant glassmorphic status banner at the top of the app:
-- Keeps Render Primary (mandoros.onrender.com)
-- Links to Free 16GB RAM Hugging Face Space Mirror
-- One-click PWA App Install trigger
-- Standalone Local Windows/Mac Desktop App Runner
-- Live Render Storage/RAM Auto-Janitor Health Indicator
+Tier-1 Hardware-Grade Architecture (Adidas x Apple/Samsung x Meta).
+Strictly eliminates generic AI styling and replaces emojis with Lucide SVG vectors.
 """
 
 from __future__ import annotations
+from infra_stability.lucide_icons import get_icon
 
 
 def render_mirror_and_app_bar() -> str:
     """
-    Renders top status bar HTML for the Gradio header.
+    Renders the hardware-grade status bar HTML for the top of the interface.
     """
-    return """
+    icon_zap = get_icon("zap", size=13, cls="text-sky-400")
+    icon_download = get_icon("download", size=13, cls="text-zinc-100")
+    icon_laptop = get_icon("laptop", size=13, cls="text-zinc-400")
+    icon_shield = get_icon("shield_check", size=13, cls="text-emerald-400")
+
+    return f"""
     <div class="mandoros-top-mirror-bar" style="
         display: flex;
         flex-wrap: wrap;
@@ -24,99 +26,101 @@ def render_mirror_and_app_bar() -> str:
         gap: 12px;
         padding: 8px 18px;
         margin: 0 0 16px 0;
-        background: rgba(15, 23, 42, 0.85);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border: 1px solid rgba(56, 189, 248, 0.25);
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
-        font-family: 'Inter', -apple-system, sans-serif;
+        background: #09090B;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        font-family: 'JetBrains Mono', -apple-system, monospace;
     ">
       <!-- Left: Primary & Mirror Channels -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-        <span style="
+        <span class="mandoros-prod-badge" style="
             display: inline-flex;
             align-items: center;
-            gap: 6px;
+            gap: 7px;
             padding: 4px 10px;
-            background: rgba(16, 185, 129, 0.15);
-            border: 1px solid rgba(16, 185, 129, 0.5);
-            border-radius: 9999px;
-            color: #34D399;
-            font-size: 11.5px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.35);
+            border-radius: 6px;
+            color: #10B981;
+            font-size: 11px;
             font-weight: 700;
+            letter-spacing: 0.04em;
         ">
-          <span style="width: 7px; height: 7px; background: #10B981; border-radius: 50%; box-shadow: 0 0 8px #10B981;"></span>
-          Primary Production: <a href="https://mandoros.onrender.com/" target="_blank" style="color: #6EE7B7; text-decoration: underline; margin-left: 2px;">mandoros.onrender.com</a>
+          <span class="mandoros-prod-dot" style="width: 7px; height: 7px; background: #10B981; border-radius: 50%; box-shadow: 0 0 8px #10B981; display: inline-block;"></span>
+          PROD // <a href="https://mandoros.onrender.com/" target="_blank" style="color: #34D399; text-decoration: none; margin-left: 2px;">mandoros.onrender.com</a>
         </span>
 
-        <a href="https://huggingface.co/spaces" target="_blank" style="
+        <a href="https://huggingface.co/spaces" target="_blank" class="mandoros-hf-badge mandoros-magnetic-btn" style="
             display: inline-flex;
             align-items: center;
             gap: 6px;
             padding: 4px 12px;
-            background: rgba(56, 189, 248, 0.12);
-            border: 1px solid rgba(56, 189, 248, 0.4);
-            border-radius: 9999px;
-            color: #38BDF8;
-            font-size: 11.5px;
-            font-weight: 700;
+            background: rgba(24, 24, 27, 0.9);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 6px;
+            color: #E4E4E7;
+            font-size: 11px;
+            font-weight: 600;
             text-decoration: none;
+            letter-spacing: 0.03em;
             transition: all 0.2s;
-        " onmouseover="this.style.background='rgba(56,189,248,0.25)'" onmouseout="this.style.background='rgba(56,189,248,0.12)'">
-          ⚡ Free 16GB HF Mirror
+        ">
+          {icon_zap} Free 16GB HF Mirror
         </a>
       </div>
 
       <!-- Right: App Options & Janitor Health -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-        <button class="mandoros-pwa-install-btn" style="
+        <button class="mandoros-pwa-install-btn mandoros-magnetic-btn" style="
             display: inline-flex;
             align-items: center;
             gap: 6px;
-            padding: 4px 12px;
-            background: linear-gradient(135deg, #6366F1, #4F46E5);
-            border: 1px solid #818CF8;
-            border-radius: 8px;
-            color: #FFFFFF;
-            font-size: 11.5px;
+            padding: 5px 12px;
+            background: #FAFAFA;
+            border: 1px solid #FFFFFF;
+            border-radius: 6px;
+            color: #09090B;
+            font-size: 11px;
             font-weight: 700;
             cursor: pointer;
-            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+            letter-spacing: 0.03em;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
             transition: all 0.2s;
-        " onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-          📲 Install MANDOROS as App
+        ">
+          {icon_download} Install PWA
         </button>
 
-        <a href="https://github.com/" target="_blank" style="
+        <a href="https://github.com/ahmedmando133/MANDOROS" target="_blank" class="mandoros-desktop-badge mandoros-magnetic-btn" style="
             display: inline-flex;
             align-items: center;
             gap: 6px;
             padding: 4px 10px;
-            background: rgba(30, 41, 59, 0.8);
-            border: 1px solid #475569;
-            border-radius: 8px;
-            color: #CBD5E1;
-            font-size: 11.5px;
+            background: #18181B;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #A1A1AA;
+            font-size: 11px;
             font-weight: 600;
             text-decoration: none;
+            letter-spacing: 0.02em;
         ">
-          💻 Desktop App (Win/Mac)
+          {icon_laptop} Desktop App
         </a>
 
-        <span style="
+        <span class="mandoros-janitor-badge" style="
             display: inline-flex;
             align-items: center;
             gap: 5px;
             padding: 4px 9px;
-            background: rgba(148, 163, 184, 0.1);
-            border: 1px solid rgba(148, 163, 184, 0.25);
-            border-radius: 8px;
-            color: #94A3B8;
+            background: rgba(24, 24, 27, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 6px;
+            color: #71717A;
             font-size: 11px;
             font-weight: 500;
         " title="Temp directories >30min or >200MB are pruned automatically">
-          🛡️ 200MB Auto-Janitor Active
+          {icon_shield} Auto-Janitor 200MB Active
         </span>
       </div>
     </div>

@@ -13,6 +13,7 @@ Converts any 7-sheet Phase 1 .xlsx into a rich, colorful, multi-tab standalone H
 
 from __future__ import annotations
 
+import html
 import os
 import re
 from typing import Any, Dict, List, Optional
@@ -41,21 +42,27 @@ def _safe_float(val: Any, default: float = 0.0) -> float:
 def _read_excel_sheets(xlsx_path: str) -> Dict[str, pd.DataFrame]:
     """Reads all sheets from Excel file into a dictionary of DataFrames."""
     wb = openpyxl.load_workbook(xlsx_path, data_only=True)
-    sheets_data: Dict[str, pd.DataFrame] = {}
-    for name in wb.sheetnames:
+    try:
+        sheets_data: Dict[str, pd.DataFrame] = {}
+        for name in wb.sheetnames:
+            try:
+                ws = wb[name]
+                rows = list(ws.iter_rows(values_only=True))
+                if not rows:
+                    continue
+                # Header heuristic
+                headers = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(rows[0])]
+                data_rows = rows[1:] if len(rows) > 1 else []
+                df = pd.DataFrame(data_rows, columns=headers)
+                sheets_data[name] = df
+            except Exception:
+                pass
+        return sheets_data
+    finally:
         try:
-            ws = wb[name]
-            rows = list(ws.iter_rows(values_only=True))
-            if not rows:
-                continue
-            # Header heuristic
-            headers = [str(c) if c is not None else f"Col_{i}" for i, c in enumerate(rows[0])]
-            data_rows = rows[1:] if len(rows) > 1 else []
-            df = pd.DataFrame(data_rows, columns=headers)
-            sheets_data[name] = df
+            wb.close()
         except Exception:
             pass
-    return sheets_data
 
 
 def _find_sheet_df(sheets_dict: Dict[str, pd.DataFrame], patterns: List[str]) -> pd.DataFrame:
@@ -333,12 +340,15 @@ def build_phase1_single_trial_dashboard(
 
     instant_banner = build_instant_download_banner(None, xlsx_path, phase_label="Phase 1 Single-Trial")
 
+    title_esc = html.escape(str(study_title))
+    fname_esc = html.escape(str(os.path.basename(xlsx_path)))
+
     full_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MANDOROS Phase 1 — {study_title}</title>
+  <title>MANDOROS Phase 1 — {title_esc}</title>
   {FAST_CDN_HEADER}
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-6 antialiased">
@@ -353,9 +363,9 @@ def build_phase1_single_trial_dashboard(
         <div>
           <div class="flex items-center gap-2">
             <span class="text-xs uppercase font-extrabold tracking-wider px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-400 border border-sky-500/30">Phase 1 Single-Trial 360°</span>
-            <span class="text-xs text-slate-400 font-mono">{os.path.basename(xlsx_path)}</span>
+            <span class="text-xs text-slate-400 font-mono">{fname_esc}</span>
           </div>
-          <h1 class="text-lg md:text-xl font-bold text-white mt-1 leading-snug">{study_title}</h1>
+          <h1 class="text-lg md:text-xl font-bold text-white mt-1 leading-snug">{title_esc}</h1>
         </div>
       </div>
       <div class="flex items-center gap-3">

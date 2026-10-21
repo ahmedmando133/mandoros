@@ -36,7 +36,11 @@ Thumbs.db
 ~$*
 **/~$*
 
-# Essential Production Runtime Assets (Always tracked for Render)
+# Media, Production and Scratch Files
+*.mp4
+*.wav
+production/
+scratch_*.py
 !master_protocols/
 !master_protocols/**
 !clinical_skills_library/

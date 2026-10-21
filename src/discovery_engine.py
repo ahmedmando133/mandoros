@@ -563,31 +563,6 @@ class InSilicoDiscoveryEngine:
 
         is_multi_drug = len(norm_drugs) >= 2 or "Multi-Drug" in self.cohort_mode or "Mixed" in self.cohort_name
 
-        # Helper to get pharmacological ceiling per drug class
-        def get_pharmacological_ceiling(drug_name: str, fallback_max: float) -> float:
-            dn = drug_name.lower()
-            if "empagliflozin" in dn:
-                return 25.0
-            elif "dapagliflozin" in dn:
-                return 10.0
-            elif "canagliflozin" in dn:
-                return 300.0
-            elif "semaglutide" in dn:
-                return 2.4
-            elif "tirzepatide" in dn:
-                return 15.0
-            elif "liraglutide" in dn:
-                return 3.0
-            elif "metformin" in dn:
-                return 2000.0
-            elif "orlistat" in dn:
-                return 120.0
-            elif "sitagliptin" in dn:
-                return 100.0
-            elif "pioglitazone" in dn:
-                return 45.0
-            return max(1.0, fallback_max)
-
         # Mine observed active doses from arms_df
         observed_active_doses: List[float] = []
         if hasattr(self, "arms_df") and not self.arms_df.empty:

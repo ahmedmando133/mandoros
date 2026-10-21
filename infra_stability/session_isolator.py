@@ -1,7 +1,6 @@
 import time
 import uuid
 from pathlib import Path
-from typing import Optional
 from infra_stability.storage_memory_janitor import SESSION_ROOT
 
 

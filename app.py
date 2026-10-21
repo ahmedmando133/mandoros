@@ -7,11 +7,12 @@ import os
 import sys
 import re
 import json
+import html
 import functools
 import tempfile
 import urllib.parse
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 import gradio as gr
 import pandas as pd
 
@@ -43,9 +44,7 @@ def get_cached_data_dictionary(path: str = "schema/data_dictionary.csv") -> list
 def deduplicate_columns(df) -> Any:
     """Guarantees 100% unique column names and cleans NaN values for Gradio JSON serialization."""
     if df is None:
-        import pandas as pd
         return pd.DataFrame()
-    import pandas as pd
     if not isinstance(df, pd.DataFrame) or df.empty:
         return pd.DataFrame()
     seen = {}
@@ -195,7 +194,7 @@ def process_pdf(
                 <span>⚠️</span> AI Provider Diagnostic Notice
               </div>
               <div style="font-size: 12px; color: #FEE2E2; font-family: monospace;">
-                {extractor.api_error}
+                {html.escape(str(extractor.api_error))}
               </div>
               <div style="font-size: 11px; color: #94A3B8; margin-top: 6px;">
                 The analysis seamlessly completed using the Smart Pharmacology Local Engine to guarantee zero workflow interruption. Please check your provider account quota or billing limits.
@@ -205,7 +204,7 @@ def process_pdf(
         elif extractor.api_key:
             diagnostic_banner = f"""
             <div style="background: rgba(16, 185, 129, 0.12); border: 1.5px solid #10B981; border-radius: 14px; padding: 10px 18px; margin-bottom: 20px; color: #34D399; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
-              <span>✨</span> Verified AI Cloud Execution: Successfully ran multi-stage clinical extraction using <u>{engine_badge}</u>.
+              <span>✨</span> Verified AI Cloud Execution: Successfully ran multi-stage clinical extraction using <u>{html.escape(str(engine_badge))}</u>.
             </div>
             """
 
@@ -222,14 +221,14 @@ def process_pdf(
               Academic Grade • Cochrane & PRISMA Standard
             </span>
             <span style="background: rgba(6,182,212,0.15); border: 1px solid #06B6D4; color: #22D3EE; padding: 3px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;">
-              Trial ID: {data.study.study_id}
+              Trial ID: {html.escape(str(data.study.study_id or ''))}
             </span>
           </div>
           <h2 style="color: #F8FAFC; margin: 0 0 6px 0; font-size: 21px; font-weight: 800; line-height: 1.3;">
-            {data.study.title}
+            {html.escape(str(data.study.title or ''))}
           </h2>
           <p style="color: #94A3B8; margin: 0; font-size: 13px; font-weight: 500;">
-            {data.study.authors} • <strong style="color: #E2E8F0;">{data.study.journal} ({data.study.publication_year})</strong> • Condition: <span style="color: #38BDF8;">{data.study.condition_studied or 'Cardiometabolic'}</span>
+            {html.escape(str(data.study.authors or ''))} • <strong style="color: #E2E8F0;">{html.escape(str(data.study.journal or ''))} ({data.study.publication_year})</strong> • Condition: <span style="color: #38BDF8;">{html.escape(str(data.study.condition_studied or 'Cardiometabolic'))}</span>
           </p>
         </div>
 
@@ -3260,202 +3259,340 @@ def process_phase3_ui(
 
 def build_app():
     custom_css = """
-    /* Apple.com Flagship Dark Architecture & Futuristic Biotech Aesthetic */
-    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap');
+    /* Tier-1 Flagship Dark Architecture (Adidas x Apple/Samsung x Meta) */
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&display=swap');
 
     :root {
         --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', Roboto, sans-serif;
         --font-mono: 'JetBrains Mono', monospace;
+        --bg-obsidian: #09090B;
+        --bg-carbon: #121215;
+        --bg-surface: #18181B;
+        --border-hairline: rgba(255, 255, 255, 0.09);
+        --border-active: rgba(255, 255, 255, 0.22);
+        --text-titanium: #FAFAFA;
+        --text-alabaster: #F4F4F5;
+        --text-muted: #A1A1AA;
+        --accent-emerald: #10B981;
+        --accent-sky: #38BDF8;
     }
 
-    body, .gradio-container {
+    *, *::before, *::after {
+        box-sizing: border-box !important;
+    }
+
+    html, body, .gradio-container {
         font-family: var(--font-sans) !important;
-        background: radial-gradient(circle at 50% -10%, #0d1b38 0%, #061026 40%, #030712 100%) !important;
-        color: #f1f5f9 !important;
+        background: #09090B !important;
+        color: #F4F4F5 !important;
         min-height: 100vh;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow-x: hidden !important;
+        width: 100% !important;
+        max-width: 100vw !important;
     }
 
-    /* Apple.com Obsidian Header Hero Container */
+    /* Asymmetric Precision Flagship Header */
     #header-container {
         position: relative;
-        text-align: center;
-        padding: 42px 20px 32px 20px;
-        margin-bottom: 28px;
-        background: radial-gradient(circle at 50% 0%, rgba(14, 165, 233, 0.12) 0%, rgba(99, 102, 241, 0.08) 35%, rgba(3, 7, 18, 0.6) 80%);
-        border-bottom: 1px solid rgba(56, 189, 248, 0.18);
-        border-radius: 0 0 28px 28px;
+        padding: 32px 24px 24px 24px;
+        margin-bottom: 24px;
+        background: #09090B;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.09);
         overflow: hidden;
+        width: 100%;
     }
-
-    .mesh-wave {
-        position: absolute;
-        top: 15px;
-        pointer-events: none;
-        z-index: 0;
-    }
-    .mesh-left { left: -10px; }
-    .mesh-right { right: -10px; transform: scaleX(-1); }
 
     .header-content-inner {
         position: relative;
         z-index: 1;
-        max-width: 1280px;
+        max-width: 1360px;
         margin: 0 auto;
     }
 
-    /* 3D Ribbon Emblem Container */
+    .header-hero-asymmetric {
+        display: grid;
+        grid-template-columns: 1.4fr 1fr;
+        gap: 36px;
+        align-items: center;
+        margin-bottom: 24px;
+    }
+
+    @media (max-width: 960px) {
+        .header-hero-asymmetric {
+            grid-template-columns: 1fr;
+            gap: 24px;
+        }
+    }
+
+    .header-hero-left {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    @media (max-width: 960px) {
+        .header-hero-left {
+            align-items: center;
+            text-align: center;
+        }
+    }
+
+    .header-hero-right {
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 14px;
+    }
+
+    /* 3D Ribbon & Emblem Card */
+    .mandoros-emblem-card {
+        background: #121215;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 16px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+        position: relative;
+    }
+
     .emblem-wrapper {
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 6px;
+        margin-bottom: 4px;
     }
 
-    /* M Λ N D O R O S Geometric Metallic Title */
+    /* Brutalist Titanium Main Title */
     .mandoros-hero-title {
         font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif !important;
-        font-size: clamp(2.5rem, 5.5vw, 4.2rem) !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.32em !important;
-        text-indent: 0.32em;
-        background: linear-gradient(90deg, #2DD4BF 0%, #67E8F9 25%, #FFFFFF 52%, #60A5FA 78%, #F8FAFC 100%) !important;
+        font-size: clamp(2.2rem, 4.2vw, 3.8rem) !important;
+        font-weight: 900 !important;
+        letter-spacing: -0.01em !important;
+        line-height: 1.05 !important;
+        color: #FAFAFA !important;
+        background: linear-gradient(180deg, #FFFFFF 0%, #D4D4D8 100%) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
-        margin: 12px 0 6px 0 !important;
+        margin: 0 0 10px 0 !important;
         text-transform: uppercase !important;
-        filter: drop-shadow(0 0 35px rgba(45, 212, 191, 0.32));
     }
 
     .mandoros-lambda {
         display: inline-block;
         font-family: inherit;
-        font-weight: 700;
-        margin: 0 -0.04em;
-        color: #2DD4BF;
-        -webkit-text-fill-color: #2DD4BF;
-        filter: drop-shadow(0 0 14px rgba(45, 212, 191, 0.7));
+        font-weight: 800;
+        color: #10B981 !important;
+        -webkit-text-fill-color: #10B981 !important;
     }
 
     .mandoros-subtitle {
         font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif !important;
-        font-size: 14.5px !important;
+        font-size: 14px !important;
         font-weight: 500 !important;
-        letter-spacing: 0.06em !important;
-        color: #94A3B8 !important;
-        margin: 0 auto 16px auto !important;
-        max-width: 900px;
+        line-height: 1.5 !important;
+        color: #A1A1AA !important;
+        margin: 0 0 14px 0 !important;
+        max-width: 780px;
+    }
+
+    .mandoros-meta-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+        margin-bottom: 14px;
+    }
+
+    .mandoros-chip {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 4px 10px;
+        border-radius: 6px;
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        color: #D4D4D8;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
     }
 
     /* Primary Tagline */
     .mandoros-tagline-container {
         display: flex;
         align-items: center;
-        justify-content: center;
-        gap: 16px;
-        max-width: 720px;
-        margin: 0 auto 28px auto;
+        gap: 12px;
+        margin: 6px 0 0 0;
     }
 
     .tagline-rule {
-        flex: 1;
+        width: 32px;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.4), transparent);
+        background: rgba(255, 255, 255, 0.15);
     }
 
     .mandoros-tagline {
-        font-style: italic !important;
-        font-size: 14.5px !important;
-        letter-spacing: 0.05em !important;
+        font-size: 13.5px !important;
+        font-weight: 600 !important;
+        letter-spacing: 0.02em !important;
         color: #38BDF8 !important;
         white-space: nowrap;
+    }
+
+    /* Live Telemetry / KPI Mini Grid */
+    .mandoros-kpi-quick-strip {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 8px;
+        width: 100%;
+        margin-top: 14px;
+    }
+
+    .kpi-mini-card {
+        background: #18181B;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        border-radius: 8px;
+        padding: 9px 12px;
+        text-align: left;
+    }
+
+    .kpi-mini-label {
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+        font-size: 10px;
+        font-weight: 600;
+        color: #71717A;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+
+    .kpi-mini-value {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 17px;
+        font-weight: 800;
+        color: #FAFAFA;
+        margin-top: 2px;
     }
 
     /* 8-Node Interactive Pipeline Strip (M-A-N-D-O-R-O-S) */
     .mandoros-pipeline-strip {
         display: flex;
-        align-items: flex-start;
-        justify-content: center;
+        align-items: center;
+        justify-content: space-between;
         gap: 6px;
         flex-wrap: nowrap;
         overflow-x: auto;
-        padding: 12px 8px 24px 8px;
-        max-width: 1260px;
+        scrollbar-width: none;
+        padding: 18px 4px 12px 4px;
+        max-width: 1360px;
         margin: 0 auto;
+        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        position: relative;
+    }
+    .mandoros-pipeline-strip::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pipeline-laser-svg {
+        position: absolute;
+        top: 28px;
+        left: 0;
+        width: 100%;
+        height: 4px;
+        pointer-events: none;
+        z-index: 0;
     }
 
     .pipeline-node {
         flex: 1 1 125px;
-        min-width: 105px;
-        max-width: 140px;
+        min-width: 110px;
+        max-width: 155px;
         text-align: center;
         display: flex;
         flex-direction: column;
         align-items: center;
-        transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        background: #121215;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 10px;
+        padding: 10px 6px;
+        transition: border-color 0.2s, transform 0.2s, background 0.2s;
+        cursor: pointer;
+        position: relative;
+        z-index: 1;
     }
 
     .pipeline-node:hover {
-        transform: translateY(-4px);
+        border-color: rgba(255, 255, 255, 0.25);
+        background: #18181B;
+        transform: translateY(-2px);
     }
 
     .node-circle {
-        width: 52px;
-        height: 52px;
-        border-radius: 50%;
+        width: 36px;
+        height: 36px;
+        border-radius: 8px;
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-bottom: 9px;
-        background: radial-gradient(circle at 35% 35%, rgba(15, 23, 42, 0.95), rgba(3, 7, 18, 0.98));
+        margin-bottom: 6px;
+        background: #18181B;
+        border: 1px solid rgba(255, 255, 255, 0.09);
         position: relative;
-        transition: all 0.3s ease;
+        transition: all 0.2s ease;
     }
 
-    .node-circle-1 { border: 1.5px solid #00F5D4; box-shadow: 0 0 16px rgba(0, 245, 212, 0.5); }
-    .node-circle-2 { border: 1.5px solid #0EA5E9; box-shadow: 0 0 16px rgba(14, 165, 233, 0.5); }
-    .node-circle-3 { border: 1.5px solid #6366F1; box-shadow: 0 0 16px rgba(99, 102, 241, 0.5); }
-    .node-circle-4 { border: 1.5px solid #8B5CF6; box-shadow: 0 0 16px rgba(139, 92, 246, 0.5); }
-    .node-circle-5 { border: 1.5px solid #38BDF8; box-shadow: 0 0 16px rgba(56, 189, 248, 0.5); }
-    .node-circle-6 { border: 1.5px solid #A855F7; box-shadow: 0 0 16px rgba(168, 85, 247, 0.5); }
-    .node-circle-7 { border: 1.5px solid #14B8A6; box-shadow: 0 0 16px rgba(20, 184, 166, 0.5); }
-    .node-circle-8 { border: 1.5px solid #0284C7; box-shadow: 0 0 16px rgba(2, 132, 199, 0.5); }
+    .node-circle-1 { border-color: rgba(16, 185, 129, 0.4); }
+    .node-circle-2 { border-color: rgba(56, 189, 248, 0.4); }
+    .node-circle-3 { border-color: rgba(99, 102, 241, 0.4); }
+    .node-circle-4 { border-color: rgba(139, 92, 246, 0.4); }
+    .node-circle-5 { border-color: rgba(56, 189, 248, 0.4); }
+    .node-circle-6 { border-color: rgba(168, 85, 247, 0.4); }
+    .node-circle-7 { border-color: rgba(20, 184, 166, 0.4); }
+    .node-circle-8 { border-color: rgba(2, 132, 199, 0.4); }
 
     .pipeline-chevron {
         display: flex;
         align-items: center;
-        color: rgba(148, 163, 184, 0.35);
-        font-size: 18px;
+        color: #52525B;
+        font-size: 16px;
         font-weight: 300;
-        margin: 15px 1px 0 1px;
         user-select: none;
+        flex-shrink: 0;
     }
 
     .node-letter {
-        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-        font-size: 20px;
-        font-weight: 900;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 13px;
+        font-weight: 800;
         margin-bottom: 2px;
+        color: #FAFAFA;
     }
 
-    .node-letter-1 { color: #00F5D4; text-shadow: 0 0 12px rgba(0, 245, 212, 0.55); }
-    .node-letter-2 { color: #38BDF8; text-shadow: 0 0 12px rgba(56, 189, 248, 0.55); }
-    .node-letter-3 { color: #818CF8; text-shadow: 0 0 12px rgba(129, 140, 248, 0.55); }
-    .node-letter-4 { color: #A78BFA; text-shadow: 0 0 12px rgba(167, 139, 250, 0.55); }
-    .node-letter-5 { color: #38BDF8; text-shadow: 0 0 12px rgba(56, 189, 248, 0.55); }
-    .node-letter-6 { color: #C084FC; text-shadow: 0 0 12px rgba(192, 132, 252, 0.55); }
-    .node-letter-7 { color: #2DD4BF; text-shadow: 0 0 12px rgba(45, 212, 191, 0.55); }
-    .node-letter-8 { color: #38BDF8; text-shadow: 0 0 12px rgba(56, 189, 248, 0.55); }
+    .node-letter-1 { color: #34D399; }
+    .node-letter-2 { color: #38BDF8; }
+    .node-letter-3 { color: #818CF8; }
+    .node-letter-4 { color: #A78BFA; }
+    .node-letter-5 { color: #38BDF8; }
+    .node-letter-6 { color: #C084FC; }
+    .node-letter-7 { color: #2DD4BF; }
+    .node-letter-8 { color: #38BDF8; }
 
     .node-title {
         font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 700;
-        margin-bottom: 4px;
+        margin-bottom: 2px;
+        color: #E4E4E7;
         white-space: nowrap;
     }
 
-    .node-title-1 { color: #22D3EE; }
-    .node-title-2 { color: #60A5FA; }
+    .node-title-1 { color: #34D399; }
+    .node-title-2 { color: #38BDF8; }
     .node-title-3 { color: #A5B4FC; }
     .node-title-4 { color: #C084FC; }
     .node-title-5 { color: #38BDF8; }
@@ -3464,10 +3601,10 @@ def build_app():
     .node-title-8 { color: #60A5FA; }
 
     .node-desc {
-        font-size: 10.5px;
-        line-height: 1.35;
-        color: #94A3B8;
-        padding: 0 3px;
+        font-size: 10px;
+        line-height: 1.3;
+        color: #71717A;
+        padding: 0 2px;
     }
 
     /* Bottom Framing Motto */
@@ -3477,90 +3614,108 @@ def build_app():
         justify-content: center;
         gap: 16px;
         max-width: 860px;
-        margin: 10px auto 0 auto;
+        margin: 14px auto 0 auto;
     }
 
     .motto-rule {
         flex: 1;
         height: 1px;
-        background: linear-gradient(90deg, transparent, rgba(56, 189, 248, 0.35), transparent);
+        background: rgba(255, 255, 255, 0.1);
     }
 
     .mandoros-motto {
-        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif !important;
+        font-family: 'JetBrains Mono', monospace !important;
         font-size: 11px !important;
         font-weight: 700 !important;
-        letter-spacing: 0.32em !important;
-        color: #94A3B8 !important;
-        text-shadow: 0 0 10px rgba(56, 189, 248, 0.3);
+        letter-spacing: 0.15em !important;
+        color: #71717A !important;
         white-space: nowrap;
     }
 
-    /* Apple.com Bento Frosted Glass Architecture */
+    /* Tier-1 Carbon Frosted Card Architecture */
     .glass-card, div.gr-box, div.gr-panel, div.gr-form {
-        background: rgba(11, 22, 44, 0.62) !important;
-        border: 1px solid rgba(148, 163, 184, 0.14) !important;
-        border-top: 1px solid rgba(56, 189, 248, 0.28) !important;
-        border-radius: 22px !important;
-        box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45) !important;
-        backdrop-filter: saturate(180%) blur(24px) !important;
-        -webkit-backdrop-filter: saturate(180%) blur(24px) !important;
+        background: #121215 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
     }
 
-    /* Apple-Style Radiant CTA Buttons */
-    .extract-btn {
-        background: linear-gradient(135deg, #00F5D4 0%, #0EA5E9 40%, #6366F1 80%, #A855F7 100%) !important;
-        color: #FFFFFF !important;
-        font-weight: 800 !important;
-        font-size: 15px !important;
-        padding: 14px 28px !important;
-        border-radius: 9999px !important;
-        border: none !important;
-        box-shadow: 0 0 30px rgba(14, 165, 233, 0.45) !important;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+    /* Tier-1 Titanium & Magnetic Action Buttons */
+    .extract-btn, .gr-button-primary {
+        background: #FAFAFA !important;
+        color: #09090B !important;
+        font-weight: 700 !important;
+        font-size: 14px !important;
+        padding: 12px 24px !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.2) !important;
+        box-shadow: 0 4px 14px rgba(255, 255, 255, 0.1) !important;
+        transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
         cursor: pointer !important;
     }
 
-    .extract-btn:hover {
+    .extract-btn:hover, .gr-button-primary:hover {
+        background: #FFFFFF !important;
         transform: translateY(-2px) scale(1.01) !important;
-        box-shadow: 0 0 40px rgba(0, 245, 212, 0.65) !important;
+        box-shadow: 0 6px 20px rgba(255, 255, 255, 0.18) !important;
     }
 
-    /* Segmented Pill Tabs */
-    /* Segmented Pill Tabs - Clean Multi-Row Wrap without overflow menu cutoff */
-    .tab-nav, div.tab-nav, .tabs > .tabitem-header-container, div[role="tablist"] {
-        background: rgba(15, 23, 42, 0.65) !important;
-        border-radius: 9999px !important;
-        padding: 6px !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        margin-bottom: 20px !important;
+    /* =========================================================================
+       CLEAN SUB-TABS (Phase 1, Phase 2, Phase 3 Secondary Navigation)
+       ========================================================================= */
+    .tabs:not(#main-phases-tabs) > .tab-wrapper,
+    .tabs:not(#main-phases-tabs) > div.tab-nav,
+    .tabs:not(#main-phases-tabs) > div[role="tablist"],
+    .tabs:not(#main-phases-tabs) .tab-container {
         display: flex !important;
         flex-wrap: wrap !important;
-        overflow-x: visible !important;
-        overflow-y: visible !important;
+        align-items: center !important;
+        gap: 6px !important;
+        background: rgba(15, 23, 42, 0.65) !important;
+        padding: 5px !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        margin-bottom: 18px !important;
+        height: auto !important;
+        min-height: auto !important;
         overflow: visible !important;
-        gap: 8px !important;
-        max-width: 100% !important;
+        background-image: none !important;
     }
 
-    .tab-nav button, div[role="tab"] {
-        border-radius: 9999px !important;
-        padding: 8px 20px !important;
+    .tabs:not(#main-phases-tabs) button[role="tab"],
+    .tabs:not(#main-phases-tabs) .tab-nav > button {
+        border-radius: 8px !important;
+        padding: 6px 16px !important;
         font-weight: 600 !important;
         font-size: 12.5px !important;
         transition: all 0.2s ease !important;
-        border: none !important;
+        border: 1px solid transparent !important;
         color: #94A3B8 !important;
         white-space: nowrap !important;
         flex-shrink: 0 !important;
+        background: transparent !important;
+        height: 36px !important;
+        min-height: 36px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        box-shadow: none !important;
     }
 
-    .tab-nav button.selected, div[role="tab"][aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(14, 165, 233, 0.25), rgba(99, 102, 241, 0.35)) !important;
-        border: 1px solid rgba(56, 189, 248, 0.5) !important;
+    .tabs:not(#main-phases-tabs) button[role="tab"]:hover,
+    .tabs:not(#main-phases-tabs) .tab-nav > button:hover {
+        background: rgba(255, 255, 255, 0.06) !important;
+        color: #F8FAFC !important;
+    }
+
+    .tabs:not(#main-phases-tabs) button[role="tab"].selected,
+    .tabs:not(#main-phases-tabs) .tab-nav > button.selected,
+    .tabs:not(#main-phases-tabs) button[role="tab"][aria-selected="true"] {
+        background: rgba(30, 41, 59, 0.95) !important;
+        border: 1px solid rgba(255, 255, 255, 0.16) !important;
         color: #F8FAFC !important;
         font-weight: 700 !important;
-        box-shadow: 0 0 20px rgba(56, 189, 248, 0.3) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
     }
 
     /* Hide any Gradio three-dots overflow menu so all sub-tabs show up side by side */
@@ -3705,65 +3860,68 @@ def build_app():
     }
 
     .product-phase-card {
-        background: rgba(11, 22, 44, 0.78) !important;
-        border: 1px solid rgba(148, 163, 184, 0.18) !important;
-        border-radius: 20px !important;
-        padding: 22px 20px !important;
-        backdrop-filter: blur(20px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+        background: #121215 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 20px 18px !important;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
     }
 
     .product-phase-card:hover {
-        transform: translateY(-3px) scale(1.008) !important;
+        transform: translateY(-2px) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
     }
 
     .card-phase-1 {
-        border-top: 3px solid #00F5D4 !important;
-        box-shadow: 0 14px 40px -10px rgba(0, 245, 212, 0.24) !important;
+        border-top: 2px solid #10B981 !important;
     }
     .card-phase-1:hover {
-        box-shadow: 0 18px 48px -8px rgba(0, 245, 212, 0.40) !important;
+        box-shadow: 0 12px 30px rgba(16, 185, 129, 0.15) !important;
     }
 
     .card-phase-2 {
-        border-top: 3px solid #38BDF8 !important;
-        box-shadow: 0 14px 40px -10px rgba(56, 189, 248, 0.24) !important;
+        border-top: 2px solid #38BDF8 !important;
     }
     .card-phase-2:hover {
-        box-shadow: 0 18px 48px -8px rgba(56, 189, 248, 0.40) !important;
+        box-shadow: 0 12px 30px rgba(56, 189, 248, 0.15) !important;
     }
 
     .card-phase-3 {
-        border-top: 3px solid #A855F7 !important;
-        box-shadow: 0 14px 40px -10px rgba(168, 85, 247, 0.24) !important;
+        border-top: 2px solid #C084FC !important;
     }
     .card-phase-3:hover {
-        box-shadow: 0 18px 48px -8px rgba(168, 85, 247, 0.40) !important;
+        box-shadow: 0 12px 30px rgba(192, 132, 252, 0.15) !important;
+    }
+
+    .card-phase-prisma {
+        border-top: 2px solid #F59E0B !important;
+    }
+    .card-phase-prisma:hover {
+        box-shadow: 0 12px 30px rgba(245, 158, 11, 0.15) !important;
     }
 
     /* ========================================================================= */
     /* ACADEMIC & METHODOLOGICAL POWER MATRIX (APPLE BENTO SHOWCASE)              */
     /* ========================================================================= */
-    /* ========================================================================= */
     .academic-power-matrix {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
+        gap: 14px;
         max-width: 1360px;
-        margin: 28px auto 0 auto;
+        margin: 24px auto 0 auto;
         text-align: left;
     }
 
     @media (max-width: 1100px) {
         .academic-power-matrix {
             grid-template-columns: repeat(2, 1fr);
-            gap: 14px;
+            gap: 12px;
         }
     }
 
@@ -3775,70 +3933,41 @@ def build_app():
     }
 
     .academic-pillar-card {
-        background: rgba(11, 22, 44, 0.72) !important;
-        border: 1px solid rgba(148, 163, 184, 0.16) !important;
-        border-radius: 20px !important;
-        padding: 20px 18px !important;
-        backdrop-filter: blur(20px) saturate(180%) !important;
-        -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
+        background: #121215 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        border-radius: 12px !important;
+        padding: 18px 16px !important;
         display: flex;
         flex-direction: column;
         justify-content: space-between;
-        transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         position: relative;
         overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4) !important;
     }
 
     .academic-pillar-card:hover {
-        transform: translateY(-3px) scale(1.008) !important;
+        transform: translateY(-2px) !important;
+        border-color: rgba(255, 255, 255, 0.18) !important;
     }
 
     .pillar-1 {
-        border-top: 2.5px solid #00F5D4 !important;
-        box-shadow: 0 12px 35px -10px rgba(0, 245, 212, 0.22), inset 0 0 20px rgba(0, 245, 212, 0.03) !important;
+        border-top: 2px solid #10B981 !important;
     }
-    .pillar-1:hover {
-        box-shadow: 0 16px 45px -8px rgba(0, 245, 212, 0.38), inset 0 0 25px rgba(0, 245, 212, 0.06) !important;
-    }
-
     .pillar-2 {
-        border-top: 2.5px solid #38BDF8 !important;
-        box-shadow: 0 12px 35px -10px rgba(56, 189, 248, 0.22), inset 0 0 20px rgba(56, 189, 248, 0.03) !important;
+        border-top: 2px solid #38BDF8 !important;
     }
-    .pillar-2:hover {
-        box-shadow: 0 16px 45px -8px rgba(56, 189, 248, 0.38), inset 0 0 25px rgba(56, 189, 248, 0.06) !important;
-    }
-
     .pillar-3 {
-        border-top: 2.5px solid #A855F7 !important;
-        box-shadow: 0 12px 35px -10px rgba(168, 85, 247, 0.22), inset 0 0 20px rgba(168, 85, 247, 0.03) !important;
+        border-top: 2px solid #C084FC !important;
     }
-    .pillar-3:hover {
-        box-shadow: 0 16px 45px -8px rgba(168, 85, 247, 0.38), inset 0 0 25px rgba(168, 85, 247, 0.06) !important;
-    }
-
     .pillar-4 {
-        border-top: 2.5px solid #10B981 !important;
-        box-shadow: 0 12px 35px -10px rgba(16, 185, 129, 0.22), inset 0 0 20px rgba(16, 185, 129, 0.03) !important;
+        border-top: 2px solid #10B981 !important;
     }
-    .pillar-4:hover {
-        box-shadow: 0 16px 45px -8px rgba(16, 185, 129, 0.38), inset 0 0 25px rgba(16, 185, 129, 0.06) !important;
-    }
-
     .pillar-5 {
-        border-top: 2.5px solid #F59E0B !important;
-        box-shadow: 0 12px 35px -10px rgba(245, 158, 11, 0.22), inset 0 0 20px rgba(245, 158, 11, 0.03) !important;
+        border-top: 2px solid #F59E0B !important;
     }
-    .pillar-5:hover {
-        box-shadow: 0 16px 45px -8px rgba(245, 158, 11, 0.38), inset 0 0 25px rgba(245, 158, 11, 0.06) !important;
-    }
-
     .pillar-6 {
-        border-top: 2.5px solid #F43F5E !important;
-        box-shadow: 0 12px 35px -10px rgba(244, 63, 94, 0.22), inset 0 0 20px rgba(244, 63, 94, 0.03) !important;
-    }
-    .pillar-6:hover {
-        box-shadow: 0 16px 45px -8px rgba(244, 63, 94, 0.38), inset 0 0 25px rgba(244, 63, 94, 0.06) !important;
+        border-top: 2px solid #FB7185 !important;
     }
 
     .pillar-top-row {
@@ -3850,30 +3979,32 @@ def build_app():
     }
 
     .pillar-numeral-badge {
-        font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
-        font-size: 10.5px;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        padding: 3px 9px;
-        border-radius: 6px;
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        padding: 2px 8px;
+        border-radius: 4px;
         text-transform: uppercase;
     }
 
-    .p-badge-1 { background: rgba(0, 245, 212, 0.14); color: #00F5D4; border: 1px solid rgba(0, 245, 212, 0.35); }
-    .p-badge-2 { background: rgba(56, 189, 248, 0.14); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.35); }
-    .p-badge-3 { background: rgba(168, 85, 247, 0.14); color: #C084FC; border: 1px solid rgba(168, 85, 247, 0.35); }
-    .p-badge-4 { background: rgba(16, 185, 129, 0.14); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.35); }
-    .p-badge-5 { background: rgba(245, 158, 11, 0.14); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.35); }
-    .p-badge-6 { background: rgba(244, 63, 94, 0.14); color: #FB7185; border: 1px solid rgba(244, 63, 94, 0.35); }
+    .p-badge-1 { background: rgba(16, 185, 129, 0.1); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .p-badge-2 { background: rgba(56, 189, 248, 0.1); color: #38BDF8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .p-badge-3 { background: rgba(192, 132, 252, 0.1); color: #C084FC; border: 1px solid rgba(192, 132, 252, 0.3); }
+    .p-badge-4 { background: rgba(16, 185, 129, 0.1); color: #34D399; border: 1px solid rgba(16, 185, 129, 0.3); }
+    .p-badge-5 { background: rgba(245, 158, 11, 0.1); color: #FBBF24; border: 1px solid rgba(245, 158, 11, 0.3); }
+    .p-badge-6 { background: rgba(244, 63, 94, 0.1); color: #FB7185; border: 1px solid rgba(244, 63, 94, 0.3); }
 
     .pillar-stage-tag {
         font-size: 10px;
-        font-weight: 700;
-        color: #94A3B8;
-        background: rgba(255, 255, 255, 0.05);
-        padding: 2px 8px;
-        border-radius: 9999px;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        font-weight: 600;
+        color: #71717A;
+        background: rgba(255, 255, 255, 0.04);
+        padding: 2px 7px;
+        border-radius: 4px;
+        border: 1px solid rgba(255, 255, 255, 0.07);
+        white-space: nowrap;
+    }
         white-space: nowrap;
     }
 
@@ -4226,125 +4357,187 @@ def build_app():
         user-select: none;
     }
 
-    /* 4-PHASE MASTER TABS - SPREAD EQUALLY IN 4 COLUMNS */
-    #main-phases-tabs {
-        margin-top: 6px !important;
+    /* =========================================================================
+       FLAGSHIP HARDWARE-GRADE TAB ARCHITECTURE - 100% CLEAN (ZERO DISFIGURING LINES)
+       ========================================================================= */
+
+    /* 1. OBLITERATE ALL DISFIGURING GRADIO UNDERLINES & REPEATING STRIPES */
+    #main-phases-tabs,
+    .tabs,
+    div.tabs,
+    .tab-wrapper,
+    .tab-container,
+    .tab-nav,
+    div.tab-nav,
+    div[role="tablist"],
+    button[role="tab"] {
+        border-bottom: none !important;
+        background-image: none !important;
     }
 
+    /* Kill all pseudo-element lines that Gradio injects across tabs */
+    #main-phases-tabs::before,
+    #main-phases-tabs::after,
+    .tabs::before,
+    .tabs::after,
+    .tab-wrapper::before,
+    .tab-wrapper::after,
+    .tab-container::before,
+    .tab-container::after,
+    .tab-nav::before,
+    .tab-nav::after,
+    div[role="tablist"]::before,
+    div[role="tablist"]::after,
+    button[role="tab"]::before,
+    button[role="tab"]::after,
+    .selected::before,
+    .selected::after {
+        display: none !important;
+        content: none !important;
+        background: none !important;
+        border: none !important;
+        height: 0 !important;
+        width: 0 !important;
+    }
+
+    /* 2. MAIN 4-PHASE TABS: SLEEK OBSIDIAN HARDWARE SEGMENTED BAR */
+    #main-phases-tabs {
+        margin-top: 10px !important;
+        margin-bottom: 24px !important;
+        position: relative !important;
+        z-index: 10 !important;
+    }
+
+    #main-phases-tabs > .tab-wrapper,
     #main-phases-tabs > div.tab-nav,
     #main-phases-tabs > div[role="tablist"],
-    #main-phases-tabs > .tabs {
-        display: grid !important;
-        grid-template-columns: repeat(4, 1fr) !important;
-        gap: 12px !important;
-        background: rgba(15, 23, 42, 0.90) !important;
-        padding: 8px !important;
-        border-radius: 18px !important;
-        border: 1px solid rgba(255, 255, 255, 0.12) !important;
-        margin-bottom: 24px !important;
+    #main-phases-tabs .tab-container {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: nowrap !important;
+        align-items: stretch !important;
+        gap: 8px !important;
+        background: rgba(9, 9, 11, 0.95) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
+        padding: 6px !important;
+        border-radius: 14px !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        margin-bottom: 22px !important;
         width: 100% !important;
         box-sizing: border-box !important;
+        height: auto !important;
+        min-height: auto !important;
         overflow: visible !important;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
     }
 
-    #main-phases-tabs button[role="tab"],
-    #main-phases-tabs .tab-nav > button {
+    /* Individual Main Tab Buttons */
+    #main-phases-tabs > .tab-wrapper button,
+    #main-phases-tabs > div.tab-nav button,
+    #main-phases-tabs > div[role="tablist"] button,
+    #main-phases-tabs .tab-container > button,
+    #main-phases-tabs > .tab-wrapper button[role="tab"],
+    #main-phases-tabs > div.tab-nav button[role="tab"],
+    #main-phases-tabs > div[role="tablist"] button[role="tab"],
+    #main-phases-tabs .tab-container > button[role="tab"] {
+        flex: 1 1 0 !important;
+        min-width: 0 !important;
+        height: 48px !important;
+        min-height: 48px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-        font-size: 14.5px !important;
-        font-weight: 800 !important;
-        padding: 14px 14px !important;
-        border-radius: 12px !important;
-        background: rgba(30, 41, 59, 0.7) !important;
-        color: #94A3B8 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         text-align: center !important;
-        white-space: normal !important;
-        line-height: 1.3 !important;
-        min-height: 54px !important;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        font-size: 13.5px !important;
+        font-weight: 700 !important;
+        letter-spacing: 0.02em !important;
+        padding: 0 16px !important;
+        margin: 0 !important;
+        border-radius: 10px !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        background: rgba(24, 24, 27, 0.6) !important;
+        color: #94A3B8 !important;
+        white-space: nowrap !important;
+        text-overflow: ellipsis !important;
+        cursor: pointer !important;
+        transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+        box-shadow: none !important;
+        line-height: 1 !important;
     }
 
-    #main-phases-tabs button[role="tab"]:hover,
-    #main-phases-tabs .tab-nav > button:hover {
-        background: rgba(51, 65, 85, 0.9) !important;
-        color: #F8FAFC !important;
-        transform: translateY(-2px) !important;
+    #main-phases-tabs .tab-container > button:hover,
+    #main-phases-tabs > div.tab-nav button:hover {
+        background: rgba(39, 39, 42, 0.85) !important;
+        color: #F4F4F5 !important;
+        border-color: rgba(255, 255, 255, 0.16) !important;
+        transform: translateY(-1px) !important;
     }
 
-    /* Tab 1: Cyan */
-    #main-phases-tabs button[role="tab"]:nth-child(1),
-    #main-phases-tabs .tab-nav > button:nth-child(1) {
-        border-bottom: 4px solid #00F5D4 !important;
-    }
-    #main-phases-tabs button[role="tab"]:nth-child(1).selected,
-    #main-phases-tabs .tab-nav > button:nth-child(1).selected {
-        background: linear-gradient(135deg, rgba(0, 245, 212, 0.22), rgba(15, 23, 42, 0.95)) !important;
+    /* Active Tab States (Dedicated Aesthetic Identity Per Phase - ZERO BOTTOM LINES) */
+    #main-phases-tabs .tab-container > button:nth-child(1).selected,
+    #main-phases-tabs > div.tab-nav button:nth-child(1).selected,
+    #main-phases-tabs .tab-container > button:nth-child(1)[aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(0, 245, 212, 0.16), rgba(15, 23, 42, 0.95)) !important;
         color: #00F5D4 !important;
-        border-color: #00F5D4 !important;
-        box-shadow: 0 4px 22px rgba(0, 245, 212, 0.3) !important;
+        border: 1.5px solid #00F5D4 !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 20px rgba(0, 245, 212, 0.25), inset 0 0 12px rgba(0, 245, 212, 0.10) !important;
     }
 
-    /* Tab 2: Sky Blue */
-    #main-phases-tabs button[role="tab"]:nth-child(2),
-    #main-phases-tabs .tab-nav > button:nth-child(2) {
-        border-bottom: 4px solid #38BDF8 !important;
-    }
-    #main-phases-tabs button[role="tab"]:nth-child(2).selected,
-    #main-phases-tabs .tab-nav > button:nth-child(2).selected {
-        background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.95)) !important;
+    #main-phases-tabs .tab-container > button:nth-child(2).selected,
+    #main-phases-tabs > div.tab-nav button:nth-child(2).selected,
+    #main-phases-tabs .tab-container > button:nth-child(2)[aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.95)) !important;
         color: #38BDF8 !important;
-        border-color: #38BDF8 !important;
-        box-shadow: 0 4px 22px rgba(56, 189, 248, 0.3) !important;
+        border: 1.5px solid #38BDF8 !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 20px rgba(56, 189, 248, 0.25), inset 0 0 12px rgba(56, 189, 248, 0.10) !important;
     }
 
-    /* Tab 3: Purple */
-    #main-phases-tabs button[role="tab"]:nth-child(3),
-    #main-phases-tabs .tab-nav > button:nth-child(3) {
-        border-bottom: 4px solid #C084FC !important;
-    }
-    #main-phases-tabs button[role="tab"]:nth-child(3).selected,
-    #main-phases-tabs .tab-nav > button:nth-child(3).selected {
-        background: linear-gradient(135deg, rgba(192, 132, 252, 0.22), rgba(15, 23, 42, 0.95)) !important;
+    #main-phases-tabs .tab-container > button:nth-child(3).selected,
+    #main-phases-tabs > div.tab-nav button:nth-child(3).selected,
+    #main-phases-tabs .tab-container > button:nth-child(3)[aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(192, 132, 252, 0.16), rgba(15, 23, 42, 0.95)) !important;
         color: #C084FC !important;
-        border-color: #C084FC !important;
-        box-shadow: 0 4px 22px rgba(192, 132, 252, 0.3) !important;
+        border: 1.5px solid #C084FC !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 20px rgba(192, 132, 252, 0.25), inset 0 0 12px rgba(192, 132, 252, 0.10) !important;
     }
 
-    /* Tab 4: Amber / Gold */
-    #main-phases-tabs button[role="tab"]:nth-child(4),
-    #main-phases-tabs .tab-nav > button:nth-child(4) {
-        border-bottom: 4px solid #F59E0B !important;
-    }
-    #main-phases-tabs button[role="tab"]:nth-child(4).selected,
-    #main-phases-tabs .tab-nav > button:nth-child(4).selected {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(15, 23, 42, 0.95)) !important;
+    #main-phases-tabs .tab-container > button:nth-child(4).selected,
+    #main-phases-tabs > div.tab-nav button:nth-child(4).selected,
+    #main-phases-tabs .tab-container > button:nth-child(4)[aria-selected="true"] {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.95)) !important;
         color: #FBBF24 !important;
-        border-color: #F59E0B !important;
-        box-shadow: 0 4px 22px rgba(245, 158, 11, 0.3) !important;
+        border: 1.5px solid #F59E0B !important;
+        font-weight: 800 !important;
+        box-shadow: 0 4px 20px rgba(245, 158, 11, 0.25), inset 0 0 12px rgba(245, 158, 11, 0.10) !important;
     }
 
-    @media (max-width: 1200px) {
+    /* Responsive Main Tabs Breakpoint - Safe Auto-Wrap without Overlap Collision */
+    @media (max-width: 950px) {
+        #main-phases-tabs > .tab-wrapper,
         #main-phases-tabs > div.tab-nav,
-        #main-phases-tabs > div[role="tablist"] {
-            grid-template-columns: repeat(2, 1fr) !important;
+        #main-phases-tabs > div[role="tablist"],
+        #main-phases-tabs .tab-container {
+            flex-wrap: wrap !important;
+            height: auto !important;
+            min-height: auto !important;
+        }
+        #main-phases-tabs .tab-container > button,
+        #main-phases-tabs > div.tab-nav button {
+            flex: 1 1 calc(50% - 6px) !important;
+            min-width: calc(50% - 6px) !important;
         }
     }
 
-    @media (max-width: 800px) {
-        .mandoros-phases-banner {
-            grid-template-columns: 1fr;
-            gap: 10px;
-        }
-        .phase-banner-arrow {
-            display: none;
-        }
-        #main-phases-tabs > div.tab-nav,
-        #main-phases-tabs > div[role="tablist"] {
-            grid-template-columns: 1fr !important;
+    @media (max-width: 600px) {
+        #main-phases-tabs .tab-container > button,
+        #main-phases-tabs > div.tab-nav button {
+            flex: 1 1 100% !important;
+            min-width: 100% !important;
         }
     }
     """
@@ -4406,8 +4599,10 @@ def build_app():
         render_ncpi_fhir_pillar_html,
         render_phase2_rxnorm_component_html,
         render_phase3_nih_benchmark_html,
+        get_gsap_head_tags,
+        GSAP_BOOTSTRAP_JS,
     )
-    custom_head_tags = custom_head_tags + "\n" + get_pwa_head_html() + "\n" + get_ncpi_fhir_head_tags()
+    custom_head_tags = custom_head_tags + "\n" + get_pwa_head_html() + "\n" + get_ncpi_fhir_head_tags() + "\n" + get_gsap_head_tags()
 
     with gr.Blocks(
         title="MANDOROS • Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis",
@@ -4415,6 +4610,9 @@ def build_app():
         theme=gr.themes.Base(),
         head=custom_head_tags
     ) as demo:
+        # Top Hardware-Grade Infrastructure Mirror & App Bar
+        gr.HTML(render_mirror_and_app_bar())
+
         with gr.Column(elem_id="header-container"):
             _mr_logo_path = os.path.join(os.path.dirname(__file__), "assets", "mr_logo.svg")
             _mr_logo_markup = ""
@@ -4425,54 +4623,89 @@ def build_app():
                 _raw_svg = re.sub(r'<!--[^>]*-->\s*', '', _raw_svg)
                 _mr_logo_markup = re.sub(
                     r'<svg([^>]*)width="1600"\s+height="1600"',
-                    r'<svg\1width="135" height="135" style="filter: drop-shadow(0 0 22px rgba(0, 245, 212, 0.60)) drop-shadow(0 0 38px rgba(244, 63, 94, 0.55)); display: block; margin: 0 auto;"',
+                    r'<svg\1width="135" height="135" class="mandoros-m-logo-svg" style="filter: drop-shadow(0 0 22px rgba(0, 245, 212, 0.60)) drop-shadow(0 0 38px rgba(244, 63, 94, 0.55)); display: block; margin: 0 auto;"',
                     _raw_svg
                 )
 
             _header_html = """
-                <!-- Left Particle Mesh -->
-                <div class="mesh-wave mesh-left">
-                  <svg width="240" height="200" viewBox="0 0 240 200" fill="none" opacity="0.32">
-                    <path d="M -30 20 C 40 40, 70 130, 190 85 C 230 75, 250 120, 290 150" stroke="#00F5D4" stroke-width="1.2" stroke-dasharray="2 3"/>
-                    <path d="M -15 55 C 60 75, 90 160, 210 115" stroke="#00BBF9" stroke-width="1" stroke-dasharray="1 2"/>
-                    <path d="M 0 90 C 80 110, 110 190, 230 145" stroke="#6366F1" stroke-width="1" stroke-dasharray="2 4"/>
-                  </svg>
-                </div>
-
-                <!-- Right Particle Mesh -->
-                <div class="mesh-wave mesh-right">
-                  <svg width="240" height="200" viewBox="0 0 240 200" fill="none" opacity="0.32">
-                    <path d="M -30 20 C 40 40, 70 130, 190 85 C 230 75, 250 120, 290 150" stroke="#6366F1" stroke-width="1.2" stroke-dasharray="2 3"/>
-                    <path d="M -15 55 C 60 75, 90 160, 210 115" stroke="#38BDF8" stroke-width="1" stroke-dasharray="1 2"/>
-                    <path d="M 0 90 C 80 110, 110 190, 230 145" stroke="#00F5D4" stroke-width="1" stroke-dasharray="2 4"/>
-                  </svg>
-                </div>
-
                 <div class="header-content-inner">
-                  <!-- Official MR Logo Neon Vector Emblem -->
-                  <div class="emblem-wrapper">
-                    <!-- MR_LOGO_EMBLEM_PLACEHOLDER -->
-                  </div>
+                  <!-- Asymmetric 2-Column Flagship Hero (Adidas x Apple/Samsung x Meta) -->
+                  <div class="header-hero-asymmetric">
+                    <!-- Left Column: High-Impact Typography & Clinical Metadata -->
+                    <div class="header-hero-left">
+                      <div class="mandoros-chip" style="margin-bottom: 8px; border-color: rgba(16, 185, 129, 0.35); background: rgba(16, 185, 129, 0.08); color: #34D399;">
+                        GLOBAL CLINICAL SYNTHESIS PLATFORM // v2.6 FLAGSHIP
+                      </div>
+                      
+                      <!-- Geometric Titanium Main Title -->
+                      <h1 class="mandoros-hero-title">
+                        M<span class="mandoros-lambda">Λ</span>NDOROS
+                      </h1>
 
-                  <!-- Geometric Metallic Main Title -->
-                  <h1 class="mandoros-hero-title">
-                    M<span class="mandoros-lambda">Λ</span>NDOROS
-                  </h1>
+                      <!-- Acronym Subtitle with TextPlugin Target -->
+                      <div class="mandoros-subtitle" data-full-text="Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis">
+                        Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis
+                      </div>
 
-                  <!-- Acronym Subtitle -->
-                  <div class="mandoros-subtitle">
-                    Meta-Analysis Network for Data, Outcomes & Research Optimization Synthesis
-                  </div>
+                      <!-- Clinical Rigor Specification Chips -->
+                      <div class="mandoros-meta-chips">
+                        <span class="mandoros-chip">88 Atomic Fields</span>
+                        <span class="mandoros-chip">metafor-Grade REML</span>
+                        <span class="mandoros-chip">Cochrane RoB 2.0</span>
+                        <span class="mandoros-chip">In-Silico Virtual Trials</span>
+                      </div>
 
-                  <!-- Primary Tagline -->
-                  <div class="mandoros-tagline-container">
-                    <span class="tagline-rule"></span>
-                    <span class="mandoros-tagline">— &nbsp; From Raw Trials to Global Clinical Verdicts. &nbsp; —</span>
-                    <span class="tagline-rule"></span>
+                      <!-- Primary Tagline -->
+                      <div class="mandoros-tagline-container">
+                        <span class="tagline-rule"></span>
+                        <span class="mandoros-tagline">Smarter Evidence. Better Decisions.</span>
+                        <span class="tagline-rule"></span>
+                      </div>
+                    </div>
+
+                    <!-- Right Column: 3D Emblem Card & Live Metric Telemetry -->
+                    <div class="header-hero-right">
+                      <div class="mandoros-emblem-card bento-spotlight-card">
+                        <div class="emblem-wrapper">
+                          <!-- MR_LOGO_EMBLEM_PLACEHOLDER -->
+                        </div>
+                        
+                        <!-- High-Speed KPI Telemetry Counters -->
+                        <div class="mandoros-kpi-quick-strip">
+                          <div class="kpi-mini-card">
+                            <div class="kpi-mini-label">Extracted Fields</div>
+                            <div class="kpi-mini-value mandoros-kpi-val" data-kpi-val="88">88</div>
+                          </div>
+                          <div class="kpi-mini-card">
+                            <div class="kpi-mini-label">Pipeline Speed</div>
+                            <div class="kpi-mini-value mandoros-kpi-val" data-kpi-val="25s">25s</div>
+                          </div>
+                          <div class="kpi-mini-card">
+                            <div class="kpi-mini-label">Data Precision</div>
+                            <div class="kpi-mini-value mandoros-kpi-val" data-kpi-val="99.5%">99.5%</div>
+                          </div>
+                          <div class="kpi-mini-card">
+                            <div class="kpi-mini-label">SUCRA Dominance</div>
+                            <div class="kpi-mini-value mandoros-kpi-val" data-kpi-val="91.2%">91.2%</div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
 
                   <!-- 8-Node Interactive Pipeline Strip (M-A-N-D-O-R-O-S) -->
                   <div class="mandoros-pipeline-strip">
+                    <svg class="pipeline-laser-svg" viewBox="0 0 1200 4" preserveAspectRatio="none">
+                      <line x1="0" y1="2" x2="1200" y2="2" stroke="rgba(255,255,255,0.06)" stroke-width="2"/>
+                      <path class="pipeline-laser-path" d="M 0 2 L 1200 2" stroke="url(#laserGrad)" stroke-width="2" stroke-dasharray="80 320" stroke-linecap="round"/>
+                      <defs>
+                        <linearGradient id="laserGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                          <stop offset="0%" stop-color="#10B981"/>
+                          <stop offset="50%" stop-color="#38BDF8"/>
+                          <stop offset="100%" stop-color="#C084FC"/>
+                        </linearGradient>
+                      </defs>
+                    </svg>
                     <!-- Node 1: M -->
                     <div class="pipeline-node">
                       <div class="node-circle node-circle-1">
@@ -4884,52 +5117,14 @@ def build_app():
             p3_init_md
         ) = get_default_phase3_preview()
 
-        gr.HTML(
-            """
-            <div class="mandoros-phases-banner">
-              <div class="phase-banner-item item-p1" onclick="window.selectMandorosPhase(0)" title="Jump to Phase 1">
-                <div class="phase-banner-dot dot-p1"></div>
-                <div class="phase-banner-content">
-                  <span class="phase-banner-label">PHASE 1 ENGINE</span>
-                  <span class="phase-banner-title">🩺 Clinical Trial Deep Extractor</span>
-                </div>
-              </div>
-              <div class="phase-banner-arrow">→</div>
-              <div class="phase-banner-item item-p2" onclick="window.selectMandorosPhase(1)" title="Jump to Phase 2">
-                <div class="phase-banner-dot dot-p2"></div>
-                <div class="phase-banner-content">
-                  <span class="phase-banner-label">PHASE 2 ENGINE</span>
-                  <span class="phase-banner-title">🔬 Meta-Analysis & Evidence Synthesis</span>
-                </div>
-              </div>
-              <div class="phase-banner-arrow">→</div>
-              <div class="phase-banner-item item-p3" onclick="window.selectMandorosPhase(2)" title="Jump to Phase 3">
-                <div class="phase-banner-dot dot-p3"></div>
-                <div class="phase-banner-content">
-                  <span class="phase-banner-label">PHASE 3 ENGINE</span>
-                  <span class="phase-banner-title">🧭 Research Gap & Thesis Navigator</span>
-                </div>
-              </div>
-              <div class="phase-banner-arrow">→</div>
-              <div class="phase-banner-item item-prisma" onclick="window.selectMandorosPhase(3)" title="Jump to PRISMA Intelligence">
-                <div class="phase-banner-dot dot-prisma"></div>
-                <div class="phase-banner-content">
-                  <span class="phase-banner-label">PRISMA INTELLIGENCE</span>
-                  <span class="phase-banner-title">📊 Trial Intelligence &amp; Visualization</span>
-                </div>
-              </div>
-            </div>
-            """
-        )
-
-        gr.HTML(render_mirror_and_app_bar())
+        # Optional Global NCPI & HL7 FHIR Interoperability Toolbar
         gr.HTML(render_ncpi_fhir_pillar_html())
 
         with gr.Tabs(elem_id="main-phases-tabs") as main_nav_tabs:
             # ==========================================
             # TAB 1: PHASE 1 SINGLE-STUDY DEEP EXTRACTOR
             # ==========================================
-            with gr.TabItem("🩺 Phase 1: Clinical Trial Deep Extractor", id="tab_phase_1"):
+            with gr.TabItem("Phase 1 • Deep Extractor", id="tab_phase_1"):
                 with gr.Row():
                     # Left Column: Upload & Parameters
                     with gr.Column(scale=1):
@@ -4966,19 +5161,19 @@ def build_app():
                             type="filepath"
                         )
 
-                        with gr.Accordion("⚡ Direct Excel Upload Shortcut (Convert .xlsx to 360° Dashboard in <2s)", open=False):
+                        with gr.Accordion("Direct Excel Upload Shortcut (Convert .xlsx to 360° Dashboard in <2s)", open=False):
                             p1_direct_excel = gr.File(
                                 label="Drop Pre-Extracted 7-Sheet Excel (.xlsx)",
                                 file_types=[".xlsx"],
                                 type="filepath"
                             )
-                            convert_p1_excel_btn = gr.Button("🎨 Convert Extracted Excel to Interactive Dashboard", variant="secondary")
+                            convert_p1_excel_btn = gr.Button("Convert Extracted Excel to Dashboard", variant="secondary", elem_classes=["mandoros-magnetic-btn"])
 
-                        gr.Markdown("### ⚡ Step 2: Configure AI Engine")
+                        gr.Markdown("### Step 2: Configure AI Engine")
                         model_selector = gr.Dropdown(
-                            label="🤖 Deep AI Model Selection (BYOK)",
+                            label="Deep AI Model Selection (BYOK)",
                             choices=[
-                                "⚡ Auto-Detect & Select Best Available Model (Recommended)",
+                                "Auto-Detect & Select Best Available Model (Recommended)",
                                 "Google Gemini 2.0 Flash (Fast & Accurate Flagship)",
                                 "Google Gemini 1.5 Pro (Deep Clinical Reasoning)",
                                 "Google Gemini 1.5 Flash",
@@ -4988,16 +5183,16 @@ def build_app():
                                 "OpenAI GPT-4o-mini",
                                 "Smart Local Engine (Offline / Reference Benchmark)"
                             ],
-                            value="⚡ Auto-Detect & Select Best Available Model (Recommended)"
+                            value="Auto-Detect & Select Best Available Model (Recommended)"
                         )
 
                         api_key_input = gr.Textbox(
-                            label="🔑 AI Provider API Key (Google AI Studio / Anthropic / OpenAI)",
+                            label="AI Provider API Key (Google AI Studio / Anthropic / OpenAI)",
                             type="password",
                             placeholder="Enter your Gemini Key, Claude Key, or OpenAI Key (or set via environment variable)"
                         )
 
-                        extract_btn = gr.Button("🚀 Run Academic Deep Extraction", variant="primary", elem_classes=["extract-btn"])
+                        extract_btn = gr.Button("Run Academic Deep Extraction", variant="primary", elem_classes=["extract-btn", "mandoros-magnetic-btn"])
 
                         gr.Markdown("### 📥 Step 3: Verified Outputs")
                         excel_output = gr.File(
@@ -5022,46 +5217,28 @@ def build_app():
                         )
                         gr.HTML(
                             """
-                            <script>
-                            window.mandorosRunFhir = window.mandorosRunFhir || function(fnName) {
-                              function exec() {
-                                if (typeof window[fnName] === 'function') {
-                                  try { window[fnName](); } catch(e) { console.error('FHIR Exec Error:', e); }
-                                }
-                              }
-                              if (typeof window[fnName] === 'function') {
-                                exec();
-                              } else {
-                                var s = document.createElement('script');
-                                s.src = '/ncpiFhirAddon.js';
-                                s.async = true;
-                                s.onload = exec;
-                                document.head.appendChild(s);
-                              }
-                            };
-                            </script>
-                            <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>"
-                                 onload="if(!window.ncpiFhirAddonLoaded){window.ncpiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.async=true;document.head.appendChild(s);}"
-                                 style="display:none;" />
                             <div class="mandoros-ncpi-fhir-tool" style="margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
                               <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhir');"
                                  title="Export 88 atomic fields as an HL7 FHIR Bundle (JSON) conforming to EBMonFHIR specification"
+                                 class="mandoros-magnetic-btn"
                                  style="display:flex;align-items:center;justify-content:center;gap:8px;width:100%;background:linear-gradient(135deg,#8B5CF6,#7C3AED);color:#fff;padding:10px 14px;border-radius:10px;font-weight:700;font-size:12.5px;border:none;cursor:pointer;box-shadow:0 4px 14px rgba(139,92,246,0.35);transition:all 0.2s;"
                                  onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-                                 🧬 Export HL7 FHIR (JSON)
+                                 Export HL7 FHIR (JSON)
                               </button>
                               <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
                                 <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhirExcel');"
                                    title="Export 88 atomic fields as a Multi-Sheet HL7 FHIR Relational Excel Workbook (.xlsx)"
+                                   class="mandoros-magnetic-btn"
                                    style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#059669,#047857);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(5,150,105,0.35);transition:all 0.2s;"
                                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-                                   📊 FHIR Excel (.xlsx)
+                                   FHIR Excel (.xlsx)
                                 </button>
                                 <button type="button" onclick="window.mandorosRunFhir('exportToNCPIFhirDashboard');"
                                    title="Open standalone Interactive HL7 FHIR & NCPI Interoperability Dashboard"
+                                   class="mandoros-magnetic-btn"
                                    style="display:flex;align-items:center;justify-content:center;gap:6px;background:linear-gradient(135deg,#0284C7,#0369A1);color:#fff;padding:9px 12px;border-radius:10px;font-weight:700;font-size:12px;border:none;cursor:pointer;box-shadow:0 4px 12px rgba(2,132,199,0.35);transition:all 0.2s;"
                                    onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
-                                   🌐 FHIR Dashboard
+                                   FHIR Dashboard
                                 </button>
                               </div>
                             </div>
@@ -5131,22 +5308,21 @@ def build_app():
             # =========================================================================
             # TAB 2: PHASE 2 MULTI-TRIAL COHORT, META-ANALYSIS & PREDICTIVE DASHBOARD
             # =========================================================================
-            with gr.TabItem("🔬 Phase 2: Multi-Trial Meta-Analysis & Synthesis", id="tab_phase_2"):
+            with gr.TabItem("Phase 2 • Meta-Analysis & SUCRA", id="tab_phase_2"):
                 with gr.Row():
                     # Left Column: Cohort Selection & Configuration
                     with gr.Column(scale=1):
                         gr.HTML(
                             """
                             <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 10px 14px; margin-bottom: 12px; display: flex; align-items: center; gap: 10px;">
-                              <span style="font-size: 20px;">📊</span>
-                              <div style="font-size: 11.5px; color: #E2E8F0; line-height: 1.45;">
-                                <strong style="color: #38BDF8; font-size: 12px;">Unified Multi-Trial Evidence Synthesis Engine Active:</strong><br/>
-                                Automated <strong>PRISMA 2020 Flow tracking</strong>, cumulative relevance ranking (&Icirc;<sub>i</sub> = &sum; I<sub>i</sub><sup>m</sup>), cross-trial <strong>Cochrane RoB 2.0 synthesis</strong>, and <strong>GRADE certainty profiling</strong>.
-                              </div>
+                                <div style="font-size: 11.5px; color: #E2E8F0; line-height: 1.45;">
+                                  <strong style="color: #38BDF8; font-size: 12px;">Unified Multi-Trial Evidence Synthesis Engine Active:</strong><br/>
+                                  Automated <strong>PRISMA 2020 Flow tracking</strong>, cumulative relevance ranking (&Icirc;<sub>i</sub> = &sum; I<sub>i</sub><sup>m</sup>), cross-trial <strong>Cochrane RoB 2.0 synthesis</strong>, and <strong>GRADE certainty profiling</strong>.
+                                </div>
                             </div>
                             """
                         )
-                        gr.Markdown("### 🧬 Step 1: Active-Ingredient Ingestion")
+                        gr.Markdown("### Step 1: Active-Ingredient Ingestion")
                         cohort_mode_radio = gr.Radio(
                             choices=["Local Cohort Folder (analysis/<Drug>)", "Upload Multiple Files (PDFs / Excels)"],
                             label="Cohort Source",
@@ -5161,7 +5337,7 @@ def build_app():
                                 value=None,
                                 info="Select an existing cohort folder (or choose 'Upload Multiple Files')..."
                             )
-                            refresh_cohorts_btn = gr.Button("🔄 Refresh Folder List", size="sm")
+                            refresh_cohorts_btn = gr.Button("Refresh Folder List", size="sm")
 
                         with gr.Group(visible=False) as upload_mode_group:
                             custom_drug_input = gr.Textbox(
@@ -5171,14 +5347,9 @@ def build_app():
                             gr.HTML(
                                 """
                                 <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(45,212,191,0.25); border-radius: 14px; padding: 12px 16px; margin: 10px 0; display: flex; align-items: center; justify-content: space-between;">
-                                  <div style="display: flex; align-items: center; gap: 10px;">
-                                    <div style="width: 32px; height: 32px; border-radius: 8px; background: rgba(45,212,191,0.15); display: flex; align-items: center; justify-content: center; color: #2DD4BF; font-size: 16px;">
-                                      ⚡
-                                    </div>
-                                    <div>
-                                      <div style="font-weight: 700; color: #F8FAFC; font-size: 13px;">Multi-Trial Batch Dropzone</div>
-                                      <div style="color: #94A3B8; font-size: 11px;">Drop multiple raw RCT PDFs or pre-extracted Excels for automated cohort pooling</div>
-                                    </div>
+                                  <div>
+                                    <div style="font-weight: 700; color: #F8FAFC; font-size: 13px;">Multi-Trial Batch Dropzone</div>
+                                    <div style="color: #94A3B8; font-size: 11px;">Drop multiple raw RCT PDFs or pre-extracted Excels for automated cohort pooling</div>
                                   </div>
                                   <div style="display: flex; gap: 6px;">
                                     <span style="background: rgba(56,189,248,0.15); border: 1px solid #38BDF8; color: #38BDF8; font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 6px;">PDF</span>
@@ -5189,34 +5360,34 @@ def build_app():
                                 """
                             )
                             upload_cohort_files = gr.File(
-                                label="📂 Batch File Dropzone (Accepts Multiple PDFs & Excels)",
+                                label="Batch File Dropzone (Accepts Multiple PDFs & Excels)",
                                 file_count="multiple",
                                 file_types=[".pdf", ".xlsx"]
                             )
                             with gr.Row():
                                 add_more_files_btn = gr.UploadButton(
-                                    "➕ Upload / Add Multiple Trial Files (PDFs & Excels)",
+                                    "Upload / Add Multiple Trial Files (PDFs & Excels)",
                                     file_count="multiple",
                                     file_types=[".pdf", ".xlsx"],
                                     variant="primary",
-                                    elem_classes=["extract-btn"]
+                                    elem_classes=["extract-btn", "mandoros-magnetic-btn"]
                                 )
-                                clear_cohort_files_btn = gr.Button("🗑️ Clear Selected Files", variant="secondary")
+                                clear_cohort_files_btn = gr.Button("Clear Selected Files", variant="secondary")
 
                             cohort_files_state = gr.State([])
                             queued_cohort_badge = gr.HTML(
                                 """
                                 <div style="background: rgba(15,23,42,0.6); border: 1px dashed rgba(148,163,184,0.2); border-radius: 12px; padding: 10px 14px; margin-top: 10px; font-size: 12px; color: #94A3B8; text-align: center;">
-                                  📂 <em>No custom files queued yet. Drop multiple files above or click "Upload / Add Multiple Trial Files".</em>
+                                  <em>No custom files queued yet. Drop multiple files above or click "Upload / Add Multiple Trial Files".</em>
                                 </div>
                                 """
                             )
 
-                        gr.Markdown("### ⚡ Step 2: Auto-Extraction & AI Engine")
+                        gr.Markdown("### Step 2: Auto-Extraction & AI Engine")
                         cohort_model_selector = gr.Dropdown(
-                            label="🤖 Deep AI Model Selection (BYOK for unextracted PDFs)",
+                            label="Deep AI Model Selection (BYOK for unextracted PDFs)",
                             choices=[
-                                "⚡ Auto-Detect & Select Best Available Model (Recommended)",
+                                "Auto-Detect & Select Best Available Model (Recommended)",
                                 "Google Gemini 2.0 Flash (Fast & Accurate Flagship)",
                                 "Google Gemini 1.5 Pro (Deep Clinical Reasoning)",
                                 "Google Gemini 1.5 Flash",
@@ -5226,16 +5397,16 @@ def build_app():
                                 "OpenAI GPT-4o-mini",
                                 "Smart Local Engine (Offline / Reference Benchmark)"
                             ],
-                            value="⚡ Auto-Detect & Select Best Available Model (Recommended)"
+                            value="Auto-Detect & Select Best Available Model (Recommended)"
                         )
 
                         cohort_api_key_input = gr.Textbox(
-                            label="🔑 AI Provider API Key (Optional for Cloud Extraction)",
+                            label="AI Provider API Key (Optional for Cloud Extraction)",
                             type="password",
                             placeholder="Enter your Gemini Key, Claude Key, or OpenAI Key (or set via environment variable)"
                         )
 
-                        run_cohort_btn = gr.Button("🚀 Run End-to-End Cohort Extraction & Executive Analysis", variant="primary", elem_classes=["extract-btn"])
+                        run_cohort_btn = gr.Button("Run End-to-End Cohort Extraction & Analysis", variant="primary", elem_classes=["extract-btn", "mandoros-magnetic-btn"])
 
                         gr.Markdown("### 📥 Step 3: Executive Deliverables")
                         cohort_excel_file = gr.File(
@@ -5367,7 +5538,7 @@ def build_app():
                                         label="Treatment Duration (weeks)"
                                     )
 
-                                sim_run_btn = gr.Button("🔮 Simulate Virtual Trial Outcome", variant="secondary")
+                                sim_run_btn = gr.Button("Simulate Virtual Trial Outcome", variant="secondary", elem_classes=["mandoros-magnetic-btn"])
                                 sim_result_html = gr.HTML(value=init_sim_html_val)
 
                                 cohort_pred_table = gr.DataFrame(
@@ -5511,16 +5682,15 @@ def build_app():
             # =========================================================================
             # TAB 3: PHASE 3 RESEARCH GAP & THESIS NAVIGATOR (PILLARS I - V)
             # =========================================================================
-            with gr.TabItem("🧭 Phase 3: Research Gap & Thesis Navigator", id="tab_phase_3"):
+            with gr.TabItem("Phase 3 • Gap Navigator", id="tab_phase_3"):
                 with gr.Row():
                     # Left Column: Upload, Gap Configuration & Sample Size Controls
                     with gr.Column(scale=1):
-                        gr.Markdown("### 📂 Step 1: Upload Literature Evidence Base")
+                        gr.Markdown("### Step 1: Upload Literature Evidence Base")
                         gr.HTML(
                             """
                             <div style="background: rgba(15,23,42,0.8); border: 1px solid rgba(56,189,248,0.25); border-radius: 14px; padding: 12px 16px; margin-bottom: 10px;">
                               <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
-                                <span style="font-size: 18px;">💡</span>
                                 <span style="color: #38BDF8; font-weight: 700; font-size: 13px;">Universal Document Support</span>
                               </div>
                               <p style="color: #94A3B8; font-size: 12px; margin: 0;">Upload 1, 2, 3+ clinical trial PDFs or compatible Phase 1 Excel workbooks. The engine automatically maps the evidence matrix across all studies.</p>
@@ -5528,12 +5698,12 @@ def build_app():
                             """
                         )
                         p3_upload_files = gr.File(
-                            label="📄 Upload Trial PDFs or Phase 1 Workbooks (.pdf, .xlsx)",
+                            label="Upload Trial PDFs or Phase 1 Workbooks (.pdf, .xlsx)",
                             file_count="multiple",
                             file_types=[".pdf", ".xlsx"]
                         )
 
-                        gr.Markdown("### 🎯 Step 2: Research Gap & Design Strategy")
+                        gr.Markdown("### Step 2: Research Gap & Design Strategy")
                         p3_gap_selector = gr.Dropdown(
                             choices=[
                                 "Gap 1: Active Comparator Void (Comparative Effectiveness)",
@@ -5543,7 +5713,7 @@ def build_app():
                                 "Gap 5: Personalized Dose-Titration vs Fixed-Dose Optimization"
                             ],
                             value="Gap 1: Active Comparator Void (Comparative Effectiveness)",
-                            label="📍 Select Target Candidate Research Gap for Investigation"
+                            label="Select Target Candidate Research Gap for Investigation"
                         )
 
                         p3_design_selector = gr.Dropdown(
@@ -5554,10 +5724,10 @@ def build_app():
                                 "Non-Inferiority Trial (Binary Proportions)"
                             ],
                             value="Two-Sample Superiority Trial (Continuous Endpoint)",
-                            label="📐 Statistical Study Design Architecture"
+                            label="Statistical Study Design Architecture"
                         )
 
-                        gr.Markdown("### ⚙️ Step 3: Statistical Power & Sample Size Parameters")
+                        gr.Markdown("### Step 3: Statistical Power & Sample Size Parameters")
                         with gr.Row():
                             p3_alpha_slider = gr.Slider(0.01, 0.10, value=0.05, step=0.01, label="Alpha (α)")
                             p3_power_slider = gr.Slider(0.70, 0.95, value=0.80, step=0.05, label="Power (1-β)")
@@ -5572,47 +5742,47 @@ def build_app():
                             p3_p2_rate = gr.Number(value=0.25, label="Control Rate (p2)")
                             p3_ni_margin = gr.Number(value=2.5, label="Non-Inferiority Margin (Δ_NI)")
 
-                        p3_run_btn = gr.Button("🚀 Run Full Phase 3 Evidence Synthesis & Thesis Blueprint", variant="primary", elem_classes=["extract-btn"])
+                        p3_run_btn = gr.Button("Run Phase 3 Evidence Synthesis & Blueprint", variant="primary", elem_classes=["extract-btn", "mandoros-magnetic-btn"])
 
-                        gr.Markdown("### 📥 Step 4: Export Deliverables")
-                        p3_excel_download = gr.File(label="📊 Download 7-Sheet Phase 3 Research Package (.xlsx)", value=p3_init_xl)
-                        p3_html_download = gr.File(label="🌐 Interactive Phase 3 Research Gap & Thesis Dashboard (.html)", value=p3_init_html)
-                        p3_md_download = gr.File(label="📝 Download Standalone Thesis Dossier (.md)", value=p3_init_md)
-                        convert_p3_excel_btn = gr.Button("🎨 Convert Uploaded Phase 3 Excel to Interactive Dashboard", variant="secondary")
+                        gr.Markdown("### Step 4: Export Deliverables")
+                        p3_excel_download = gr.File(label="Download 7-Sheet Phase 3 Research Package (.xlsx)", value=p3_init_xl)
+                        p3_html_download = gr.File(label="Interactive Phase 3 Research Gap & Thesis Dashboard (.html)", value=p3_init_html)
+                        p3_md_download = gr.File(label="Download Standalone Thesis Dossier (.md)", value=p3_init_md)
+                        convert_p3_excel_btn = gr.Button("Convert Uploaded Phase 3 Excel to Dashboard", variant="secondary", elem_classes=["mandoros-magnetic-btn"])
 
                     # Right Column: Interactive 5-Pillar Workspaces
                     with gr.Column(scale=2):
                         p3_verdict_html = gr.HTML(value=p3_init_verdict)
 
                         with gr.Tabs():
-                            with gr.TabItem("🎨 Live Interactive Phase 3 Thesis Dashboard Preview"):
+                            with gr.TabItem("Live Interactive Phase 3 Thesis Dashboard Preview"):
                                 p3_dashboard_preview = gr.HTML(
                                     value="<div style='padding:24px; text-align:center; color:#94A3B8; background:rgba(15,23,42,0.6); border-radius:12px;'>Upload literature evidence and run synthesis to view the live interactive 360° research gap and thesis dashboard preview.</div>"
                                 )
 
-                            with gr.TabItem("📑 Pillar I: Evidence Matrix & Discovered Gaps"):
-                                gr.Markdown("#### 📊 Cross-Study Evidence Matrix")
+                            with gr.TabItem("Pillar I: Evidence Matrix & Discovered Gaps"):
+                                gr.Markdown("#### Cross-Study Evidence Matrix")
                                 p3_matrix_table = gr.DataFrame(value=p3_init_matrix, interactive=False, wrap=True, max_height=320)
-                                gr.Markdown("#### 📍 Algorithmically Discovered Research Gaps")
+                                gr.Markdown("#### Algorithmically Discovered Research Gaps")
                                 p3_gaps_table = gr.DataFrame(value=p3_init_gaps, interactive=False, wrap=True, max_height=300)
 
-                            with gr.TabItem("🌐 Pillar II: Scholarly & Trial Reality Check"):
-                                gr.Markdown("#### 🔍 Real-Time Evidence Verification (ClinicalTrials.gov, OpenAlex, PubMed)")
+                            with gr.TabItem("Pillar II: Scholarly & Trial Reality Check"):
+                                gr.Markdown("#### Real-Time Evidence Verification (ClinicalTrials.gov, OpenAlex, PubMed)")
                                 p3_reality_html = gr.HTML(value=p3_init_rc)
 
-                            with gr.TabItem("🛡️ Pillar III: Methodological Quality (RoB 2.0 / CONSORT)"):
-                                gr.Markdown("#### ⚖️ Methodological Risk of Bias & Reporting Completeness Appraisal")
+                            with gr.TabItem("Pillar III: Methodological Quality (RoB 2.0 / CONSORT)"):
+                                gr.Markdown("#### Methodological Risk of Bias & Reporting Completeness Appraisal")
                                 p3_rob_table = gr.DataFrame(value=p3_init_rob, interactive=False, wrap=True, max_height=420)
 
-                            with gr.TabItem("🎓 Pillar IV: Thesis Proposal & FINER Blueprint"):
-                                gr.Markdown("#### 🏛️ Academic Research Blueprint & Feasibility Appraisal")
+                            with gr.TabItem("Pillar IV: Thesis Proposal & FINER Blueprint"):
+                                gr.Markdown("#### Academic Research Blueprint & Feasibility Appraisal")
                                 p3_proposal_html = gr.HTML(value=p3_init_prop)
 
-                            with gr.TabItem("📐 Pillar V: Protocol Outline & Biostatistical Planning"):
-                                gr.Markdown("#### 🔬 Biostatistical Sample Size & Reproducible Search Strategy")
+                            with gr.TabItem("Pillar V: Protocol Outline & Biostatistical Planning"):
+                                gr.Markdown("#### Biostatistical Sample Size & Reproducible Search Strategy")
                                 p3_protocol_html = gr.HTML(value=p3_init_proto)
 
-                            with gr.TabItem("🏛️ Registered Protocol Benchmark (NIH ClinicalTrials.gov)", id="tab_phase3_nih_benchmark"):
+                            with gr.TabItem("Registered Protocol Benchmark (NIH ClinicalTrials.gov)", id="tab_phase3_nih_benchmark"):
                                 gr.HTML(value=render_phase3_nih_benchmark_html())
 
                 p3_run_btn.click(
@@ -5655,7 +5825,7 @@ def build_app():
             # =========================================================================
             # TAB 4: PRISMA CLINICAL TRIAL INTELLIGENCE & VISUALIZATION (ISOLATED)
             # =========================================================================
-            with gr.TabItem("📊 PRISMA: Clinical Trial Intelligence & Visualization", id="tab_prisma"):
+            with gr.TabItem("PRISMA 2020 Flow", id="tab_prisma"):
                 from src.prisma.dashboard_ui import build_prisma_tab
                 build_prisma_tab()
 
@@ -5800,7 +5970,83 @@ def build_app():
             """
         )
 
+        demo.load(None, None, None, js=GSAP_BOOTSTRAP_JS)
+
     return demo
+
+
+def _resolve_safe_file_path(req_file: str) -> Optional[str]:
+    if not req_file:
+        return None
+    raw_name = urllib.parse.unquote(req_file).strip()
+    fname = os.path.basename(raw_name)
+    if not fname or fname in (".", ".."):
+        return None
+
+    allowed_roots = [
+        Path(ROOT_DIR / "outputs").resolve(),
+        Path(tempfile.gettempdir()).resolve(),
+    ]
+    try:
+        from infra_stability import SESSION_ROOT
+        allowed_roots.append(Path(SESSION_ROOT).resolve())
+    except Exception:
+        pass
+
+    candidates = [
+        Path(ROOT_DIR / "outputs" / fname),
+        Path(tempfile.gettempdir()) / fname,
+    ]
+    try:
+        from infra_stability import SESSION_ROOT
+        candidates.append(Path(SESSION_ROOT) / fname)
+    except Exception:
+        pass
+
+    norm_sub = os.path.normpath(raw_name).lstrip("/\\")
+    if not norm_sub.startswith(".."):
+        candidates.append(Path(ROOT_DIR / "outputs") / norm_sub)
+        candidates.append(Path(tempfile.gettempdir()) / norm_sub)
+
+    for c in candidates:
+        try:
+            resolved = c.resolve()
+            if resolved.is_file():
+                for root in allowed_roots:
+                    try:
+                        resolved.relative_to(root)
+                        return str(resolved)
+                    except ValueError:
+                        continue
+        except Exception:
+            continue
+
+    out_root = Path(ROOT_DIR / "outputs")
+    if out_root.exists():
+        for match in out_root.rglob(fname):
+            if match.is_file():
+                for root in allowed_roots:
+                    try:
+                        match.resolve().relative_to(root)
+                        return str(match.resolve())
+                    except ValueError:
+                        continue
+
+    try:
+        from infra_stability import SESSION_ROOT
+        if SESSION_ROOT.exists():
+            for match in SESSION_ROOT.rglob(fname):
+                if match.is_file():
+                    for root in allowed_roots:
+                        try:
+                            match.resolve().relative_to(root)
+                            return str(match.resolve())
+                        except ValueError:
+                            continue
+    except Exception:
+        pass
+
+    return None
 
 
 if __name__ == "__main__":
@@ -5814,12 +6060,20 @@ if __name__ == "__main__":
     demo.queue(default_concurrency_limit=4, max_size=60)
     port = int(os.environ.get("PORT", 7860))
     fav = "assets/favicon.ico" if os.path.exists("assets/favicon.ico") else None
+
+    auth_user = os.environ.get("MANDOROS_AUTH_USER", "").strip()
+    auth_pass = os.environ.get("MANDOROS_AUTH_PASSWORD", "").strip()
+    auth_config = (auth_user, auth_pass) if (auth_user and auth_pass) else None
+
     app_obj, _, _ = demo.launch(
         server_name="0.0.0.0",
         server_port=port,
         favicon_path=fav,
         allowed_paths=["assets", "outputs", "static", tempfile.gettempdir(), str(SESSION_ROOT), os.path.abspath("outputs")],
-        prevent_thread_lock=True
+        prevent_thread_lock=True,
+        auth=auth_config,
+        css=getattr(demo, "css", None),
+        head=getattr(demo, "head", None)
     )
 
 # Ultra-fast health check endpoints for Render cloud monitoring & keep-alive probes
@@ -5851,6 +6105,13 @@ if __name__ == "__main__":
             return FileResponse("static/ncpiFhirAddon.js", media_type="application/javascript")
         return {"error": "ncpiFhirAddon.js not found"}
 
+    @app_obj.get("/static/mandoros_gsap.js")
+    @app_obj.get("/mandoros_gsap.js")
+    def mandoros_gsap_js():
+        if os.path.exists("static/mandoros_gsap.js"):
+            return FileResponse("static/mandoros_gsap.js", media_type="application/javascript")
+        return {"error": "mandoros_gsap.js not found"}
+
     from starlette.responses import HTMLResponse
 
     # Direct Unbreakable Live Dashboard Viewer (Renders full interactive HTML in browser tab / iframe)
@@ -5862,29 +6123,13 @@ if __name__ == "__main__":
         raw_name = urllib.parse.unquote(file).strip()
         fname = os.path.basename(raw_name)
 
-        candidates = [
-            os.path.join("outputs", fname),
-            os.path.abspath(os.path.join("outputs", fname)),
-            raw_name,
-            os.path.join(tempfile.gettempdir(), fname),
-        ]
-        try:
-            from infra_stability import SESSION_ROOT
-            candidates.append(os.path.join(str(SESSION_ROOT), fname))
-        except Exception:
-            pass
-
-        target_file = None
-        for c in candidates:
-            if c and os.path.exists(c) and os.path.isfile(c):
-                target_file = c
-                break
+        target_file = _resolve_safe_file_path(file)
 
         if not target_file:
             return HTMLResponse(
                 content=f"<div style='font-family:system-ui,sans-serif;padding:36px;color:#F87171;background:#0F172A;min-height:100vh;'>"
                         f"<h2>⚠️ Dashboard Not Ready Yet</h2>"
-                        f"<p style='color:#94A3B8;'>The requested file <code>{fname}</code> is compiling or has not been extracted yet.</p></div>",
+                        f"<p style='color:#94A3B8;'>The requested file <code>{html.escape(fname)}</code> is compiling or has not been extracted yet.</p></div>",
                 status_code=404
             )
 
@@ -5910,32 +6155,11 @@ if __name__ == "__main__":
         base_name = fname
         zip_candidate = os.path.splitext(base_name)[0] + ".zip" if base_name.lower().endswith(".html") else (base_name if base_name.lower().endswith(".zip") else os.path.splitext(base_name)[0] + ".zip")
 
-        candidates = [
-            os.path.join("outputs", fname),
-            os.path.abspath(os.path.join("outputs", fname)),
-            raw_name,
-            os.path.join(tempfile.gettempdir(), fname),
-        ]
-        try:
-            from infra_stability import SESSION_ROOT
-            candidates.append(os.path.join(str(SESSION_ROOT), fname))
-        except Exception:
-            pass
-
-        target_file = None
-        for c in candidates:
-            if c and os.path.exists(c) and os.path.isfile(c):
-                target_file = c
-                break
+        target_file = _resolve_safe_file_path(file)
 
         # If user wants a zip package (bypasses Windows Edge SmartScreen HTML blocks)
         if want_zip:
-            zip_candidates = [
-                os.path.join("outputs", zip_candidate),
-                os.path.abspath(os.path.join("outputs", zip_candidate)),
-                os.path.join(tempfile.gettempdir(), zip_candidate),
-            ]
-            existing_zip = next((zc for zc in zip_candidates if os.path.exists(zc) and os.path.isfile(zc)), None)
+            existing_zip = _resolve_safe_file_path(zip_candidate)
             if existing_zip:
                 return FileResponse(
                     path=existing_zip,

@@ -10,6 +10,7 @@ All UI copy rendered in high-impact, academic English.
 from __future__ import annotations
 
 import os
+from infra_stability.lucide_icons import get_icon
 
 
 def get_ncpi_fhir_head_tags() -> str:
@@ -44,6 +45,11 @@ def get_ncpi_fhir_head_tags() -> str:
     </style>
     <script>
     {js_content}
+    window.mandorosRunFhir = window.mandorosRunFhir || function(fnName) {{
+      if (typeof window[fnName] === 'function') {{
+        try {{ window[fnName](); }} catch(e) {{ console.error('FHIR Exec Error:', e); }}
+      }}
+    }};
     </script>
     """
 
@@ -53,127 +59,134 @@ def render_ncpi_fhir_pillar_html() -> str:
     Renders the Frontend Explanatory Pillar in academic English
     with the 3 Mini-Pillar Highlights and the Optional Master Toggle.
     """
-    return """
+    icon_dna = get_icon("dna", size=18, cls="text-zinc-100")
+    icon_download = get_icon("download", size=13, cls="text-zinc-400")
+    icon_db = get_icon("database", size=13, cls="text-zinc-400")
+    icon_scale = get_icon("scale", size=13, cls="text-zinc-400")
+
+    return f"""
     <img src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'></svg>"
-         onload="if(!window.ncpiFhirAddonLoaded){window.ncpiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.async=true;document.head.appendChild(s);}"
+         onload="if(!window.ncpiFhirAddonLoaded){{window.ncpiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncpiFhirAddon.js';s.async=true;document.head.appendChild(s);}}"
          style="display:none;" />
     <div class="mandoros-ncpi-pillar-container" style="
-        background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(46, 16, 101, 0.4) 50%, rgba(15, 23, 42, 0.95) 100%);
-        border: 1.5px solid rgba(139, 92, 246, 0.45);
-        border-radius: 16px;
-        padding: 18px 22px;
-        margin: 0 0 18px 0;
-        box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45), 0 0 20px rgba(139, 92, 246, 0.15);
-        backdrop-filter: blur(14px);
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #09090B;
+        border: 1px solid rgba(255, 255, 255, 0.09);
+        border-radius: 12px;
+        padding: 16px 20px;
+        margin: 0 0 16px 0;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        font-family: 'JetBrains Mono', -apple-system, monospace;
     ">
       <!-- Top Row: Title, Subtitle & Master Toggle -->
-      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid rgba(139, 92, 246, 0.25); padding-bottom: 12px; margin-bottom: 14px;">
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px; margin-bottom: 14px;">
         <div style="flex: 1; min-width: 300px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 32px; height: 32px; border-radius: 9px; background: rgba(139, 92, 246, 0.2); border: 1px solid #8B5CF6; display: flex; align-items: center; justify-content: center; font-size: 16px;">
-              🧬
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: #18181B; border: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center;">
+              {icon_dna}
             </div>
             <div>
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="color: #F8FAFC; font-weight: 800; font-size: 15px; letter-spacing: -0.01em;">
-                  Cloud Interoperability &amp; Evidence Standards (NIH NCPI &amp; HL7 FHIR Add-on — Optional)
+                <span style="color: #FAFAFA; font-weight: 700; font-size: 13.5px; letter-spacing: -0.01em;">
+                  NIH NCPI &amp; HL7 FHIR EVIDENCE STANDARDS (OPTIONAL ADD-ON)
                 </span>
-                <span style="background: rgba(16, 185, 129, 0.2); border: 1px solid #10B981; color: #34D399; padding: 2px 8px; border-radius: 9999px; font-size: 10.5px; font-weight: 700;">
-                  Zero-Server-Load (100% Client-Side)
+                <span style="background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.35); color: #10B981; padding: 2px 8px; border-radius: 4px; font-size: 10px; font-weight: 700;">
+                  CLIENT-SIDE GPU // 0 MB RAM
                 </span>
               </div>
-              <div style="color: #CBD5E1; font-size: 12px; margin-top: 3px; line-height: 1.4;">
-                An on-demand standard layer mapping the 88 atomic fields into NIH NCPI &amp; HL7 FHIR (EBMonFHIR) specifications, harmonizing global drug codes via NIH RxNorm, and detecting outcome reporting bias with zero server overhead.
+              <div style="color: #A1A1AA; font-size: 11.5px; margin-top: 3px; line-height: 1.4;">
+                Maps 88 atomic fields into NIH NCPI &amp; HL7 FHIR (EBMonFHIR) specifications and harmonizes global drug identifiers via NIH RxNorm.
               </div>
             </div>
           </div>
         </div>
 
         <!-- Master Toggle Switch -->
-        <div style="display: flex; align-items: center; gap: 10px; background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(139, 92, 246, 0.35); padding: 6px 14px; border-radius: 9999px;">
+        <div style="display: flex; align-items: center; gap: 10px; background: #121215; border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 6px;">
           <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
             <input type="checkbox" id="ncpi-master-toggle" onchange="window.toggleNcpiAddon(this.checked)" checked style="
-                width: 16px;
-                height: 16px;
-                accent-color: #8B5CF6;
+                width: 15px;
+                height: 15px;
+                accent-color: #FAFAFA;
                 cursor: pointer;
             ">
-            <span style="color: #E2E8F0; font-size: 12px; font-weight: 700;">
-              Enable Global NIH NCPI / HL7 FHIR Interoperability Tools
+            <span style="color: #E4E4E7; font-size: 11.5px; font-weight: 600;">
+              Enable NCPI / FHIR Layer
             </span>
           </label>
         </div>
       </div>
 
-      <!-- 3 Mini-Pillar Highlights -->
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px;">
-        <!-- Card 1: Phase 1 -->
-        <div style="
-            background: rgba(30, 41, 59, 0.55);
-            border: 1px solid rgba(56, 189, 248, 0.25);
-            border-left: 3px solid #38BDF8;
-            border-radius: 10px;
-            padding: 10px 14px;
-        ">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #38BDF8; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              Phase 1 · Multi-Format FHIR Export
-            </span>
-            <span style="font-size: 12px;">📤</span>
+      <!-- 3 Mini-Pillar Highlights (Collapsible Standards Drawer) -->
+      <details id="ncpi-modules-drawer" style="margin-top: 8px;">
+        <summary style="color: #A1A1AA; font-size: 11px; font-weight: 600; outline: none; cursor: pointer; user-select: none; display: flex; align-items: center; gap: 8px; padding: 4px 0;">
+          <span style="color: #38BDF8; font-weight: 700;">▸ View 3 Standard Modules</span>
+          <span style="color: #71717A; font-size: 10.5px;">(FHIR Export • RxNorm Drug Harmonization • ClinicalTrials.gov Protocol Verification)</span>
+        </summary>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 10px; margin-top: 12px;">
+          <!-- Card 1: Phase 1 -->
+          <div class="bento-spotlight-card" style="
+              background: #121215;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 8px;
+              padding: 12px 14px;
+          ">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: #FAFAFA; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;">
+                Phase 1 · Multi-Format FHIR Export
+              </span>
+              {icon_download}
+            </div>
+            <div style="color: #F4F4F5; font-size: 12px; font-weight: 700; margin-bottom: 3px;">
+              HL7 FHIR JSON, Relational Excel &amp; Dashboard
+            </div>
+            <div style="color: #71717A; font-size: 11px; line-height: 1.4;">
+              Converts all 88 atomic fields into HL7 FHIR (JSON, Excel workbook &amp; interactive dashboard) conforming to ResearchStudy, EvidenceVariable, and Evidence resources.
+            </div>
           </div>
-          <div style="color: #F8FAFC; font-size: 12.5px; font-weight: 700; margin-bottom: 3px;">
-            HL7 FHIR JSON, Relational Excel (.xlsx) &amp; Dashboard
-          </div>
-          <div style="color: #94A3B8; font-size: 11px; line-height: 1.4;">
-            Instant 1-click transformation of all 88 atomic fields into HL7 FHIR (JSON, Excel workbook &amp; interactive dashboard) conforming to ResearchStudy, EvidenceVariable, and Evidence resources.
-          </div>
-        </div>
 
-        <!-- Card 2: Phase 2 -->
-        <div style="
-            background: rgba(30, 41, 59, 0.55);
-            border: 1px solid rgba(16, 185, 129, 0.25);
-            border-left: 3px solid #10B981;
-            border-radius: 10px;
-            padding: 10px 14px;
-        ">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #34D399; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              Phase 2 · Pharmacological Harmonization
-            </span>
-            <span style="font-size: 12px;">🏷️</span>
+          <!-- Card 2: Phase 2 -->
+          <div class="bento-spotlight-card" style="
+              background: #121215;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 8px;
+              padding: 12px 14px;
+          ">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: #FAFAFA; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;">
+                Phase 2 · Pharmacological Harmonization
+              </span>
+              {icon_db}
+            </div>
+            <div style="color: #F4F4F5; font-size: 12px; font-weight: 700; margin-bottom: 3px;">
+              NIH RxNorm Auto-Tagging (RxCUI)
+            </div>
+            <div style="color: #71717A; font-size: 11px; line-height: 1.4;">
+              Direct on-demand resolution against NIH NLM RxNorm database to display standardized RxCUI codes and eliminate brand/generic naming conflicts.
+            </div>
           </div>
-          <div style="color: #F8FAFC; font-size: 12.5px; font-weight: 700; margin-bottom: 3px;">
-            NIH RxNorm Auto-Tagging (RxCUI)
-          </div>
-          <div style="color: #94A3B8; font-size: 11px; line-height: 1.4;">
-            Direct on-demand resolution against NIH NLM RxNorm database to display standardized RxCUI codes and eliminate brand/generic naming conflicts with instant browser caching.
-          </div>
-        </div>
 
-        <!-- Card 3: Phase 3 -->
-        <div style="
-            background: rgba(30, 41, 59, 0.55);
-            border: 1px solid rgba(192, 132, 252, 0.25);
-            border-left: 3px solid #C084FC;
-            border-radius: 10px;
-            padding: 10px 14px;
-        ">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
-            <span style="color: #C084FC; font-size: 11px; font-weight: 800; text-transform: uppercase;">
-              Phase 3 · Cloud Benchmark &amp; Verification
-            </span>
-            <span style="font-size: 12px;">⚖️</span>
-          </div>
-          <div style="color: #F8FAFC; font-size: 12.5px; font-weight: 700; margin-bottom: 3px;">
-            ClinicalTrials.gov Protocol Verification
-          </div>
-          <div style="color: #94A3B8; font-size: 11px; line-height: 1.4;">
-            Real-time side-by-side protocol comparison against ClinicalTrials.gov API v2 to detect outcome reporting bias and audit published sample sizes and primary endpoints.
+          <!-- Card 3: Phase 3 -->
+          <div class="bento-spotlight-card" style="
+              background: #121215;
+              border: 1px solid rgba(255, 255, 255, 0.08);
+              border-radius: 8px;
+              padding: 12px 14px;
+          ">
+            <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px;">
+              <span style="color: #FAFAFA; font-size: 10.5px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.04em;">
+                Phase 3 · Cloud Benchmark &amp; Verification
+              </span>
+              {icon_scale}
+            </div>
+            <div style="color: #F4F4F5; font-size: 12px; font-weight: 700; margin-bottom: 3px;">
+              ClinicalTrials.gov Protocol Verification
+            </div>
+            <div style="color: #71717A; font-size: 11px; line-height: 1.4;">
+              Real-time protocol verification against ClinicalTrials.gov API v2 to detect outcome reporting bias and audit published sample sizes.
+            </div>
           </div>
         </div>
-      </div>
+      </details>
     </div>
     """
 

@@ -43,7 +43,7 @@ def get_default_trial_files() -> list[str]:
 
 
 def create_prisma_flow_html(overview: dict[str, Any]) -> str:
-    """Renders a responsive PRISMA 2020 Evidence Flow Diagram in HTML5/SVG."""
+    """Renders a responsive PRISMA 2020 Evidence Flow Diagram in HTML5/SVG with GSAP animated paths."""
     k_trials = overview.get("trials_count", 0)
     n_outcomes = overview.get("outcomes_count", 0)
     n_arms = overview.get("arms_count", 0)
@@ -54,7 +54,12 @@ def create_prisma_flow_html(overview: dict[str, Any]) -> str:
     included_trials = max(0, k_trials - crit_findings)
 
     return f"""
-    <div style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(0, 245, 212, 0.25); border-radius: 16px; padding: 20px; margin-bottom: 20px;">
+    <!-- GSAP Core & Plugins via Lightweight CDN (Zero Server Footprint) -->
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/ScrollTrigger.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/TextPlugin.min.js"></script>
+
+    <div class="mandoros-prisma-flow-container" style="background: rgba(15, 23, 42, 0.9); border: 1px solid rgba(0, 245, 212, 0.25); border-radius: 16px; padding: 20px; margin-bottom: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.4);">
       <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px;">
         <div style="display: flex; align-items: center; gap: 10px;">
           <span style="font-size: 22px;">📊</span>
@@ -66,36 +71,80 @@ def create_prisma_flow_html(overview: dict[str, Any]) -> str:
         <span style="background: rgba(0,245,212,0.15); border: 1px solid #00F5D4; color: #00F5D4; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 6px;">PRISMA 2020 Flow</span>
       </div>
 
-      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; position: relative;">
+      <!-- Stage Cards Row with Responsive Connecting SVG Paths -->
+      <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; position: relative;">
         <!-- Stage 1: Identification -->
-        <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(56, 189, 248, 0.3); border-radius: 12px; padding: 14px;">
+        <div class="prisma-stage-card prisma-stage-1" style="flex: 1; min-width: 200px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 12px; padding: 14px; will-change: transform, opacity;">
           <div style="color: #38BDF8; font-size: 11px; font-weight: 800; text-transform: uppercase;">1. Identification</div>
-          <div style="font-size: 22px; font-weight: 900; color: #F8FAFC; margin: 4px 0;">{n_workbooks} Workbooks</div>
+          <div class="mandoros-kpi-val" data-kpi-val="{n_workbooks}" style="font-size: 22px; font-weight: 900; color: #F8FAFC; margin: 4px 0;">{n_workbooks} Workbooks</div>
           <div style="color: #94A3B8; font-size: 11.5px;">{n_outcomes} extracted endpoints across {n_arms} treatment arms.</div>
         </div>
 
+        <!-- Connector 1 -->
+        <div class="prisma-flow-connector" style="display: flex; align-items: center; justify-content: center; padding: 0 4px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path class="prisma-flow-path" d="M 4 12 L 20 12 M 14 6 L 20 12 L 14 18" stroke="#38BDF8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
         <!-- Stage 2: Screening -->
-        <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(168, 85, 247, 0.3); border-radius: 12px; padding: 14px;">
-          <div style="color: #C084FC; font-size: 11px; font-weight: 800; text-transform: uppercase;">2. Screening & Schema Audit</div>
-          <div style="font-size: 22px; font-weight: 900; color: #F8FAFC; margin: 4px 0;">{k_trials} Unique Trials</div>
+        <div class="prisma-stage-card prisma-stage-2" style="flex: 1; min-width: 200px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(168, 85, 247, 0.35); border-radius: 12px; padding: 14px; will-change: transform, opacity;">
+          <div style="color: #C084FC; font-size: 11px; font-weight: 800; text-transform: uppercase;">2. Screening &amp; Schema Audit</div>
+          <div class="mandoros-kpi-val" data-kpi-val="{k_trials}" style="font-size: 22px; font-weight: 900; color: #F8FAFC; margin: 4px 0;">{k_trials} Unique Trials</div>
           <div style="color: #94A3B8; font-size: 11.5px;">100% cell coordinates mapped and validated against schema.</div>
         </div>
 
+        <!-- Connector 2 -->
+        <div class="prisma-flow-connector" style="display: flex; align-items: center; justify-content: center; padding: 0 4px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path class="prisma-flow-path" d="M 4 12 L 20 12 M 14 6 L 20 12 L 14 18" stroke="#C084FC" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
         <!-- Stage 3: Eligibility -->
-        <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(234, 179, 8, 0.3); border-radius: 12px; padding: 14px;">
-          <div style="color: #FACC15; font-size: 11px; font-weight: 800; text-transform: uppercase;">3. Divergence & Eligibility</div>
-          <div style="font-size: 22px; font-weight: 900; color: #F8FAFC; margin: 4px 0;">{k_trials} Evaluated</div>
+        <div class="prisma-stage-card prisma-stage-3" style="flex: 1; min-width: 200px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(234, 179, 8, 0.35); border-radius: 12px; padding: 14px; will-change: transform, opacity;">
+          <div style="color: #FACC15; font-size: 11px; font-weight: 800; text-transform: uppercase;">3. Divergence &amp; Eligibility</div>
+          <div class="mandoros-kpi-val" data-kpi-val="{k_trials}" style="font-size: 22px; font-weight: 900; color: #F8FAFC; margin: 4px 0;">{k_trials} Evaluated</div>
           <div style="color: #94A3B8; font-size: 11.5px;">Dosing, duration, and comparator arms audited for exchangeability.</div>
         </div>
 
+        <!-- Connector 3 -->
+        <div class="prisma-flow-connector" style="display: flex; align-items: center; justify-content: center; padding: 0 4px;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+            <path class="prisma-flow-path" d="M 4 12 L 20 12 M 14 6 L 20 12 L 14 18" stroke="#FACC15" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+
         <!-- Stage 4: Included -->
-        <div style="background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(16, 185, 129, 0.4); border-radius: 12px; padding: 14px; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);">
+        <div class="prisma-stage-card prisma-stage-4" style="flex: 1; min-width: 200px; background: rgba(30, 41, 59, 0.85); border: 1px solid rgba(16, 185, 129, 0.45); border-radius: 12px; padding: 14px; box-shadow: 0 4px 18px rgba(16, 185, 129, 0.18); will-change: transform, opacity;">
           <div style="color: #34D399; font-size: 11px; font-weight: 800; text-transform: uppercase;">4. Synthesis Included</div>
-          <div style="font-size: 22px; font-weight: 900; color: #34D399; margin: 4px 0;">{included_trials} Eligible for REML</div>
-          <div style="color: #94A3B8; font-size: 11.5px;">Trials with paired comparator arms & complete sample sizes.</div>
+          <div class="mandoros-kpi-val" data-kpi-val="{included_trials}" style="font-size: 22px; font-weight: 900; color: #34D399; margin: 4px 0;">{included_trials} Eligible for REML</div>
+          <div style="color: #94A3B8; font-size: 11.5px;">Trials with paired comparator arms &amp; complete sample sizes.</div>
         </div>
       </div>
     </div>
+    <script>
+    (function() {{
+      function triggerPrismaGsap() {{
+        if (typeof window.mandorosGsap !== 'undefined' && window.mandorosGsap.animatePrismaFlow) {{
+          window.mandorosGsap.animatePrismaFlow();
+          window.mandorosGsap.animateKpiCounters();
+        }} else if (typeof gsap !== 'undefined') {{
+          gsap.fromTo('.prisma-flow-path',
+            {{ strokeDasharray: 80, strokeDashoffset: 80 }},
+            {{ strokeDashoffset: 0, duration: 0.8, stagger: 0.15, ease: 'power2.out' }}
+          );
+          gsap.fromTo('.prisma-stage-card',
+            {{ y: 22, opacity: 0, scale: 0.94 }},
+            {{ y: 0, opacity: 1, scale: 1, duration: 0.6, stagger: 0.12, ease: 'back.out(1.4)', clearProps: 'all' }}
+          );
+        }} else {{
+          setTimeout(triggerPrismaGsap, 60);
+        }}
+      }}
+      triggerPrismaGsap();
+    }})();
+    </script>
     """
 
 
