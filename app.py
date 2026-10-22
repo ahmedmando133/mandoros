@@ -3281,9 +3281,9 @@ def build_app():
         box-sizing: border-box !important;
     }
 
-    html, body, .gradio-container {
+    html, body {
         font-family: var(--font-sans) !important;
-        background: #09090B !important;
+        background-color: #060609 !important;
         color: #F4F4F5 !important;
         min-height: 100vh;
         margin: 0 !important;
@@ -3293,15 +3293,73 @@ def build_app():
         max-width: 100vw !important;
     }
 
-    /* Asymmetric Precision Flagship Header */
+    /* Transparent Gradio Root to Expose Real Futuristic Medical AI Background */
+    gradio-app,
+    .gradio-container,
+    .contain,
+    #root,
+    .main {
+        background: transparent !important;
+        background-color: transparent !important;
+        position: relative !important;
+        z-index: 10 !important;
+        min-height: 100vh !important;
+    }
+
+    /* Mandatory Global Medical AI Background Layer (Full-Screen Viewport Cover, Responsive, No Distortion) */
+    .mandoros-global-bg-container {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .mandoros-bg-image-layer {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background-image: url('/static/mandoros_medical_ai_bg.webp'), url('/static/mandoros_medical_ai_bg.jpg'), url('/mandoros_bg.jpg'), url('/BACKUI.jpg') !important;
+        background-size: cover !important;
+        background-position: center 25% !important;
+        background-repeat: no-repeat !important;
+        background-attachment: fixed !important;
+        filter: brightness(0.52) contrast(1.18) saturate(1.22) !important;
+        transform: scale(1.02) !important;
+        z-index: 0 !important;
+        will-change: transform;
+    }
+
+    .mandoros-bg-vignette-layer {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        background: radial-gradient(circle at 65% 35%, rgba(9, 9, 11, 0.38) 0%, rgba(9, 9, 11, 0.72) 55%, rgba(6, 6, 9, 0.92) 100%),
+                    linear-gradient(180deg, rgba(9, 9, 11, 0.65) 0%, rgba(9, 9, 11, 0.30) 30%, rgba(9, 9, 11, 0.65) 70%, rgba(6, 6, 9, 0.95) 100%) !important;
+        z-index: 1 !important;
+        backdrop-filter: blur(1.5px) !important;
+        -webkit-backdrop-filter: blur(1.5px) !important;
+    }
+
+    /* Asymmetric Precision Flagship Header (Translucent Glassmorphism) */
     #header-container {
         position: relative;
         padding: 32px 24px 24px 24px;
         margin-bottom: 24px;
-        background: #09090B;
+        background: rgba(9, 9, 11, 0.68) !important;
+        backdrop-filter: blur(20px) !important;
+        -webkit-backdrop-filter: blur(20px) !important;
         border-bottom: 1px solid rgba(255, 255, 255, 0.09);
         overflow: hidden;
         width: 100%;
+        z-index: 10;
     }
 
     .header-content-inner {
@@ -4887,6 +4945,29 @@ def build_app():
         }
     };
     </script>
+
+    <!-- Mandatory Global Medical AI Background Layer Fallback Enforcer -->
+    <script>
+    (function() {
+      function ensureGlobalBg() {
+        if (!document.getElementById('mandoros-global-bg')) {
+          var bg = document.createElement('div');
+          bg.id = 'mandoros-global-bg';
+          bg.className = 'mandoros-global-bg-container';
+          bg.setAttribute('aria-hidden', 'true');
+          bg.innerHTML = '<div class="mandoros-bg-image-layer"></div><div class="mandoros-bg-vignette-layer"></div>';
+          document.body.prepend(bg);
+        }
+      }
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', ensureGlobalBg);
+      } else {
+        ensureGlobalBg();
+      }
+      setTimeout(ensureGlobalBg, 300);
+      setTimeout(ensureGlobalBg, 1200);
+    })();
+    </script>
     """
 
     from infra_stability import (
@@ -4909,6 +4990,14 @@ def build_app():
         theme=gr.themes.Base(),
         head=custom_head_tags
     ) as demo:
+        # Mandatory Global Medical AI Background Layer (Full Viewport, Fixed Layering)
+        gr.HTML("""
+        <div class="mandoros-global-bg-container" id="mandoros-global-bg" aria-hidden="true">
+          <div class="mandoros-bg-image-layer"></div>
+          <div class="mandoros-bg-vignette-layer"></div>
+        </div>
+        """)
+
         # Top Hardware-Grade Infrastructure Mirror & App Bar
         gr.HTML(render_mirror_and_app_bar())
 
@@ -6440,6 +6529,28 @@ if __name__ == "__main__":
         if os.path.exists("static/mandoros_gsap.js"):
             return FileResponse("static/mandoros_gsap.js", media_type="application/javascript")
         return {"error": "mandoros_gsap.js not found"}
+
+    # Medical AI Background Image Delivery Endpoints (High-Speed Cached JPG & WebP)
+    @app_obj.get("/static/mandoros_medical_ai_bg.jpg")
+    @app_obj.get("/mandoros_bg.jpg")
+    @app_obj.get("/assets/mandoros_medical_ai_bg.jpg")
+    @app_obj.get("/static/BACKUI.jpg")
+    @app_obj.get("/assets/BACKUI.jpg")
+    @app_obj.get("/BACKUI.jpg")
+    def mandoros_bg_jpg():
+        for p in ["static/mandoros_medical_ai_bg.jpg", "assets/mandoros_medical_ai_bg.jpg", "assets/BACKUI.jpg", "static/BACKUI.jpg"]:
+            if os.path.exists(p):
+                return FileResponse(p, media_type="image/jpeg", headers={"Cache-Control": "public, max-age=86400"})
+        return {"error": "background image not found"}
+
+    @app_obj.get("/static/mandoros_medical_ai_bg.webp")
+    @app_obj.get("/mandoros_bg.webp")
+    @app_obj.get("/assets/mandoros_medical_ai_bg.webp")
+    def mandoros_bg_webp():
+        path = "static/mandoros_medical_ai_bg.webp" if os.path.exists("static/mandoros_medical_ai_bg.webp") else "assets/mandoros_medical_ai_bg.webp"
+        if os.path.exists(path):
+            return FileResponse(path, media_type="image/webp", headers={"Cache-Control": "public, max-age=86400"})
+        return mandoros_bg_jpg()
 
     from starlette.responses import HTMLResponse
 

@@ -33,19 +33,66 @@ FAST_CDN_HEADER = """
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/TextPlugin.min.js"></script>
 <script src="/mandoros_gsap.js"></script>
 <style>
-  body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+  html, body {
+    background-color: #060609 !important;
+    position: relative !important;
+    min-height: 100vh !important;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  }
+  /* Mandatory Medical AI Background Layer for All Standalone Dashboards */
+  .mandoros-global-bg-container {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    pointer-events: none !important;
+    z-index: 0 !important;
+    overflow: hidden !important;
+  }
+  .mandoros-bg-image-layer {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background-image: url('/static/mandoros_medical_ai_bg.webp'), url('/static/mandoros_medical_ai_bg.jpg'), url('/mandoros_bg.jpg'), url('/BACKUI.jpg') !important;
+    background-size: cover !important;
+    background-position: center 25% !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    filter: brightness(0.50) contrast(1.18) saturate(1.22) !important;
+    transform: scale(1.02) !important;
+    z-index: 0 !important;
+  }
+  .mandoros-bg-vignette-layer {
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: radial-gradient(circle at 65% 35%, rgba(9, 9, 11, 0.38) 0%, rgba(9, 9, 11, 0.72) 55%, rgba(6, 6, 9, 0.92) 100%),
+                linear-gradient(180deg, rgba(9, 9, 11, 0.65) 0%, rgba(9, 9, 11, 0.30) 30%, rgba(9, 9, 11, 0.65) 70%, rgba(6, 6, 9, 0.95) 100%) !important;
+    z-index: 1 !important;
+    backdrop-filter: blur(1.5px) !important;
+    -webkit-backdrop-filter: blur(1.5px) !important;
+  }
   .glass-card {
-    background: rgba(15, 23, 42, 0.75);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(51, 65, 85, 0.7);
+    background: rgba(15, 23, 42, 0.80) !important;
+    backdrop-filter: blur(16px) !important;
+    -webkit-backdrop-filter: blur(16px) !important;
+    border: 1px solid rgba(51, 65, 85, 0.7) !important;
     will-change: transform, opacity;
+    position: relative !important;
+    z-index: 10 !important;
   }
   .mandoros-kpi-card {
     will-change: transform, opacity;
     transition: border-color 0.2s ease;
+    position: relative !important;
+    z-index: 10 !important;
   }
-  .dataTables_wrapper { color: #CBD5E1 !important; padding: 12px 0; }
+  .dataTables_wrapper { color: #CBD5E1 !important; padding: 12px 0; position: relative !important; z-index: 10 !important; }
   .dataTables_wrapper select, .dataTables_wrapper input {
     background: #1E293B !important;
     border: 1px solid #475569 !important;
@@ -62,6 +109,10 @@ FAST_CDN_HEADER = """
   .mandoros-ncbi-fhir-tool, .mandoros-ncpi-fhir-tool { transition: all 0.2s ease; }
   .ncbi-hidden, .ncpi-hidden { display: none !important; }
 </style>
+<div class="mandoros-global-bg-container" aria-hidden="true">
+  <div class="mandoros-bg-image-layer"></div>
+  <div class="mandoros-bg-vignette-layer"></div>
+</div>
 <script src="/ncbiFhirAddon.js"></script>
 <script src="/ncpiFhirAddon.js"></script>
 <script>
