@@ -58,7 +58,7 @@ FAST_CDN_HEADER = """
     height: 100% !important;
     background: #060609 url('/mandoros_bg.jpg?v=2.6') no-repeat center 25% fixed !important;
     background-size: cover !important;
-    filter: brightness(0.50) contrast(1.18) saturate(1.22) !important;
+    filter: brightness(0.70) contrast(1.12) saturate(1.18) !important;
     transform: scale(1.02) !important;
     z-index: 0 !important;
   }
@@ -71,7 +71,7 @@ FAST_CDN_HEADER = """
     object-fit: cover !important;
     object-position: center 25% !important;
     display: block !important;
-    filter: brightness(0.50) contrast(1.18) saturate(1.22) !important;
+    filter: brightness(0.70) contrast(1.12) saturate(1.18) !important;
     pointer-events: none !important;
     z-index: 0 !important;
   }
@@ -81,11 +81,10 @@ FAST_CDN_HEADER = """
     left: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    background: radial-gradient(circle at 65% 35%, rgba(9, 9, 11, 0.38) 0%, rgba(9, 9, 11, 0.72) 55%, rgba(6, 6, 9, 0.92) 100%),
-                linear-gradient(180deg, rgba(9, 9, 11, 0.65) 0%, rgba(9, 9, 11, 0.30) 30%, rgba(9, 9, 11, 0.65) 70%, rgba(6, 6, 9, 0.95) 100%) !important;
+    background: radial-gradient(circle at 50% 28%, transparent 0%, rgba(9, 9, 11, 0.10) 60%, rgba(6, 6, 9, 0.70) 100%),
+                linear-gradient(180deg, transparent 0%, transparent 30%, rgba(9, 9, 11, 0.25) 65%, rgba(6, 6, 9, 0.85) 100%) !important;
     z-index: 1 !important;
-    backdrop-filter: blur(1.5px) !important;
-    -webkit-backdrop-filter: blur(1.5px) !important;
+    pointer-events: none !important;
   }
   .glass-card {
     background: rgba(15, 23, 42, 0.80) !important;

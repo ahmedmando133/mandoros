@@ -3326,7 +3326,7 @@ def build_app():
         height: 100% !important;
         background: #060609 url('/mandoros_bg.jpg?v=2.6') no-repeat center 25% fixed !important;
         background-size: cover !important;
-        filter: brightness(0.55) contrast(1.18) saturate(1.22) !important;
+        filter: brightness(0.70) contrast(1.12) saturate(1.18) !important;
         transform: scale(1.02) !important;
         z-index: 0 !important;
         will-change: transform;
@@ -3341,7 +3341,7 @@ def build_app():
         object-fit: cover !important;
         object-position: center 25% !important;
         display: block !important;
-        filter: brightness(0.55) contrast(1.18) saturate(1.22) !important;
+        filter: brightness(0.70) contrast(1.12) saturate(1.18) !important;
         pointer-events: none !important;
         z-index: 0 !important;
     }
@@ -3352,22 +3352,21 @@ def build_app():
         left: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        background: radial-gradient(circle at 65% 35%, rgba(9, 9, 11, 0.38) 0%, rgba(9, 9, 11, 0.72) 55%, rgba(6, 6, 9, 0.92) 100%),
-                    linear-gradient(180deg, rgba(9, 9, 11, 0.65) 0%, rgba(9, 9, 11, 0.30) 30%, rgba(9, 9, 11, 0.65) 70%, rgba(6, 6, 9, 0.95) 100%) !important;
+        background: radial-gradient(circle at 50% 28%, transparent 0%, rgba(9, 9, 11, 0.10) 60%, rgba(6, 6, 9, 0.70) 100%),
+                    linear-gradient(180deg, transparent 0%, transparent 30%, rgba(9, 9, 11, 0.25) 65%, rgba(6, 6, 9, 0.85) 100%) !important;
         z-index: 1 !important;
-        backdrop-filter: blur(1.5px) !important;
-        -webkit-backdrop-filter: blur(1.5px) !important;
+        pointer-events: none !important;
     }
 
-    /* Asymmetric Precision Flagship Header (Translucent Glassmorphism) */
+    /* Asymmetric Precision Flagship Header (Ultra-Light Glassmorphic Tint, 0% Heavy Blocking) */
     #header-container {
         position: relative;
         padding: 32px 24px 24px 24px;
         margin-bottom: 24px;
-        background: rgba(9, 9, 11, 0.68) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.09);
+        background: linear-gradient(180deg, rgba(9, 9, 11, 0.12) 0%, rgba(9, 9, 11, 0.02) 100%) !important;
+        backdrop-filter: blur(2px) !important;
+        -webkit-backdrop-filter: blur(2px) !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
         overflow: hidden;
         width: 100%;
         z-index: 10;
@@ -3416,17 +3415,19 @@ def build_app():
         gap: 14px;
     }
 
-    /* 3D Ribbon & Emblem Card */
+    /* 3D Ribbon & Emblem Card (Glassmorphism) */
     .mandoros-emblem-card {
-        background: #121215;
-        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(18, 18, 21, 0.35) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
         border-radius: 16px;
         padding: 20px;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 16px 36px rgba(0, 0, 0, 0.4);
         position: relative;
     }
 
@@ -3448,6 +3449,7 @@ def build_app():
         background: linear-gradient(180deg, #FFFFFF 0%, #D4D4D8 100%) !important;
         -webkit-background-clip: text !important;
         -webkit-text-fill-color: transparent !important;
+        filter: drop-shadow(0 4px 18px rgba(0, 0, 0, 0.95)) drop-shadow(0 2px 6px rgba(0, 0, 0, 0.85)) !important;
         margin: 0 0 10px 0 !important;
         text-transform: uppercase !important;
     }
@@ -3465,7 +3467,8 @@ def build_app():
         font-size: 14px !important;
         font-weight: 500 !important;
         line-height: 1.5 !important;
-        color: #A1A1AA !important;
+        color: #F1F5F9 !important;
+        text-shadow: 0 2px 14px rgba(0, 0, 0, 0.95), 0 1px 4px rgba(0, 0, 0, 0.9) !important;
         margin: 0 0 14px 0 !important;
         max-width: 780px;
     }
@@ -3700,8 +3703,10 @@ def build_app():
     }
 
     .kpi-mini-card {
-        background: #18181B;
-        border: 1px solid rgba(255, 255, 255, 0.07);
+        background: rgba(24, 24, 27, 0.45) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 8px;
         padding: 9px 12px;
         text-align: left;
@@ -3761,8 +3766,10 @@ def build_app():
         display: flex;
         flex-direction: column;
         align-items: center;
-        background: #121215;
-        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(18, 18, 21, 0.45) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
         border-radius: 10px;
         padding: 10px 6px;
         transition: border-color 0.2s, transform 0.2s, background 0.2s;
@@ -3772,8 +3779,8 @@ def build_app():
     }
 
     .pipeline-node:hover {
-        border-color: rgba(255, 255, 255, 0.25);
-        background: #18181B;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+        background: rgba(24, 24, 27, 0.65) !important;
         transform: translateY(-2px);
     }
 
