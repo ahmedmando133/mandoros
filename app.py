@@ -65,7 +65,7 @@ def deduplicate_columns(df) -> Any:
 def process_pdf(
     pdf_file, 
     api_key="", 
-    model_choice="⚡ Auto-Detect & Select Best Available Model (Recommended)",
+    model_choice="Auto-Detect & Select Best Available Model (Recommended)",
     progress=gr.Progress(track_tqdm=True)
 ):
     import pandas as pd
