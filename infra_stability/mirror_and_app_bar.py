@@ -24,12 +24,14 @@ def render_mirror_and_app_bar() -> str:
         align-items: center;
         justify-content: space-between;
         gap: 12px;
-        padding: 8px 18px;
+        padding: 9px 20px;
         margin: 0 0 16px 0;
-        background: #09090B;
-        border: 1px solid rgba(255, 255, 255, 0.09);
-        border-radius: 10px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.40) 0%, rgba(9, 9, 14, 0.20) 100%);
+        backdrop-filter: blur(14px) saturate(160%);
+        -webkit-backdrop-filter: blur(14px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        border-radius: 12px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.10);
         font-family: 'JetBrains Mono', -apple-system, monospace;
     ">
       <!-- Left: Primary & Mirror Channels -->
@@ -39,7 +41,7 @@ def render_mirror_and_app_bar() -> str:
             align-items: center;
             gap: 7px;
             padding: 4px 10px;
-            background: rgba(16, 185, 129, 0.1);
+            background: rgba(16, 185, 129, 0.12);
             border: 1px solid rgba(16, 185, 129, 0.35);
             border-radius: 6px;
             color: #10B981;
@@ -56,7 +58,9 @@ def render_mirror_and_app_bar() -> str:
             align-items: center;
             gap: 6px;
             padding: 4px 12px;
-            background: rgba(24, 24, 27, 0.9);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 6px;
             color: #E4E4E7;
@@ -76,12 +80,12 @@ def render_mirror_and_app_bar() -> str:
           align-items: center;
           gap: 8px;
           padding: 4px 14px;
-          background: linear-gradient(135deg, rgba(255, 255, 255, 0.07) 0%, rgba(0, 245, 212, 0.08) 100%);
-          backdrop-filter: blur(12px);
-          -webkit-backdrop-filter: blur(12px);
-          border: 1px solid rgba(0, 245, 212, 0.35);
+          background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(0, 245, 212, 0.12) 100%);
+          backdrop-filter: blur(14px);
+          -webkit-backdrop-filter: blur(14px);
+          border: 1px solid rgba(0, 245, 212, 0.45);
           border-radius: 20px;
-          box-shadow: 0 0 16px rgba(0, 245, 212, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+          box-shadow: 0 0 16px rgba(0, 245, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
           font-size: 11px;
           letter-spacing: 0.02em;
           transition: all 0.25s ease;
@@ -99,15 +103,17 @@ def render_mirror_and_app_bar() -> str:
             align-items: center;
             gap: 6px;
             padding: 5px 12px;
-            background: #FAFAFA;
-            border: 1px solid #FFFFFF;
+            background: rgba(255, 255, 255, 0.14);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.25);
             border-radius: 6px;
-            color: #09090B;
+            color: #FFFFFF;
             font-size: 11px;
             font-weight: 700;
             cursor: pointer;
             letter-spacing: 0.03em;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
             transition: all 0.2s;
         ">
           {icon_download} Install PWA
@@ -118,10 +124,12 @@ def render_mirror_and_app_bar() -> str:
             align-items: center;
             gap: 6px;
             padding: 4px 10px;
-            background: #18181B;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.06);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
             border-radius: 6px;
-            color: #A1A1AA;
+            color: #CBD5E1;
             font-size: 11px;
             font-weight: 600;
             text-decoration: none;
@@ -135,10 +143,12 @@ def render_mirror_and_app_bar() -> str:
             align-items: center;
             gap: 5px;
             padding: 4px 9px;
-            background: rgba(24, 24, 27, 0.7);
+            background: rgba(255, 255, 255, 0.04);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 6px;
-            color: #71717A;
+            color: #94A3B8;
             font-size: 11px;
             font-weight: 500;
         " title="Temp directories >30min or >200MB are pruned automatically">

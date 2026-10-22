@@ -3358,6 +3358,66 @@ def build_app():
         pointer-events: none !important;
     }
 
+    /* Top Infrastructure Mirror & App Bar (Ultra-Light Translucent Glassmorphism) */
+    .mandoros-top-mirror-bar {
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.40) 0%, rgba(9, 9, 14, 0.20) 100%) !important;
+        backdrop-filter: blur(14px) saturate(160%) !important;
+        -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        border-radius: 12px !important;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
+        margin: 0 0 16px 0 !important;
+    }
+
+    .mandoros-pwa-install-btn {
+        background: rgba(255, 255, 255, 0.14) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.25) !important;
+        color: #FFFFFF !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    .mandoros-pwa-install-btn:hover {
+        background: rgba(255, 255, 255, 0.24) !important;
+        border-color: rgba(255, 255, 255, 0.45) !important;
+        box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .mandoros-desktop-badge {
+        background: rgba(255, 255, 255, 0.06) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #CBD5E1 !important;
+    }
+
+    .mandoros-desktop-badge:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #FFFFFF !important;
+    }
+
+    .mandoros-janitor-badge {
+        background: rgba(255, 255, 255, 0.04) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        color: #94A3B8 !important;
+    }
+
+    .mandoros-hf-badge {
+        background: rgba(255, 255, 255, 0.06) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #E4E4E7 !important;
+    }
+
+    .mandoros-hf-badge:hover {
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #FFFFFF !important;
+    }
+
     /* Asymmetric Precision Flagship Header (Ultra-Light Glassmorphic Tint, 0% Heavy Blocking) */
     #header-container {
         position: relative;
@@ -3661,14 +3721,24 @@ def build_app():
         font-family: 'JetBrains Mono', monospace;
         font-size: 11px;
         font-weight: 600;
-        padding: 4px 10px;
-        border-radius: 6px;
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 255, 255, 0.08);
-        color: #D4D4D8;
+        padding: 5px 12px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.07) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        color: #E2E8F0;
         display: inline-flex;
         align-items: center;
         gap: 6px;
+        transition: all 0.2s ease;
+    }
+
+    .mandoros-chip:hover {
+        background: rgba(255, 255, 255, 0.14) !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
+        color: #FFFFFF;
+        transform: translateY(-1px);
     }
 
     /* Primary Tagline */
@@ -3738,10 +3808,15 @@ def build_app():
         flex-wrap: nowrap;
         overflow-x: auto;
         scrollbar-width: none;
-        padding: 18px 4px 12px 4px;
+        padding: 14px 12px;
         max-width: 1360px;
-        margin: 0 auto;
-        border-top: 1px solid rgba(255, 255, 255, 0.07);
+        margin: 0 auto 16px auto;
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.35) 0%, rgba(9, 9, 14, 0.15) 100%) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.09) !important;
+        border-radius: 14px !important;
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3) !important;
         position: relative;
     }
     .mandoros-pipeline-strip::-webkit-scrollbar {
@@ -3922,7 +3997,9 @@ def build_app():
         display: flex !important;
         flex-wrap: wrap !important;
         align-items: center !important;
-        background: rgba(15, 23, 42, 0.75) !important;
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.35) 0%, rgba(9, 9, 14, 0.15) 100%) !important;
+        backdrop-filter: blur(12px) !important;
+        -webkit-backdrop-filter: blur(12px) !important;
         padding: 5px !important;
         border-radius: 10px !important;
         border: 1px solid rgba(255, 255, 255, 0.08) !important;
@@ -3987,8 +4064,10 @@ def build_app():
     .tabs:not(#main-phases-tabs) button[role="tab"].selected,
     .tabs:not(#main-phases-tabs) .tab-nav > button.selected,
     .tabs:not(#main-phases-tabs) button[role="tab"][aria-selected="true"] {
-        background: rgba(30, 41, 59, 0.95) !important;
-        border: 1px solid rgba(255, 255, 255, 0.16) !important;
+        background: rgba(30, 41, 59, 0.50) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.20) !important;
         color: #F8FAFC !important;
         font-weight: 700 !important;
         box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4) !important;
@@ -4147,9 +4226,11 @@ def build_app():
     }
 
     .product-phase-card {
-        background: #121215 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
-        border-radius: 12px !important;
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.42) 0%, rgba(9, 9, 14, 0.22) 100%) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
+        border-radius: 14px !important;
         padding: 20px 18px !important;
         display: flex;
         flex-direction: column;
@@ -4157,12 +4238,13 @@ def build_app():
         transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
         position: relative;
         overflow: hidden;
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4) !important;
     }
 
     .product-phase-card:hover {
         transform: translateY(-2px) !important;
-        border-color: rgba(255, 255, 255, 0.18) !important;
+        background: linear-gradient(180deg, rgba(24, 24, 32, 0.55) 0%, rgba(14, 14, 20, 0.30) 100%) !important;
+        border-color: rgba(255, 255, 255, 0.22) !important;
     }
 
     .card-phase-1 {
@@ -4220,8 +4302,10 @@ def build_app():
     }
 
     .academic-pillar-card {
-        background: #121215 !important;
-        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.42) 0%, rgba(9, 9, 14, 0.22) 100%) !important;
+        backdrop-filter: blur(14px) !important;
+        -webkit-backdrop-filter: blur(14px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
         border-radius: 12px !important;
         padding: 18px 16px !important;
         display: flex;
@@ -4235,7 +4319,8 @@ def build_app():
 
     .academic-pillar-card:hover {
         transform: translateY(-2px) !important;
-        border-color: rgba(255, 255, 255, 0.18) !important;
+        background: linear-gradient(180deg, rgba(24, 24, 32, 0.55) 0%, rgba(14, 14, 20, 0.30) 100%) !important;
+        border-color: rgba(255, 255, 255, 0.22) !important;
     }
 
     .pillar-1 {
@@ -4292,8 +4377,6 @@ def build_app():
         border: 1px solid rgba(255, 255, 255, 0.07);
         white-space: nowrap;
     }
-        white-space: nowrap;
-    }
 
     .pillar-title {
         font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Plus Jakarta Sans', sans-serif;
@@ -4324,8 +4407,10 @@ def build_app():
     }
 
     .academic-pill {
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: rgba(255, 255, 255, 0.06) !important;
+        backdrop-filter: blur(6px) !important;
+        -webkit-backdrop-filter: blur(6px) !important;
+        border: 1px solid rgba(255, 255, 255, 0.10) !important;
         color: #CBD5E1;
         padding: 3px 8.5px;
         border-radius: 9999px;
@@ -4337,9 +4422,9 @@ def build_app():
     }
 
     .academic-pill:hover {
-        background: rgba(255, 255, 255, 0.12);
-        color: #FFFFFF;
-        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.15) !important;
+        color: #FFFFFF !important;
+        border-color: rgba(255, 255, 255, 0.25) !important;
     }
 
     .pillar-desc {
@@ -4705,13 +4790,13 @@ def build_app():
         display: flex !important;
         flex-direction: row !important;
         align-items: stretch !important;
-        background: rgba(9, 9, 11, 0.95) !important;
-        backdrop-filter: blur(20px) !important;
-        -webkit-backdrop-filter: blur(20px) !important;
-        padding: 5px !important;
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.40) 0%, rgba(9, 9, 14, 0.20) 100%) !important;
+        backdrop-filter: blur(16px) saturate(160%) !important;
+        -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
+        padding: 6px !important;
         border-radius: 14px !important;
-        border: 1px solid rgba(255, 255, 255, 0.10) !important;
-        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+        border: 1px solid rgba(255, 255, 255, 0.12) !important;
+        box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.10) !important;
         margin-bottom: 20px !important;
         width: 100% !important;
         box-sizing: border-box !important;
@@ -4763,9 +4848,11 @@ def build_app():
         padding: 0 12px !important;
         margin: 0 !important;
         border-radius: 10px !important;
-        border: 1px solid rgba(255, 255, 255, 0.06) !important;
-        background: rgba(24, 24, 27, 0.6) !important;
-        color: #94A3B8 !important;
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        background: rgba(255, 255, 255, 0.05) !important;
+        backdrop-filter: blur(8px) !important;
+        -webkit-backdrop-filter: blur(8px) !important;
+        color: #CBD5E1 !important;
         white-space: nowrap !important;
         text-overflow: ellipsis !important;
         overflow: hidden !important;
@@ -4777,9 +4864,9 @@ def build_app():
 
     #main-phases-tabs .tab-container > button:hover,
     #main-phases-tabs > div.tab-nav button:hover {
-        background: rgba(39, 39, 42, 0.85) !important;
-        color: #F4F4F5 !important;
-        border-color: rgba(255, 255, 255, 0.16) !important;
+        background: rgba(255, 255, 255, 0.12) !important;
+        color: #FFFFFF !important;
+        border-color: rgba(255, 255, 255, 0.20) !important;
         transform: translateY(-1px) !important;
     }
 
@@ -4787,7 +4874,7 @@ def build_app():
     #main-phases-tabs .tab-container > button:nth-child(1).selected,
     #main-phases-tabs > div.tab-nav button:nth-child(1).selected,
     #main-phases-tabs .tab-container > button:nth-child(1)[aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(0, 245, 212, 0.16), rgba(15, 23, 42, 0.95)) !important;
+        background: linear-gradient(135deg, rgba(0, 245, 212, 0.22), rgba(15, 23, 42, 0.65)) !important;
         color: #00F5D4 !important;
         border: 1.5px solid #00F5D4 !important;
         font-weight: 800 !important;
@@ -4797,7 +4884,7 @@ def build_app():
     #main-phases-tabs .tab-container > button:nth-child(2).selected,
     #main-phases-tabs > div.tab-nav button:nth-child(2).selected,
     #main-phases-tabs .tab-container > button:nth-child(2)[aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(15, 23, 42, 0.95)) !important;
+        background: linear-gradient(135deg, rgba(56, 189, 248, 0.22), rgba(15, 23, 42, 0.65)) !important;
         color: #38BDF8 !important;
         border: 1.5px solid #38BDF8 !important;
         font-weight: 800 !important;
@@ -4807,7 +4894,7 @@ def build_app():
     #main-phases-tabs .tab-container > button:nth-child(3).selected,
     #main-phases-tabs > div.tab-nav button:nth-child(3).selected,
     #main-phases-tabs .tab-container > button:nth-child(3)[aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(192, 132, 252, 0.16), rgba(15, 23, 42, 0.95)) !important;
+        background: linear-gradient(135deg, rgba(192, 132, 252, 0.22), rgba(15, 23, 42, 0.65)) !important;
         color: #C084FC !important;
         border: 1.5px solid #C084FC !important;
         font-weight: 800 !important;
@@ -4817,7 +4904,7 @@ def build_app():
     #main-phases-tabs .tab-container > button:nth-child(4).selected,
     #main-phases-tabs > div.tab-nav button:nth-child(4).selected,
     #main-phases-tabs .tab-container > button:nth-child(4)[aria-selected="true"] {
-        background: linear-gradient(135deg, rgba(245, 158, 11, 0.16), rgba(15, 23, 42, 0.95)) !important;
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.22), rgba(15, 23, 42, 0.65)) !important;
         color: #FBBF24 !important;
         border: 1.5px solid #F59E0B !important;
         font-weight: 800 !important;

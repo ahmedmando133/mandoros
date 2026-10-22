@@ -74,19 +74,21 @@ def render_ncbi_fhir_pillar_html() -> str:
          onload="if(!window.ncbiFhirAddonLoaded){{window.ncbiFhirAddonLoaded=true;var s=document.createElement('script');s.src='/ncbiFhirAddon.js';s.async=true;document.head.appendChild(s);}}"
          style="display:none;" />
     <div class="mandoros-ncbi-pillar-container mandoros-ncpi-pillar-container" style="
-        background: #09090B;
-        border: 1px solid rgba(255, 255, 255, 0.09);
+        background: linear-gradient(180deg, rgba(18, 18, 24, 0.40) 0%, rgba(9, 9, 14, 0.20) 100%);
+        backdrop-filter: blur(14px) saturate(160%);
+        -webkit-backdrop-filter: blur(14px) saturate(160%);
+        border: 1px solid rgba(255, 255, 255, 0.12);
         border-radius: 12px;
         padding: 16px 20px;
         margin: 0 0 16px 0;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.10);
         font-family: 'JetBrains Mono', -apple-system, monospace;
     ">
       <!-- Top Row: Title, Subtitle & Master Toggle -->
       <div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px; margin-bottom: 14px;">
         <div style="flex: 1; min-width: 300px;">
           <div style="display: flex; align-items: center; gap: 10px;">
-            <div style="width: 32px; height: 32px; border-radius: 6px; background: #18181B; border: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center;">
+            <div style="width: 32px; height: 32px; border-radius: 6px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); display: flex; align-items: center; justify-content: center;">
               {icon_dna}
             </div>
             <div>
@@ -106,7 +108,7 @@ def render_ncbi_fhir_pillar_html() -> str:
         </div>
 
         <!-- Master Toggle Switch -->
-        <div style="display: flex; align-items: center; gap: 10px; background: #121215; border: 1px solid rgba(255, 255, 255, 0.1); padding: 6px 14px; border-radius: 6px;">
+        <div style="display: flex; align-items: center; gap: 10px; background: rgba(255, 255, 255, 0.06); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.12); padding: 6px 14px; border-radius: 8px;">
           <label title="Enable Global National Center for Biotechnology Information (NCBI) / HL7 FHIR Interoperability Tools" style="display: flex; align-items: center; gap: 8px; cursor: pointer; margin: 0;">
             <input type="checkbox" id="ncbi-master-toggle" class="ncbi-toggle-input" onchange="(window.toggleNcbiAddon||window.toggleNcpiAddon)(this.checked)" checked style="
                 width: 15px;
