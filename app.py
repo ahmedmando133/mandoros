@@ -3324,15 +3324,26 @@ def build_app():
         left: 0 !important;
         width: 100% !important;
         height: 100% !important;
-        background-image: url('/static/mandoros_medical_ai_bg.webp'), url('/static/mandoros_medical_ai_bg.jpg'), url('/mandoros_bg.jpg'), url('/BACKUI.jpg') !important;
+        background: #060609 url('/mandoros_bg.jpg?v=2.6') no-repeat center 25% fixed !important;
         background-size: cover !important;
-        background-position: center 25% !important;
-        background-repeat: no-repeat !important;
-        background-attachment: fixed !important;
-        filter: brightness(0.52) contrast(1.18) saturate(1.22) !important;
+        filter: brightness(0.55) contrast(1.18) saturate(1.22) !important;
         transform: scale(1.02) !important;
         z-index: 0 !important;
         will-change: transform;
+    }
+
+    .mandoros-bg-real-img {
+        position: absolute !important;
+        top: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
+        object-position: center 25% !important;
+        display: block !important;
+        filter: brightness(0.55) contrast(1.18) saturate(1.22) !important;
+        pointer-events: none !important;
+        z-index: 0 !important;
     }
 
     .mandoros-bg-vignette-layer {
@@ -4955,7 +4966,7 @@ def build_app():
           bg.id = 'mandoros-global-bg';
           bg.className = 'mandoros-global-bg-container';
           bg.setAttribute('aria-hidden', 'true');
-          bg.innerHTML = '<div class="mandoros-bg-image-layer"></div><div class="mandoros-bg-vignette-layer"></div>';
+          bg.innerHTML = '<div class="mandoros-bg-image-layer"><img src="/mandoros_bg.jpg?v=2.6" alt="" class="mandoros-bg-real-img" /></div><div class="mandoros-bg-vignette-layer"></div>';
           document.body.prepend(bg);
         }
       }
@@ -4993,7 +5004,9 @@ def build_app():
         # Mandatory Global Medical AI Background Layer (Full Viewport, Fixed Layering)
         gr.HTML("""
         <div class="mandoros-global-bg-container" id="mandoros-global-bg" aria-hidden="true">
-          <div class="mandoros-bg-image-layer"></div>
+          <div class="mandoros-bg-image-layer">
+            <img src="/mandoros_bg.jpg?v=2.6" alt="" class="mandoros-bg-real-img" />
+          </div>
           <div class="mandoros-bg-vignette-layer"></div>
         </div>
         """)

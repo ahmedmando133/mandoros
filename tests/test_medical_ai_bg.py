@@ -36,6 +36,7 @@ def test_app_py_background_layering_and_rules():
     assert "mandoros-global-bg-container" in app_code
     assert "mandoros-bg-image-layer" in app_code
     assert "mandoros-bg-vignette-layer" in app_code
+    assert "mandoros-bg-real-img" in app_code
 
     # Layering rules verification
     assert "z-index: 0 !important" in app_code
@@ -44,7 +45,7 @@ def test_app_py_background_layering_and_rules():
 
     # Cover & responsive rules
     assert "background-size: cover !important" in app_code
-    assert "background-attachment: fixed !important" in app_code
+    assert "center 25%" in app_code
 
     # HTTP serving endpoints
     assert "/mandoros_bg.jpg" in app_code
@@ -57,4 +58,4 @@ def test_shared_ui_components_has_background():
     assert "mandoros-global-bg-container" in shared_ui
     assert "mandoros-bg-image-layer" in shared_ui
     assert "mandoros-bg-vignette-layer" in shared_ui
-    assert "mandoros_medical_ai_bg" in shared_ui
+    assert "mandoros_bg.jpg" in shared_ui
