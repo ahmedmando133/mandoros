@@ -249,8 +249,6 @@ def build_instant_download_banner(
     buttons_html = []
     if html_file_path and os.path.exists(html_file_path):
         ensure_dashboard_zip(html_file_path, xlsx_file_path)
-        with open(html_file_path, "rb") as f:
-            b64_html = base64.b64encode(f.read()).decode("utf-8")
         fname = os.path.basename(html_file_path)
         fname_q = urllib.parse.quote(fname)
         h_dl_url = f"/api/download?file={fname_q}&octet=1"
@@ -270,8 +268,7 @@ def build_instant_download_banner(
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                📦 Download Dashboard (.zip)
             </a>
-            <a href="{h_dl_url}" download="{fname}" data-base64="data:text/html;base64,{b64_html}"
-               onclick="if(window.mandorosDownloadBlob){{return window.mandorosDownloadBlob('{b64_html}','{fname}','application/octet-stream','{h_dl_url}');}}"
+            <a href="{h_dl_url}" download="{fname}"
                title="Direct raw HTML download"
                style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#475569,#334155);color:#fff;padding:10px 16px;border-radius:10px;font-weight:700;font-size:12.5px;text-decoration:none;box-shadow:0 4px 14px rgba(71,85,105,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
@@ -279,13 +276,10 @@ def build_instant_download_banner(
             </a>
         ''')
     if xlsx_file_path and os.path.exists(xlsx_file_path):
-        with open(xlsx_file_path, "rb") as f:
-            b64_xlsx = base64.b64encode(f.read()).decode("utf-8")
         xname = os.path.basename(xlsx_file_path)
         x_dl_url = f"/api/download?file={urllib.parse.quote(xname)}"
         buttons_html.append(f'''
-            <a href="{x_dl_url}" download="{xname}" data-base64="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_xlsx}"
-               onclick="if(window.mandorosDownloadBlob){{return window.mandorosDownloadBlob('{b64_xlsx}','{xname}','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','{x_dl_url}');}}"
+            <a href="{x_dl_url}" download="{xname}"
                style="display:inline-flex;align-items:center;gap:8px;background:linear-gradient(135deg,#3B82F6,#2563EB);color:#fff;padding:10px 18px;border-radius:10px;font-weight:700;font-size:13px;text-decoration:none;box-shadow:0 4px 14px rgba(59,130,246,0.35);transition:all 0.2s;"
                onmouseover="this.style.transform='translateY(-1px)'" onmouseout="this.style.transform='none'">
                📊 Instant Download {phase_label} Excel Workbook (.xlsx)
@@ -328,7 +322,7 @@ def build_instant_download_banner(
           <div style="width:36px;height:36px;border-radius:10px;background:rgba(56,189,248,0.15);display:flex;align-items:center;justify-content:center;font-size:18px;">🚀</div>
           <div>
             <div style="color:#F8FAFC;font-weight:800;font-size:14.5px;">{phase_label} Verified Interactive Deliverables Ready</div>
-            <div style="color:#94A3B8;font-size:11.5px;">Zero-latency 1-click downloads embedded as Base64 data URIs</div>
+            <div style="color:#94A3B8;font-size:11.5px;">Direct 1-click instant downloads & live interactive viewer</div>
           </div>
         </div>
         <div style="display:flex;flex-wrap:wrap;gap:10px;">{"".join(buttons_html)}</div>

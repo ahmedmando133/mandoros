@@ -25,6 +25,8 @@ from src.skill_injector import (
     to_phase1_master_dict
 )
 
+_GEMINI_DISCOVERED_MODELS_CACHE: Dict[str, List[str]] = {}
+
 
 def verify_biomarker_in_pdf_tables(table_text: str, biomarker_name: str) -> bool:
     """
@@ -4189,9 +4191,11 @@ class RCTExtractor:
     def _call_api_model(self, prompt: str, system_prompt: str = "") -> Optional[Dict[str, Any]]:
         """
         Executes an AI API request against the specified provider (Gemini, OpenAI, or Claude).
-        Provides robust JSON parsing and transparent error tracking.
+        Provides robust JSON parsing, strict fast timeouts, and transparent error tracking.
         """
         if not self.api_key:
+            return None
+        if getattr(self, "api_error", None):
             return None
 
         import json
@@ -4218,7 +4222,7 @@ class RCTExtractor:
                     temperature=0.1,
                     system=full_sys,
                     messages=[{"role": "user", "content": prompt}],
-                    timeout=60.0
+                    timeout=20.0
                 )
                 if resp and resp.content:
                     raw_text = resp.content[0].text
@@ -4245,7 +4249,7 @@ class RCTExtractor:
                     messages=messages,
                     response_format={"type": "json_object"},
                     temperature=0.1,
-                    timeout=60.0
+                    timeout=20.0
                 )
                 if resp and resp.choices:
                     raw_text = resp.choices[0].message.content
@@ -4261,74 +4265,60 @@ class RCTExtractor:
         else:
             import requests
 
-            # 1. Dynamically discover live models supported by this specific Google AI Studio key
-            discovered_models = []
-            try:
-                disc_url = "https://generativelanguage.googleapis.com/v1beta/models"
-                d_resp = requests.get(disc_url, headers={"x-goog-api-key": key_str, "Content-Type": "application/json"}, timeout=10)
-                if d_resp.status_code == 200:
-                    for m in d_resp.json().get("models", []):
-                        if "generateContent" in m.get("supportedGenerationMethods", []):
-                            m_clean = m.get("name", "").replace("models/", "").strip()
-                            if m_clean:
-                                discovered_models.append(m_clean)
-                elif d_resp.status_code == 400:
-                    err_j = d_resp.json().get("error", {})
-                    self.api_error = f"Google Gemini API: {err_j.get('message', 'Invalid Key')} (Status 400)"
-                    print(f"[!] {self.api_error}")
-                    return None
-            except Exception as disc_err:
-                print(f"[*] Discovery probe notice (v1beta): {disc_err}")
+            cache_key = key_str[:12]
+            discovered_models = _GEMINI_DISCOVERED_MODELS_CACHE.get(cache_key)
 
-            if not discovered_models:
+            if discovered_models is None:
+                discovered_models = []
                 try:
-                    disc_v1 = "https://generativelanguage.googleapis.com/v1/models"
-                    d_resp = requests.get(disc_v1, headers={"x-goog-api-key": key_str, "Content-Type": "application/json"}, timeout=8)
+                    disc_url = "https://generativelanguage.googleapis.com/v1beta/models"
+                    d_resp = requests.get(disc_url, headers={"x-goog-api-key": key_str, "Content-Type": "application/json"}, timeout=4)
                     if d_resp.status_code == 200:
                         for m in d_resp.json().get("models", []):
                             if "generateContent" in m.get("supportedGenerationMethods", []):
                                 m_clean = m.get("name", "").replace("models/", "").strip()
                                 if m_clean:
                                     discovered_models.append(m_clean)
-                except Exception:
-                    pass
+                    elif d_resp.status_code in (400, 401, 403):
+                        err_j = d_resp.json().get("error", {})
+                        self.api_error = f"Google Gemini API: {err_j.get('message', 'Auth Failed')} (Status {d_resp.status_code})"
+                        print(f"[!] {self.api_error}")
+                        return None
+                    elif d_resp.status_code == 429:
+                        self.api_error = "Google Gemini API: Quota Exceeded / Rate Limited (Status 429)"
+                        print(f"[!] {self.api_error}")
+                        return None
+                except Exception as disc_err:
+                    print(f"[*] Discovery probe notice (v1beta): {disc_err}")
+
+                _GEMINI_DISCOVERED_MODELS_CACHE[cache_key] = discovered_models
 
             # 2. Build prioritized candidate list based on user selection or auto-optimization
             if "pro" in mod_pref:
                 preferred_order = [
-                    "gemini-1.5-pro", "gemini-1.5-pro-latest", "gemini-1.5-pro-002", "gemini-1.5-pro-001",
-                    "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-flash-latest"
+                    "gemini-1.5-pro", "gemini-1.5-pro-latest", "gemini-2.0-flash", "gemini-1.5-flash"
                 ]
             elif "1.5 flash" in mod_pref:
                 preferred_order = [
-                    "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash-002", "gemini-1.5-flash-001",
-                    "gemini-2.0-flash", "gemini-1.5-pro"
+                    "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-2.0-flash"
                 ]
             else:
-                # Auto-Detect / Recommended / 2.0:
                 preferred_order = [
-                    "gemini-2.0-flash", "gemini-2.0-flash-exp",
-                    "gemini-1.5-flash", "gemini-1.5-flash-latest", "gemini-1.5-flash-002", "gemini-1.5-flash-001",
-                    "gemini-1.5-pro", "gemini-1.5-pro-latest", "gemini-1.5-pro-002", "gemini-1.5-pro-001",
-                    "gemini-pro"
+                    "gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"
                 ]
 
             gemini_candidates = []
             if discovered_models:
-                print(f"[*] Discovered {len(discovered_models)} live models for key: {discovered_models[:6]}")
                 for cand in preferred_order:
                     if cand in discovered_models and cand not in gemini_candidates:
                         gemini_candidates.append(cand)
                 for dm in discovered_models:
                     if ("flash" in dm or "pro" in dm) and dm not in gemini_candidates:
                         gemini_candidates.append(dm)
-                for dm in discovered_models:
-                    if dm not in gemini_candidates:
-                        gemini_candidates.append(dm)
             else:
                 gemini_candidates = preferred_order
 
-            gemini_candidates = gemini_candidates[:3]
+            gemini_candidates = gemini_candidates[:2]
             print(f"[*] Active Gemini candidate models: {gemini_candidates}")
 
             last_g_err = None
@@ -4337,96 +4327,78 @@ class RCTExtractor:
             full_p = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
 
             for g_mod in gemini_candidates:
-                # Try v1beta first, then v1
-                for api_ver in ["v1beta", "v1"]:
-                    post_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{g_mod}:generateContent"
-                    body = {
-                        "contents": [
-                            {
-                                "role": "user",
-                                "parts": [{"text": full_p}]
-                            }
-                        ],
-                        "generationConfig": {
-                            "temperature": 0.1,
-                            "responseMimeType": "application/json"
+                api_ver = "v1beta"
+                post_url = f"https://generativelanguage.googleapis.com/{api_ver}/models/{g_mod}:generateContent"
+                body = {
+                    "contents": [
+                        {
+                            "role": "user",
+                            "parts": [{"text": full_p}]
                         }
+                    ],
+                    "generationConfig": {
+                        "temperature": 0.1,
+                        "responseMimeType": "application/json"
                     }
+                }
 
-                    try:
+                try:
+                    resp = requests.post(
+                        post_url,
+                        json=body,
+                        headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
+                        timeout=12
+                    )
+
+                    # If 400 because responseMimeType is not supported, retry without responseMimeType
+                    if resp.status_code == 400 and ("responseMimeType" in resp.text or "response_mime_type" in resp.text):
+                        body["generationConfig"] = {"temperature": 0.1}
                         resp = requests.post(
                             post_url,
                             json=body,
                             headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
-                            timeout=30
+                            timeout=12
                         )
 
-                        # If 400 because responseMimeType is not supported, retry without responseMimeType
-                        if resp.status_code == 400 and ("responseMimeType" in resp.text or "response_mime_type" in resp.text):
-                            body["generationConfig"] = {"temperature": 0.1}
-                            resp = requests.post(
-                                post_url,
-                                json=body,
-                                headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
-                                timeout=30
-                            )
-
-                        if resp.status_code == 200:
-                            data_json = resp.json()
-                            cands = data_json.get("candidates", [])
-                            if cands:
-                                p_list = cands[0].get("content", {}).get("parts", [])
-                                txt = "".join(p.get("text", "") for p in p_list if "text" in p)
-                                if txt.strip():
-                                    raw_text = txt
-                                    self.actual_model_used = g_mod
-                                    self.engine_used = f"Google Gemini ({g_mod})"
-                                    print(f"[+] Successfully extracted via Google Gemini REST: {g_mod} ({api_ver})")
-                                    break
-                        elif resp.status_code == 404:
-                            last_g_err = f"{g_mod} ({api_ver}) 404 Not Found"
-                            continue
-                        elif resp.status_code == 429:
-                            last_g_err = f"{g_mod} (429 Rate Limit / Quota Exceeded)"
-                            print(f"[!] {last_g_err}")
-                            rate_limited = True
-                            break
-                        elif resp.status_code in (401, 403):
-                            last_g_err = f"{g_mod} (HTTP {resp.status_code} Unauthorized / Forbidden)"
-                            print(f"[!] {last_g_err}")
-                            auth_failed = True
-                            break
-                        else:
-                            last_g_err = f"{g_mod} ({api_ver}) HTTP {resp.status_code}: {resp.text[:120]}"
-                            print(f"[!] {last_g_err}")
-                    except Exception as rest_e:
-                        last_g_err = str(rest_e)
-                        print(f"[!] Network error calling {g_mod} via {api_ver}: {rest_e}")
+                    if resp.status_code == 200:
+                        data_json = resp.json()
+                        cands = data_json.get("candidates", [])
+                        if cands:
+                            p_list = cands[0].get("content", {}).get("parts", [])
+                            txt = "".join(p.get("text", "") for p in p_list if "text" in p)
+                            if txt.strip():
+                                raw_text = txt
+                                self.actual_model_used = g_mod
+                                self.engine_used = f"Google Gemini ({g_mod})"
+                                print(f"[+] Successfully extracted via Google Gemini REST: {g_mod} ({api_ver})")
+                                break
+                    elif resp.status_code == 404:
+                        last_g_err = f"{g_mod} 404 Not Found"
                         continue
+                    elif resp.status_code == 429:
+                        last_g_err = f"{g_mod} (429 Rate Limit / Quota Exceeded)"
+                        print(f"[!] {last_g_err}")
+                        self.api_error = last_g_err
+                        rate_limited = True
+                        break
+                    elif resp.status_code in (401, 403):
+                        last_g_err = f"{g_mod} (HTTP {resp.status_code} Unauthorized / Forbidden)"
+                        print(f"[!] {last_g_err}")
+                        self.api_error = last_g_err
+                        auth_failed = True
+                        break
+                    else:
+                        last_g_err = f"{g_mod} HTTP {resp.status_code}: {resp.text[:120]}"
+                        print(f"[!] {last_g_err}")
+                except Exception as rest_e:
+                    last_g_err = str(rest_e)
+                    print(f"[!] Network error calling {g_mod}: {rest_e}")
+                    continue
 
                 if raw_text or rate_limited or auth_failed:
                     break
 
-            # Secondary fallback: google.generativeai SDK if available and REST was blocked (and not rate-limited/unauthorized)
-            if not raw_text and not rate_limited and not auth_failed:
-                try:
-                    import google.generativeai as genai
-                    genai.configure(api_key=key_str)
-                    for fallback_mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
-                        try:
-                            g_model = genai.GenerativeModel(fallback_mod)
-                            g_resp = g_model.generate_content(full_p, request_options={"timeout": 30.0})
-                            if g_resp and g_resp.text:
-                                raw_text = g_resp.text
-                                self.actual_model_used = fallback_mod
-                                self.engine_used = f"Google Gemini SDK ({fallback_mod})"
-                                break
-                        except Exception as sdk_e:
-                            last_g_err = str(sdk_e)
-                except Exception:
-                    pass
-
-            if not raw_text and last_g_err:
+            if not raw_text and last_g_err and not self.api_error:
                 self.api_error = f"Google Gemini API Error: {last_g_err}"
 
         if not raw_text:
@@ -4862,11 +4834,16 @@ DOCUMENT CONTEXT:
         - Pass 3: Table 1 Baseline Demographics & Labs
         - Pass 4: Efficacy Outcomes & Safety Adverse Events
         Combines passes with 100% sample size audit and provenance linking.
+        Enforces a hard time budget of 20 seconds to guarantee responsive web performance.
         """
         if not self.api_key:
             return None
 
-        print(f"[*] Starting Multi-Stage Decomposed AI Extraction for {study_id}...")
+        import time
+        ai_start = time.time()
+        MAX_AI_BUDGET = 20.0
+
+        print(f"[*] Starting Multi-Stage Decomposed AI Extraction for {study_id} (Time budget: {MAX_AI_BUDGET}s)...")
 
         # Stage 1: Protocol & Treatment Arms
         study_meta, arms_list = self._extract_llm_stage1_protocol_and_arms(study_id, sections)
@@ -4878,17 +4855,31 @@ DOCUMENT CONTEXT:
             study_meta = study_meta or self._extract_study_metadata(study_id, sections)
             arms_list = arms_list or self._extract_treatment_arms(study_id, sections)
 
+        # Check budget or errors before subsequent stages
+        if self.api_error or (time.time() - ai_start > MAX_AI_BUDGET):
+            print(f"[!] AI budget exceeded or error encountered ({time.time() - ai_start:.1f}s); aborting AI pipeline and falling back to local engine.")
+            return None
+
         # Stage 2: Eligibility Criteria
         elig_list = self._extract_llm_stage2_eligibility(study_id, sections)
         if not elig_list:
             print("[!] Stage 2 incomplete; falling back to local eligibility parser.")
             elig_list = self._extract_eligibility(study_id, sections)
 
-        # Stage 3: Table 1 Baseline Characteristics
-        baseline_outcomes = self._extract_llm_stage3_table1_baseline(study_id, arms_list, sections)
+        if self.api_error or (time.time() - ai_start > MAX_AI_BUDGET):
+            print(f"[!] AI budget reached after Stage 2 ({time.time() - ai_start:.1f}s); falling back to verified local outcomes.")
+            baseline_outcomes = []
+            efficacy_outcomes = []
+        else:
+            # Stage 3: Table 1 Baseline Characteristics
+            baseline_outcomes = self._extract_llm_stage3_table1_baseline(study_id, arms_list, sections)
 
-        # Stage 4: Efficacy Endpoints & Safety Adverse Events
-        efficacy_outcomes = self._extract_llm_stage4_efficacy_and_safety(study_id, arms_list, sections)
+            if self.api_error or (time.time() - ai_start > MAX_AI_BUDGET):
+                print(f"[!] AI budget reached after Stage 3 ({time.time() - ai_start:.1f}s); falling back to verified local outcomes.")
+                efficacy_outcomes = []
+            else:
+                # Stage 4: Efficacy Endpoints & Safety Adverse Events
+                efficacy_outcomes = self._extract_llm_stage4_efficacy_and_safety(study_id, arms_list, sections)
 
         # Combine all extracted clinical outcomes
         outcomes_list = baseline_outcomes + efficacy_outcomes
