@@ -4328,9 +4328,12 @@ class RCTExtractor:
             else:
                 gemini_candidates = preferred_order
 
-            print(f"[*] Active Gemini candidate models: {gemini_candidates[:4]}")
+            gemini_candidates = gemini_candidates[:3]
+            print(f"[*] Active Gemini candidate models: {gemini_candidates}")
 
             last_g_err = None
+            rate_limited = False
+            auth_failed = False
             full_p = f"{system_prompt}\n\n{prompt}" if system_prompt else prompt
 
             for g_mod in gemini_candidates:
@@ -4355,7 +4358,7 @@ class RCTExtractor:
                             post_url,
                             json=body,
                             headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
-                            timeout=60
+                            timeout=30
                         )
 
                         # If 400 because responseMimeType is not supported, retry without responseMimeType
@@ -4365,7 +4368,7 @@ class RCTExtractor:
                                 post_url,
                                 json=body,
                                 headers={"x-goog-api-key": key_str, "Content-Type": "application/json"},
-                                timeout=60
+                                timeout=30
                             )
 
                         if resp.status_code == 200:
@@ -4384,8 +4387,14 @@ class RCTExtractor:
                             last_g_err = f"{g_mod} ({api_ver}) 404 Not Found"
                             continue
                         elif resp.status_code == 429:
-                            last_g_err = f"{g_mod} (429 Rate Limit Exceeded)"
+                            last_g_err = f"{g_mod} (429 Rate Limit / Quota Exceeded)"
                             print(f"[!] {last_g_err}")
+                            rate_limited = True
+                            break
+                        elif resp.status_code in (401, 403):
+                            last_g_err = f"{g_mod} (HTTP {resp.status_code} Unauthorized / Forbidden)"
+                            print(f"[!] {last_g_err}")
+                            auth_failed = True
                             break
                         else:
                             last_g_err = f"{g_mod} ({api_ver}) HTTP {resp.status_code}: {resp.text[:120]}"
@@ -4395,18 +4404,18 @@ class RCTExtractor:
                         print(f"[!] Network error calling {g_mod} via {api_ver}: {rest_e}")
                         continue
 
-                if raw_text:
+                if raw_text or rate_limited or auth_failed:
                     break
 
-            # Secondary fallback: google.generativeai SDK if available and REST was blocked
-            if not raw_text:
+            # Secondary fallback: google.generativeai SDK if available and REST was blocked (and not rate-limited/unauthorized)
+            if not raw_text and not rate_limited and not auth_failed:
                 try:
                     import google.generativeai as genai
                     genai.configure(api_key=key_str)
                     for fallback_mod in ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"]:
                         try:
                             g_model = genai.GenerativeModel(fallback_mod)
-                            g_resp = g_model.generate_content(full_p, request_options={"timeout": 60.0})
+                            g_resp = g_model.generate_content(full_p, request_options={"timeout": 30.0})
                             if g_resp and g_resp.text:
                                 raw_text = g_resp.text
                                 self.actual_model_used = fallback_mod
@@ -4862,6 +4871,9 @@ DOCUMENT CONTEXT:
         # Stage 1: Protocol & Treatment Arms
         study_meta, arms_list = self._extract_llm_stage1_protocol_and_arms(study_id, sections)
         if not study_meta or not arms_list:
+            if self.api_error:
+                print(f"[!] Stage 1 aborted due to AI API issue ({self.api_error}); falling back to local engine immediately.")
+                return None
             print("[!] Stage 1 incomplete; enriching with local study structure.")
             study_meta = study_meta or self._extract_study_metadata(study_id, sections)
             arms_list = arms_list or self._extract_treatment_arms(study_id, sections)

@@ -407,3 +407,23 @@ def test_master_excel_sheet_and_row_continuity(tmp_path):
     # Both rows 4 and 5 must have male and female percentages populated!
     assert row4_vals[male_pct_idx] == 60.0
     assert row5_vals[male_pct_idx] == 60.0
+
+
+def test_process_pdf_end_to_end_no_html_shadowing():
+    """Verify app.process_pdf runs end-to-end without UnboundLocalError on html or diagnostic failure."""
+    import types
+    import app
+    pdf_path = Path(__file__).resolve().parent.parent / "data" / "raw" / "Dabagliflozin.pdf"
+    if not pdf_path.exists():
+        pytest.skip("Test fixture Dabagliflozin.pdf not found")
+
+    mock_pdf = types.SimpleNamespace(name=str(pdf_path))
+    res = app.process_pdf(mock_pdf, api_key="", model_choice="smart-local")
+    excel_path, json_path, p1_html_path, summary_md, df_master, df_matrix, df_outcomes, df_elig, iframe = res
+
+    assert excel_path is not None, "excel_path should not be None"
+    assert Path(excel_path).exists(), f"Excel file {excel_path} should exist"
+    assert "Extraction Diagnostic Notice" not in summary_md, "Summary markdown must not contain Extraction Diagnostic Notice"
+    assert "cannot access local variable" not in summary_md, "Summary markdown must not contain UnboundLocalError"
+    assert not df_outcomes.empty, "Extracted outcomes DataFrame should not be empty"
+

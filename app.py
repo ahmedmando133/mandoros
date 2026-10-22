@@ -433,7 +433,7 @@ def process_pdf(
         return saved_excel, json_path, p1_html_path, summary_md, df_master, df_matrix, df_outcomes, df_elig, preview_iframe
 
     except Exception as e:
-        import traceback, html
+        import traceback
         traceback.print_exc()
         err_msg = html.escape(str(e))
         err_card = f"""
@@ -1065,7 +1065,6 @@ def get_default_student_express_lab() -> tuple:
         showlegend=False
     )
 
-    import html
     p1_div = fig_forest.to_html(full_html=False, include_plotlyjs=False, config={'displayModeBar': False})
     p2_div = fig_traj.to_html(full_html=False, include_plotlyjs=False, config={'displayModeBar': False})
     p3_div = fig_dose.to_html(full_html=False, include_plotlyjs=False, config={'displayModeBar': False})
@@ -1722,7 +1721,6 @@ def simulate_virtual_trial_ui(
     duration: float = 24.0
 ) -> str:
     """Interactively simulates a virtual trial for a specified dose and duration with extrapolation risk rating."""
-    import html
     from src.cohort_pipeline import ActiveIngredientCohortPipeline
     from src.meta_predictive import extrapolation_risk_score
 
@@ -1829,7 +1827,6 @@ def simulate_virtual_trial_ui(
 
 def build_student_express_lab_ui(cohort_name: str, res: dict, pipeline: Any) -> tuple:
     """Builds the dynamic Student & Junior Researcher Express Lab UI using synthesized cohort evidence."""
-    import html
     import plotly.graph_objects as go
     import numpy as np
 
@@ -2224,7 +2221,6 @@ def process_cohort(
 ):
     """Runs end-to-end active-ingredient cohort extraction, harmonization, meta-analysis, and dashboard generation."""
     import re
-    import html
     import shutil
     from pathlib import Path
     import pandas as pd
@@ -2655,7 +2651,7 @@ def process_cohort(
         )
 
     except Exception as e:
-        import traceback, html
+        import traceback
         traceback.print_exc()
         err_msg = html.escape(str(e))
         err_card = f"""
